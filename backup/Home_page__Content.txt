@@ -1,0 +1,170 @@
+class HomeScreen extends StatefulWidget {
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  List<Map<String, dynamic>> projects = [];
+  List<Map<String, dynamic>> groups = [];
+  List<Map<String, dynamic>> freelancers = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    // Database se data load karein
+    // Example:
+    projects = await _fetchProjectsFromDatabase();
+    groups = await _fetchGroupsFromDatabase();
+    freelancers = await _fetchFreelancersFromDatabase();
+    setState(() {});
+  }
+
+  // Database se projects fetch karne ka function
+  Future<List<Map<String, dynamic>>> _fetchProjectsFromDatabase() async {
+    // Yahan database interaction ka code likhein
+    // Example:
+    return [
+      {'image': 'assets/project1.png', 'name': 'Project 1', 'description': 'Description 1'},
+      {'image': 'assets/project2.png', 'name': 'Project 2', 'description': 'Description 2'},
+      {'image': 'assets/project3.png', 'name': 'Project 3', 'description': 'Description 3'},
+      {'image': 'assets/project4.png', 'name': 'Project 4', 'description': 'Description 4'},
+    ];
+  }
+
+  // Database se groups fetch karne ka function
+  Future<List<Map<String, dynamic>>> _fetchGroupsFromDatabase() async {
+    // Yahan database interaction ka code likhein
+    // Example:
+    return [
+      {'image': 'assets/group1.png', 'name': 'Group 1', 'description': 'Description 1'},
+      {'image': 'assets/group2.png', 'name': 'Group 2', 'description': 'Description 2'},
+      {'image': 'assets/group3.png', 'name': 'Group 3', 'description': 'Description 3'},
+      {'image': 'assets/group4.png', 'name': 'Group 4', 'description': 'Description 4'},
+    ];
+  }// Database se freelancers fetch karne ka function
+  Future<List<Map<String, dynamic>>> _fetchFreelancersFromDatabase() async {
+    // Yahan database interaction ka code likhein
+    // Example:
+    return [
+      {'image': 'assets/freelancer1.png', 'name': 'Freelancer 1', 'description': 'Description 1'},
+      {'image': 'assets/freelancer2.png', 'name': 'Freelancer 2', 'description': 'Description 2'},
+      {'image': 'assets/freelancer3.png', 'name': 'Freelancer 3', 'description': 'Description 3'},
+      {'image': 'assets/freelancer4.png', 'name': 'Freelancer 4', 'description': 'Description 4'},
+    ];
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: null,
+      body: ListView(
+        children: [
+          _buildSection('Projects', projects),
+          _buildSection('Groups', groups),
+          _buildSection('Freelancers', freelancers),
+        ],
+      ),
+    );
+  }
+  Widget _buildSection(String title, List<Map<String, dynamic>> data) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Text(
+            title,
+            style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+          ),
+        ),
+        SizedBox(
+          height: 200, // Adjust height as needed
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: data.length,
+            itemBuilder: (context, index) {
+              return _buildItem(data[index]);
+            },
+          ),
+        ),
+      ],
+    );
+  }
+  Widget _buildItem(Map<String, dynamic> item) {
+    return InkWell(
+      onTap: ()
+      {
+
+      },
+      child: Card(
+        child: Container(
+          width: 200, // Adjust width as needed
+          child: Column(
+            children: [
+              Image.asset(item['image']),
+              Text(item['name']),
+              Text(item['description']),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+
+
+
+
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+
+
+/ Different content widgets for each BottomNavigationBarItem
+// class HomeScreen extends StatelessWidget {
+//   @override
+//   Widget build(BuildContext context) {
+//     return Container(
+//       margin: EdgeInsets.only(top: 10),
+//       height: 150,
+//       width: double.infinity,
+//       color: Colors.white,
+//       child: SingleChildScrollView(
+//         scrollDirection: Axis.horizontal,
+//         child: Row(
+//           children: [
+//             Container(width: 150,height: 150,
+//                 child: Image.asset('image.png'),
+//             ),
+//             Column(
+//               children: [
+//                 Container(
+//                   width: 180,
+//                 )
+//               ],
+//             ),
+//             Container(width: 150,height: 150,
+//               child: Image.asset('image.png'),
+//             ),
+//             Container(
+//               width: 150,height: 150,
+//               child: Image.asset('image.png'),
+//             ),
+//             Container(
+//               width: 150,height: 150,
+//               child: Image.asset('image.png'),
+//             )
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+//
+// }
