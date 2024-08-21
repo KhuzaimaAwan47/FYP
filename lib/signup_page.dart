@@ -64,7 +64,7 @@ class _SignupPageState extends State<SignupPage> {
                   else if(value!.length<6){
                     return'Username must be atleast 6 chracter long';
                   }
-              },
+                },
               ),
               SizedBox(height: screenHeight * 0.01), // Add vertical space based on screen height
               TextFormField(
@@ -134,32 +134,32 @@ class _SignupPageState extends State<SignupPage> {
               ),
               SizedBox(height: screenHeight * 0.01), // Add vertical space based on screen height
 
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text('Mention yourself as:'),
-              Checkbox(
-                value: isClientChecked,
-                onChanged: (bool? newValue) {
-                  setState(() {
-                    isClientChecked = newValue!;
-                    isfreelancerChecked = !newValue;
-                  });
-                },
-                activeColor: Colors.indigo,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text('Mention yourself as:'),
+                  Checkbox(
+                    value: isClientChecked,
+                    onChanged: (bool? newValue) {
+                      setState(() {
+                        isClientChecked = newValue!;
+                        isfreelancerChecked = !newValue;
+                      });
+                    },
+                    activeColor: Colors.indigo,
+                  ),
+                  Text('Client'),
+                  Checkbox(value: isfreelancerChecked, onChanged: (bool? newValue){
+                    setState(() {
+                      isfreelancerChecked = newValue!;
+                      isClientChecked = !newValue; // uncheck the other
+                    });
+                  },
+                    activeColor: Colors.indigo,
+                  ),
+                  Text('Freelancer'),
+                ],
               ),
-              Text('Client'),
-              Checkbox(value: isfreelancerChecked, onChanged: (bool? newValue){
-                setState(() {
-                  isfreelancerChecked = newValue!;
-                  isClientChecked = !newValue; // uncheck the other
-                });
-              },
-                activeColor: Colors.indigo,
-              ),
-              Text('Freelancer'),
-            ],
-          ),
               SizedBox(height: screenHeight * 0.01),
 
               ElevatedButton(
@@ -197,10 +197,3 @@ class _SignupPageState extends State<SignupPage> {
     );
   }
 }
-
-
-
-
-
-
-

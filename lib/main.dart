@@ -1,10 +1,13 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'splash_page.dart';
 import 'login_page.dart';
 import 'signup_page.dart';
 import 'home_page.dart';
 
-void main() {
+Future main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
   runApp(MyApp());
 }
 
@@ -22,7 +25,7 @@ class MyApp extends StatelessWidget {
       routes: {
         '/': (context) => SplashScreen(),
         '/login': (context) => LoginPage(),
-       '/signup': (context) => SignupPage(),
+        '/signup': (context) => SignupPage(),
         '/home': (context) => HomePage(),
       },
     );
