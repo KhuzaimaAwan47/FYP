@@ -1,32 +1,60 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:my_fyp/login_page.dart';
 
-void main() {
-  runApp(MyApp());
+
+class SignupPage extends StatefulWidget {
+
+  @override
+  State<SignupPage> createState() => _SignupPageState();
 }
 
-class MyApp extends StatelessWidget {
+class _SignupPageState extends State<SignupPage> {
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController usernameController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+  final TextEditingController confirmpasswordControllerText = TextEditingController();
+  // final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  bool? isSignIn = false;
+  bool isClientChecked = false;
+  bool isfreelancerChecked = false;
+  bool isPasswordVisible = false;
+  bool isCPasswordVisible = false;
+
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false, // this removes debug tag from app bar
-      title: "FlutterApp",
-      theme: ThemeData(
-        primarySwatch: Colors.deepPurple,
-      ),
-      home: Myhomepage(),
-    );
+  void dispose(){
+    usernameController.dispose();
+    emailController.dispose();
+    passwordController.dispose();
+    confirmpasswordControllerText.dispose();
+    super.dispose();
   }
-}
 
-class Myhomepage extends StatefulWidget {
-  @override
-  State<Myhomepage> createState() => _MyHomepageState();
-}
+  Future signUpUser() async {
+    setState(() {
+      isSignIn = true;
+    });
+    try {
+      await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: emailController.text,
+        password: passwordController.text,
+      ).then((value) {
+        setState(() {
+          isSignIn = false;
+        });
+      });
+      Navigator.push(context, MaterialPageRoute(builder: (context) => LoginPage()));
+    } catch (e) {
+      print("error occured $e");
+    }
+  }
 
-class _MyHomepageState extends State<Myhomepage> {
-  final TextEditingController emailText = TextEditingController();
-  final TextEditingController passText = TextEditingController();
+
+
+
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -47,15 +75,16 @@ class _MyHomepageState extends State<Myhomepage> {
             children: [
               Text(
                 'Register',
-                style: TextStyle(fontSize: 45, fontWeight: FontWeight.w400, color: Colors.black45),
+                style: TextStyle(fontSize: 60, fontWeight: FontWeight.w400, color: Colors.black45),
                 textAlign: TextAlign.center,
               ),
               Text(
                 'Create your account',
-                style: TextStyle(color: Colors.black54, fontSize: 16, fontWeight: FontWeight.w500),
+                style: TextStyle(color: Colors.black54, fontSize: 20, fontWeight: FontWeight.w500),
               ),
               SizedBox(height: screenHeight * 0.05), // Add vertical space based on screen height
               TextFormField(
+                controller: usernameController,
                 decoration: InputDecoration(
                   hintText: 'Username',
                   border: OutlineInputBorder(
@@ -65,10 +94,18 @@ class _MyHomepageState extends State<Myhomepage> {
                   prefixIcon: Icon(Icons.account_circle_outlined),
                 ),
                 keyboardType: TextInputType.name,
+                validator: (value){
+                  if(value!.isEmpty){
+                    return 'Enter your username';
+                  }
+                  else if(value!.length<6){
+                    return'Username must be atleast 6 chracter long';
+                  }
+                },
               ),
-              SizedBox(height: screenHeight * 0.02), // Add vertical space based on screen height
+              SizedBox(height: screenHeight * 0.01), // Add vertical space based on screen height
               TextFormField(
-                controller: emailText,
+                controller: emailController,
                 decoration: InputDecoration(
                   hintText: 'Enter your email',
                   border: OutlineInputBorder(
@@ -78,11 +115,18 @@ class _MyHomepageState extends State<Myhomepage> {
                   prefixIcon: Icon(Icons.email_outlined),
                 ),
                 keyboardType: TextInputType.emailAddress,
+                validator: (value){
+                  final RegExp emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                  if (!emailRegex.hasMatch(value!)) {
+                    return 'Please enter a valid email address';
+                  }
+                  return null;
+                },
               ),
-              SizedBox(height: screenHeight * 0.02), // Add vertical space based on screen height
+              SizedBox(height: screenHeight * 0.01), // Add vertical space based on screen height
               TextFormField(
-                controller: passText,
-                obscureText: true,
+                controller: passwordController,
+                obscureText: !isPasswordVisible,
                 obscuringCharacter: '*',
                 decoration: InputDecoration(
                   hintText: 'Password',
@@ -92,15 +136,20 @@ class _MyHomepageState extends State<Myhomepage> {
                   ),
                   prefixIcon: Icon(Icons.password),
                   suffixIcon: IconButton(
-                    icon: Icon(Icons.remove_red_eye_outlined),
-                    onPressed: () {},
-                  ),
+                    icon: Icon(isPasswordVisible ? Icons.visibility:Icons.visibility_off,),
+                    onPressed: ()
+                    {
+                      setState((){
+                        isPasswordVisible  =  !isPasswordVisible;
+                      });
+
+                    },),
                 ),
               ),
-              SizedBox(height: screenHeight * 0.02), // Add vertical space based on screen height
+              SizedBox(height: screenHeight * 0.01), // Add vertical space based on screen height
               TextFormField(
-                controller: passText,
-                obscureText: true,
+                controller: confirmpasswordControllerText,
+                obscureText: !isCPasswordVisible,
                 obscuringCharacter: '*',
                 decoration: InputDecoration(
                   hintText: 'Confirm Password',
@@ -110,24 +159,76 @@ class _MyHomepageState extends State<Myhomepage> {
                   ),
                   prefixIcon: Icon(Icons.password),
                   suffixIcon: IconButton(
-                    icon: Icon(Icons.remove_red_eye_outlined),
-                    onPressed: () {},
-                  ),
+                    icon: Icon(isCPasswordVisible ? Icons.visibility:Icons.visibility_off,),
+                    onPressed: ()
+                    {
+                      setState((){
+                        isCPasswordVisible  =  !isCPasswordVisible;
+                      });
+
+                    },),
                 ),
               ),
-              SizedBox(height: screenHeight * 0.05), // Add vertical space based on screen height
+              SizedBox(height: screenHeight * 0.01), // Add vertical space based on screen height
+
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text('Mention yourself as:'),
+                  Checkbox(
+                    value: isClientChecked,
+                    onChanged: (bool? newValue) {
+                      setState(() {
+                        isClientChecked = newValue!;
+                        isfreelancerChecked = !newValue;
+                      });
+                    },
+                    activeColor: Colors.indigo,
+                  ),
+                  Text('Client'),
+                  Checkbox(value: isfreelancerChecked, onChanged: (bool? newValue){
+                    setState(() {
+                      isfreelancerChecked = newValue!;
+                      isClientChecked = !newValue; // uncheck the other
+                    });
+                  },
+                    activeColor: Colors.indigo,
+                  ),
+                  Text('Freelancer'),
+                ],
+              ),
+              SizedBox(height: screenHeight * 0.01),
+
+              SizedBox(
+                height: 1,
+              ),
+              // isSignIn == true
+              //     ? Row(
+              //   mainAxisAlignment: MainAxisAlignment.center,
+              //   children: [
+              //     Text("Please wait..."),
+              //     SizedBox(
+              //       width: 10,
+              //     ),
+              //     CircularProgressIndicator()
+              //   ],
+              // )
+              //     : Container(),
+
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.indigo,
-                  padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.2, vertical: 15),
+                  padding: EdgeInsets.symmetric(horizontal: 135, vertical: 15),
                 ),
-                onPressed: () {},
+                onPressed:() {
+                  signUpUser();
+                },
                 child: Text(
                   'Register',
                   style: TextStyle(fontSize: 18, color: Colors.white),
                 ),
               ),
-              SizedBox(height: screenHeight * 0.02), // Add vertical space based on screen height
+
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -138,9 +239,9 @@ class _MyHomepageState extends State<Myhomepage> {
                   ),
                   TextButton(
                     onPressed: () {
-                      //Navigator.push(context, MaterialPageRoute(builder: (context) => ));
-                      },
-                    child: Text('Sign in'),
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => LoginPage()));
+                    },
+                    child: Text('Sign in',style: TextStyle(color: Colors.indigo),),
                   ),
                 ],
               ),

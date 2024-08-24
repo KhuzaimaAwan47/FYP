@@ -1,196 +1,342 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:my_fyp/login_page.dart';
 
 
-class SignupPage extends StatefulWidget {
+class  SignupPage extends StatefulWidget {
+  const SignupPage({super.key});
 
   @override
   State<SignupPage> createState() => _SignupPageState();
 }
 
 class _SignupPageState extends State<SignupPage> {
-  final TextEditingController emailText = TextEditingController();
-  final TextEditingController nameText = TextEditingController();
-  final TextEditingController passText = TextEditingController();
-  final TextEditingController confirmpassText = TextEditingController();
-
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController usernameController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+  final TextEditingController confirmpasswordControllerText = TextEditingController();
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   bool isClientChecked = false;
   bool isfreelancerChecked = false;
   bool isPasswordVisible = false;
   bool isCPasswordVisible = false;
+  bool isLoading = false;
 
+  @override
+  void dispose(){
+    usernameController.dispose();
+    emailController.dispose();
+    passwordController.dispose();
+    confirmpasswordControllerText.dispose();
+    super.dispose();
+  }
+  bool passwordConfirmed() {
+    return passwordController.text.trim() == confirmpasswordControllerText.text.trim();
+  }
+
+  Future<void> signUpUser() async {
+    try {
+      if (passwordConfirmed()) {
+        await FirebaseAuth.instance.createUserWithEmailAndPassword(
+          email: emailController.text.trim(),
+          password: passwordController.text.trim(),
+        );
+        // Add user details to Firestore
+        addUserDetails(
+          usernameController.text.trim(),
+          emailController.text.trim(),
+          isClientChecked ? 'client' : 'freelancer',
+          passwordController.text.trim(),
+        );
+        // Navigate to the Login Page
+        Navigator.push(context, MaterialPageRoute(builder: (context) => LoginPage()),);
+      } else {
+        _showErrorDialog('Passwords do not match.');
+      }
+    } on FirebaseAuthException catch (e) {
+      // Handle FirebaseAuth errors and show an error dialog
+      String errorMessage = _handleFirebaseAuthError(e);
+      _showErrorDialog(errorMessage);
+    } catch (e) {
+      // Handle other errors and show an error dialog
+      _showErrorDialog('An unexpected error occurred. Please try again.');
+    } finally {
+
+    }
+  }
+
+  String _handleFirebaseAuthError(FirebaseAuthException e) {
+    if (e.code == 'email-already-in-use') {
+      return 'This email is already in use. Please use a different email.';
+    } else if (e.code == 'weak-password') {
+      return 'The password provided is too weak. Please use a stronger password.';
+    } else if (e.code == 'invalid-email') {
+      return 'The email address is not valid. Please enter a correct email.';
+    } else {
+      return 'An unexpected error occurred. Please try again.';
+    }
+  }// SignUpUser
+  Future addUserDetails(String username, String email, String userType, String password) async {
+    await FirebaseFirestore.instance.collection('users').add({
+      'username' : username,
+      'userType' : userType,
+      'email'    : email,
+      'passowrd' : password,
+    });
+  }
+
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Error'),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Dismiss the dialog
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+  //Note the "const" keyword is used to improve performance. Not to be confused to seen "const" keyword along widgets.
   @override
   Widget build(BuildContext context) {
     // Get screen height and width
     var screenHeight = MediaQuery.of(context).size.height;
     var screenWidth = MediaQuery.of(context).size.width;
 
-    return Scaffold(
-      appBar: null,
-      body: SingleChildScrollView(
-        child: Container(
-          height: screenHeight,
-          width: screenWidth,
-          color: Colors.indigo.shade50,
-          padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.1), // Add horizontal padding based on screen width
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                'Register',
-                style: TextStyle(fontSize: 60, fontWeight: FontWeight.w400, color: Colors.black45),
-                textAlign: TextAlign.center,
-              ),
-              Text(
-                'Create your account',
-                style: TextStyle(color: Colors.black54, fontSize: 20, fontWeight: FontWeight.w500),
-              ),
-              SizedBox(height: screenHeight * 0.05), // Add vertical space based on screen height
-              TextFormField(
-                controller: nameText,
-                decoration: InputDecoration(
-                  hintText: 'Username',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide(color: Colors.blue, width: 1.5),
-                  ),
-                  prefixIcon: Icon(Icons.account_circle_outlined),
-                ),
-                keyboardType: TextInputType.name,
-                validator: (value){
-                  if(value!.isEmpty){
-                    return 'Enter your username';
-                  }
-                  else if(value!.length<6){
-                    return'Username must be atleast 6 chracter long';
-                  }
-                },
-              ),
-              SizedBox(height: screenHeight * 0.01), // Add vertical space based on screen height
-              TextFormField(
-                controller: emailText,
-                decoration: InputDecoration(
-                  hintText: 'Enter your email',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide(color: Colors.blue, width: 1.5),
-                  ),
-                  prefixIcon: Icon(Icons.email_outlined),
-                ),
-                keyboardType: TextInputType.emailAddress,
-                validator: (value){
-                  final RegExp emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-                  if (!emailRegex.hasMatch(value!)) {
-                    return 'Please enter a valid email address';
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: screenHeight * 0.01), // Add vertical space based on screen height
-              TextFormField(
-                controller: passText,
-                obscureText: !isPasswordVisible,
-                obscuringCharacter: '*',
-                decoration: InputDecoration(
-                  hintText: 'Password',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide(color: Colors.indigo, width: 1.5),
-                  ),
-                  prefixIcon: Icon(Icons.password),
-                  suffixIcon: IconButton(
-                    icon: Icon(isPasswordVisible ? Icons.visibility:Icons.visibility_off,),
-                    onPressed: ()
-                    {
-                      setState((){
-                        isPasswordVisible  =  !isPasswordVisible;
-                      });
+    // PopScope block user to leave screen such as swapback or going back.
+    return PopScope(
+      canPop: false,
+      onPopInvoked : (didPop){
+        // logic
+      },
+      child: Scaffold(
+        appBar: null,
+        body: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(0),//this padding is used to add formkey.
+            child: Form(
+              key: _formKey,
+              child: Container(
+                height: screenHeight,
+                width: screenWidth,
+                color: Colors.indigo.shade50,
+                padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.1), // Add horizontal padding based on screen width
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                     const Text(
+                      'Register',
+                      style: TextStyle(fontSize: 60, fontWeight: FontWeight.w400, color: Colors.black45),
+                      textAlign: TextAlign.center,
+                    ),
+                    const Text(
+                      'Create your account',
+                      style: TextStyle(color: Colors.black54, fontSize: 20, fontWeight: FontWeight.w500),
+                    ),
+                    SizedBox(height: screenHeight * 0.05), // Add vertical space based on screen height
 
-                    },),
+                    //----------Username----------
+
+                    TextFormField(
+                      controller: usernameController,
+                      decoration: InputDecoration(
+                        hintText: 'Username',
+                        border:  OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: const BorderSide(color: Colors.blue, width: 1.5),
+                        ),
+                        prefixIcon: const Icon(Icons.account_circle_outlined),
+                      ),
+                      keyboardType: TextInputType.name,
+                      validator: (value){
+                        if(value == null || value.isEmpty){
+                          return 'Enter your username';
+                        }
+                        else if(value.length<6){
+                          return'Username must be atleast 6 character long';
+                        }
+                        return null;
+                      },
+                    ),
+                    SizedBox(height: screenHeight * 0.01), // Add vertical space based on screen height
+
+                    //----------Email----------
+
+                    TextFormField(
+                      controller: emailController,
+                      decoration: InputDecoration(
+                        hintText: 'Enter your email',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: const BorderSide(color: Colors.blue, width: 1.5),
+                        ),
+                        prefixIcon: const Icon(Icons.email_outlined),
+                      ),
+                      keyboardType: TextInputType.emailAddress,
+                      validator: (value){
+                        final RegExp emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                        if (!emailRegex.hasMatch(value!)) {
+                          return 'Please enter a valid email address';
+                        }
+                        return null;
+                      },
+                    ),
+                    SizedBox(height: screenHeight * 0.01), // Add vertical space based on screen height
+
+                    //----------Password----------
+
+                    TextFormField(
+                      controller: passwordController,
+                      obscureText: !isPasswordVisible,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter your password';
+                        }
+                        if (value.length < 6) {
+                          return 'Password must be at least 6 characters long';
+                        }
+                        if (!RegExp(r'[a-zA-Z]').hasMatch(value)) {
+                          return 'Password must contain at least one letter';
+                        }
+                        if (!RegExp(r'\d').hasMatch(value)) {
+                          return 'Password must contain at least one number';
+                        }
+                        return null;
+                      },
+                      obscuringCharacter: '*',
+                      decoration: InputDecoration(
+                        hintText: 'Password',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: const BorderSide(color: Colors.indigo, width: 1.5),
+                        ),
+                        prefixIcon: const Icon(Icons.password),
+                        suffixIcon: IconButton(
+                          icon: Icon(isPasswordVisible ? Icons.visibility:Icons.visibility_off,),
+                          onPressed: ()
+                          {
+                            setState((){
+                              isPasswordVisible  =  !isPasswordVisible;
+                            });
+
+                          },),
+                      ),
+                    ),
+                    SizedBox(height: screenHeight * 0.01), // Add vertical space based on screen height
+
+                    //----------Confirm Password----------
+
+                    TextFormField(
+                      controller: confirmpasswordControllerText,
+                      obscureText: !isCPasswordVisible,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please confirm your password';  // Ensures the confirm password field is not empty.
+                           }
+                        if (value != passwordController.text) {
+                          return 'Passwords do not match';  // Checks if the confirm password matches the original password.
+                           }
+                        return null;
+                      },
+                      obscuringCharacter: '*',
+                      decoration: InputDecoration(
+                        hintText: 'Confirm Password',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: const BorderSide(color: Colors.indigo, width: 1.5),
+                        ),
+                        prefixIcon: const Icon(Icons.password),
+                        suffixIcon: IconButton(
+                          icon: Icon(isCPasswordVisible ? Icons.visibility:Icons.visibility_off,),
+                          onPressed: ()
+                          {
+                            setState((){
+                              isCPasswordVisible  =  !isCPasswordVisible;
+                            });
+
+                          },),
+                      ),
+                    ),
+                    SizedBox(height: screenHeight * 0.01), // Add vertical space based on screen height
+
+                    //----------Check Box----------
+
+                     Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text('Mention yourself as:'),
+                        Checkbox(
+                          value: isClientChecked,
+                          onChanged: (bool? newValue) {
+                            setState(() {
+                              isClientChecked = newValue!;
+                              isfreelancerChecked = !newValue;
+                            });
+                          },
+                          activeColor: Colors.indigo,
+                        ),
+                        const Text('Client'),
+                        Checkbox(value: isfreelancerChecked, onChanged: (bool? newValue){
+                          setState(() {
+                            isfreelancerChecked = newValue!;
+                            isClientChecked = !newValue; // uncheck the other
+                          });
+                        },
+                          activeColor: Colors.indigo,
+                        ),
+                       const Text('Freelancer'),
+                      ],
+                    ),
+                    SizedBox(height: screenHeight * 0.01),
+                    const SizedBox( height: 1,),
+
+                    //----------Button----------
+
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.indigo,
+                        padding: const EdgeInsets.symmetric(horizontal: 135, vertical: 15),
+                      ),
+                      onPressed:() {
+                        if (_formKey.currentState!.validate()){
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Processing Data...')),);
+                          signUpUser();
+                        }
+                        },
+                      child: const Text('Register', style: TextStyle(fontSize: 18, color: Colors.white),),
+                    ),
+
+                    //----------Text Button----------
+
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text(
+                          'Already, have an account?',
+                          style: TextStyle(fontWeight: FontWeight.w400, color: Colors.black),
+                          textAlign: TextAlign.center,
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            Navigator.push(context, MaterialPageRoute(builder: (context) => LoginPage()));
+                          },
+                          child: const Text('Sign in',style: TextStyle(color: Colors.indigo),),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
-              SizedBox(height: screenHeight * 0.01), // Add vertical space based on screen height
-              TextFormField(
-                controller: confirmpassText,
-                obscureText: !isCPasswordVisible,
-                obscuringCharacter: '*',
-                decoration: InputDecoration(
-                  hintText: 'Confirm Password',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide(color: Colors.indigo, width: 1.5),
-                  ),
-                  prefixIcon: Icon(Icons.password),
-                  suffixIcon: IconButton(
-                    icon: Icon(isCPasswordVisible ? Icons.visibility:Icons.visibility_off,),
-                    onPressed: ()
-                    {
-                      setState((){
-                        isCPasswordVisible  =  !isCPasswordVisible;
-                      });
-
-                    },),
-                ),
-              ),
-              SizedBox(height: screenHeight * 0.01), // Add vertical space based on screen height
-
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text('Mention yourself as:'),
-                  Checkbox(
-                    value: isClientChecked,
-                    onChanged: (bool? newValue) {
-                      setState(() {
-                        isClientChecked = newValue!;
-                        isfreelancerChecked = !newValue;
-                      });
-                    },
-                    activeColor: Colors.indigo,
-                  ),
-                  Text('Client'),
-                  Checkbox(value: isfreelancerChecked, onChanged: (bool? newValue){
-                    setState(() {
-                      isfreelancerChecked = newValue!;
-                      isClientChecked = !newValue; // uncheck the other
-                    });
-                  },
-                    activeColor: Colors.indigo,
-                  ),
-                  Text('Freelancer'),
-                ],
-              ),
-              SizedBox(height: screenHeight * 0.01),
-
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.indigo,
-                  padding: EdgeInsets.symmetric(horizontal: 135, vertical: 15),
-                ),
-                onPressed: () {},
-                child: Text(
-                  'Register',
-                  style: TextStyle(fontSize: 18, color: Colors.white),
-                ),
-              ),
-
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    'Already, have an account?',
-                    style: TextStyle(fontWeight: FontWeight.w400, color: Colors.black),
-                    textAlign: TextAlign.center,
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => LoginPage()));
-                    },
-                    child: Text('Sign in',style: TextStyle(color: Colors.indigo),),
-                  ),
-                ],
-              ),
-            ],
+            ),
           ),
         ),
       ),
