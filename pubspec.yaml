@@ -40,6 +40,10 @@ dependencies:
   cupertino_icons: ^1.0.6
   firebase_auth: ^5.1.4
   cloud_firestore: ^5.2.1
+  auto_size_text: ^3.0.0
+  custom_navigation_bar: ^0.8.2
+  ionicons: ^0.2.2
+  image_picker: ^1.1.2
 
 
 dev_dependencies:

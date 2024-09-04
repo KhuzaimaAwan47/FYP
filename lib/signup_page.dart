@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:auto_size_text/auto_size_text.dart';
 import 'package:my_fyp/login_page.dart';
 
 
@@ -77,7 +78,7 @@ class _SignupPageState extends State<SignupPage> {
       return 'An unexpected error occurred. Please try again.';
     }
   }// SignUpUser
-  Future addUserDetails(String username, String email, String userType, String password) async {
+  Future addUserDetails(String username, String email, String userType, String password,) async {
     await FirebaseFirestore.instance.collection('users').add({
       'username' : username,
       'userType' : userType,
@@ -105,7 +106,7 @@ class _SignupPageState extends State<SignupPage> {
       },
     );
   }
-  //Note the "const" keyword is used to improve performance. Not to be confused to seen "const" keyword along widgets.
+
   @override
   Widget build(BuildContext context) {
     // Get screen height and width
@@ -270,31 +271,40 @@ class _SignupPageState extends State<SignupPage> {
 
                     //----------Check Box----------
 
-                     Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Text('Mention yourself as:'),
-                        Checkbox(
-                          value: isClientChecked,
-                          onChanged: (bool? newValue) {
-                            setState(() {
-                              isClientChecked = newValue!;
-                              isfreelancerChecked = !newValue;
-                            });
-                          },
-                          activeColor: Colors.indigo,
+                    Container(
+                      width: MediaQuery.of(context).size.width * 0.9,
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown, // Scale down the content to fit the available space
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Text('Mention yourself as:'),
+                            Checkbox(
+                              value: isClientChecked,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+                              onChanged: (bool? newValue) {
+                                setState(() {
+                                  isClientChecked = newValue!;
+                                  isfreelancerChecked = !newValue;
+                                });
+                              },
+                              activeColor: Colors.indigo,
+                            ),
+                            const Text('Client'),
+                            Checkbox(value: isfreelancerChecked,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+                              onChanged: (bool? newValue){
+                              setState(() {
+                                isfreelancerChecked = newValue!;
+                                isClientChecked = !newValue; // uncheck the other
+                              });
+                            },
+                              activeColor: Colors.indigo,
+                            ),
+                            const Text('Freelancer'),
+                          ],
                         ),
-                        const Text('Client'),
-                        Checkbox(value: isfreelancerChecked, onChanged: (bool? newValue){
-                          setState(() {
-                            isfreelancerChecked = newValue!;
-                            isClientChecked = !newValue; // uncheck the other
-                          });
-                        },
-                          activeColor: Colors.indigo,
-                        ),
-                       const Text('Freelancer'),
-                      ],
+                      ),
                     ),
                     SizedBox(height: screenHeight * 0.01),
                     const SizedBox( height: 1,),
@@ -304,7 +314,8 @@ class _SignupPageState extends State<SignupPage> {
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.indigo,
-                        padding: const EdgeInsets.symmetric(horizontal: 135, vertical: 15),
+                        padding: EdgeInsets.symmetric( horizontal: MediaQuery.of(context).size.width * 0.30, // 30% of the screen width
+                          vertical: 10,),
                       ),
                       onPressed:() {
                         if (_formKey.currentState!.validate()){
@@ -312,7 +323,7 @@ class _SignupPageState extends State<SignupPage> {
                           signUpUser();
                         }
                         },
-                      child: const Text('Register', style: TextStyle(fontSize: 18, color: Colors.white),),
+                      child: const AutoSizeText('Register', style: TextStyle(fontSize: 18, color: Colors.white),maxLines: 1,minFontSize: 12,),
                     ),
 
                     //----------Text Button----------

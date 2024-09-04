@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:my_fyp/forgot.dart';
 import 'package:my_fyp/signup_page.dart';
-import 'package:my_fyp/home_page.dart';
+import 'package:my_fyp/f_navigator.dart';
 
 
 
@@ -25,6 +25,7 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
+  //--------------------------------------Functions for handling authentication-------------------------------------------
 
   Future<void> signInUser() async {
     try {
@@ -35,8 +36,8 @@ class _LoginPageState extends State<LoginPage> {
       );
 
       // Navigate to the HomePage after successful sign-in
-      Navigator.push( context, MaterialPageRoute(builder: (context) => HomePage()),
-      );
+      Navigator.push( context, MaterialPageRoute(builder: (context) => F_navigator()),
+    );
     } on FirebaseAuthException catch (e) {
       // Handle FirebaseAuth-specific errors and show an error dialog
       String errorMessage = _handleFirebaseAuthError(e);
@@ -44,20 +45,25 @@ class _LoginPageState extends State<LoginPage> {
     } catch (e) {
       // Handle other exceptions (e.g., network errors) and show an error dialog
       _showErrorDialog('An unexpected error occurred. Please try again.');
-      print("Error occurred: $e"); // Log the actual error for debugging purposes
+     print("Error occurred: $e"); // Log the actual error for debugging purposes
     }
   }
 
 // Error handling function (same as in the signUpUser function)
   String _handleFirebaseAuthError(FirebaseAuthException e) {
-    if (e.code == 'email-not-found') {
+    if (e.code == 'user-not-found') {
       return 'Email not found. Please check your email and try again.';
-    } else if (e.code == 'wrong-password') {
+    } else if (e.code == 'invalid-credential') {
       return 'Incorrect password. Please try again.';
+    }else if (e.code == 'too-many-requests'){
+      return 'We have blocked all requests from this device due to unusual activity. Try again later.  Access to this account has been temporarily disabled due to many failed login attempts. You can immediately restore it by resetting your password or you can try again later.';
     } else if (e.code == 'invalid-email') {
       return 'The email address is not valid. Please enter a correct email.';
+    }else if (e.code == 'channel-error'){
+      return 'Please provide a valid email or password.';
     } else {
-      return 'An unexpected error occurred. Please try again.';
+      print('Unhandled FirebaseAuthException code: ${e.code}');
+      return 'An unexpected error occurred.... Please try again.';
     }
   }
 
@@ -65,12 +71,13 @@ class _LoginPageState extends State<LoginPage> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Login Error'),
+        title: const Text('Login Error !'),
+        backgroundColor: Colors.indigo.shade50,
         content: Text(message),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
+            child: const Text('OK' ,style: TextStyle(color: Colors.indigo),),
           ),
         ],
       ),
@@ -185,16 +192,16 @@ class _LoginPageState extends State<LoginPage> {
                             return null;
                           },
                         ),
-                        SizedBox(height: 10,),
+                       const SizedBox(height: 10,),
 
                         //----------Button----------
 
                         ElevatedButton(
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.indigo,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 150,
-                              vertical: 15,
+                            padding:  EdgeInsets.symmetric(
+                              horizontal: MediaQuery.of(context).size.width * 0.35, // 35% of the screen width
+                              vertical: 10,
                             ),
                           ),
                           onPressed: (){
@@ -222,7 +229,7 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                             TextButton(
                                 onPressed: () {
-                                  Navigator.push( context, MaterialPageRoute( builder: (context) => SignupPage(),));
+                                  Navigator.push( context, MaterialPageRoute( builder: (context) => const SignupPage(),));
                                 },
                                 child: const Text('Signup',style: TextStyle(color: Colors.indigo,decoration: TextDecoration.underline),)),
                           ],

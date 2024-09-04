@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:auto_size_text/auto_size_text.dart';
 import 'package:my_fyp/verify.dart';
 
 class OtpPage extends StatefulWidget {
@@ -43,83 +44,82 @@ class _OtpPageState extends State<OtpPage> {
         automaticallyImplyLeading: true,
         backgroundColor: Colors.indigo.shade50,
       ),
-      body: Container(
-        width: screenWidth,
-        height: screenHeight,
-        padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.1),
-        color: Colors.indigo.shade50,
-        child: Column(
-          children: [
-            SizedBox(height: screenHeight * 0.09),
-            Text(
-              'CODE',
-              style: TextStyle(
-                fontSize: 100,
-                fontWeight: FontWeight.w400,
-                color: Colors.black54,
+      body: SingleChildScrollView(
+        child: Container(
+          width: screenWidth,
+          height: screenHeight,
+          padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.1),
+          color: Colors.indigo.shade50,
+
+          //----------------------------Text Section----------------------------
+
+          child: Column(
+            children: [
+              SizedBox(height: screenHeight * 0.15),
+              const Text('CODE',
+                style: TextStyle( fontSize: 100, fontWeight: FontWeight.w400, color: Colors.black54,),
+                textAlign: TextAlign.center,
               ),
-              textAlign: TextAlign.center,
-            ),
-            Text(
-              'VERIFICATION',
-              style: TextStyle(
-                fontSize: 30,
-                fontWeight: FontWeight.w500,
-                color: Colors.black54,
+              const Text( 'VERIFICATION',
+                style: TextStyle( fontSize: 30, fontWeight: FontWeight.w500, color: Colors.black54,),
+                textAlign: TextAlign.center,
               ),
-              textAlign: TextAlign.center,
-            ),
-            SizedBox(height: screenHeight * 0.01),
-            SizedBox(
-              height: 50,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: List.generate(6, (index) {
-                  return SizedBox(
-                    width: 50,
-                    child: TextFormField(
-                      controller: otpControllers[index],
-                      focusNode: otpFocusNodes[index],
-                      keyboardType: TextInputType.number,
-                      textAlign: TextAlign.center,
-                      maxLength: 1,
-                      decoration: InputDecoration(
-                        counterText: "",
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide(
-                            color: Colors.indigo,
-                            width: 1.5,
+              SizedBox(height: screenHeight * 0.01),
+
+              //----------------------------OTP Section----------------------------
+
+              SizedBox(
+                height: 50,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: List.generate(6, (index) {
+                    return SizedBox(
+                      width: 50,
+                      child: TextFormField(
+                        controller: otpControllers[index],
+                        focusNode: otpFocusNodes[index],
+                        keyboardType: TextInputType.number,
+                        textAlign: TextAlign.center,
+                        maxLength: 1,
+                        decoration: InputDecoration(
+                          counterText: "",
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: const BorderSide(
+                              color: Colors.indigo,
+                              width: 1.5,
+                            ),
                           ),
                         ),
+                        onChanged: (value) => onOtpChanged(index, value),
                       ),
-                      onChanged: (value) => onOtpChanged(index, value),
+                    );
+                  }),
+                ),
+              ),
+              SizedBox(height: screenHeight * 0.05),
+
+              //----------------------------Button Section----------------------------
+
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.indigo,
+                  padding: EdgeInsets.symmetric(horizontal: MediaQuery.of(context).size.width * 0.34, // 34% of the screen width
+                    vertical: 10,),
+                ),
+                onPressed: () {
+                  print("Entered OTP: $_otp");
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => verify(),
                     ),
                   );
-                }),
-              ),
-            ),
-            SizedBox(height: screenHeight * 0.05),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.indigo,
-                padding: EdgeInsets.symmetric(horizontal: 135, vertical: 15),
-              ),
-              onPressed: () {
-                print("Entered OTP: $_otp");
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => verify(),
-                  ),
-                );
-              },
-              child: Text(
-                'Verify',
-                style: TextStyle(fontSize: 18, color: Colors.white),
-              ),
-            ),
-          ],
+                },
+                child: const AutoSizeText('Register', style: TextStyle(fontSize: 20, color: Colors.white),maxLines: 1,minFontSize: 12,),
+                ),
+            ],
+          ),
         ),
       ),
     );

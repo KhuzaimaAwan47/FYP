@@ -3,15 +3,17 @@ import 'package:flutter/material.dart';
 import 'splash_page.dart';
 import 'login_page.dart';
 import 'signup_page.dart';
-import 'home_page.dart';
+import 'f_navigator.dart';
 
 Future main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -19,14 +21,15 @@ class MyApp extends StatelessWidget {
       title: 'FlutterApp',
       theme: ThemeData(
         primarySwatch: Colors.indigo,
+        applyElevationOverlayColor: true,
 
       ),
       initialRoute: '/',
       routes: {
         '/': (context) => SplashScreen(),
         '/login': (context) => LoginPage(),
-        '/signup': (context) => SignupPage(),
-        '/home': (context) => HomePage(),
+        '/signup': (context) => const SignupPage(),
+        '/home': (context) => const F_navigator(),
       },
     );
   }
