@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -16,8 +15,86 @@ class _DashboardScreenState extends State<DashboardScreen> {
 final double coverHeight = 150;
 final double profileHeight = 130;
 
+final FirebaseAuth _auth = FirebaseAuth.instance;
+final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  @override
+// User data variables
+String firstName = '';
+String lastName = '';
+String location = '';
+double? hourlyRate ;
+String description = '';
+
+@override
+void initState() {
+  super.initState();
+  loadUserData();  // Call to load data from Firestore when the form is initialized
+}
+
+//--------------------------------------------Function to Load data from firestore-------------------------------------
+
+
+
+
+Future<void> loadUserData() async {
+  User? user = _auth.currentUser;
+
+  if (user != null) {
+    try {
+      // Query to find the document where email matches
+      QuerySnapshot querySnapshot = await _firestore.collection('users')
+          .where('email', isEqualTo: user.email)
+          .get();
+
+      if (querySnapshot.docs.isNotEmpty) {
+        DocumentSnapshot userDoc = querySnapshot.docs.first;
+
+        setState(() {
+          firstName = userDoc['first_name'];
+          lastName = userDoc['last_name'];
+          location = userDoc['location'];
+          hourlyRate = userDoc['hourly_rate'] != null
+              ? (userDoc['hourly_rate'] is int
+              ? (userDoc['hourly_rate'] as int).toDouble()
+              : userDoc['hourly_rate'])
+              : null;
+          description = userDoc['description'];
+        });
+        print('User data loaded: $firstName, $lastName, $location, $hourlyRate, $description');
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No data found for the current user!')),
+        );
+      }
+    } catch (e) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Error'),
+          content: Text('Failed to load data: $e'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+      print('Error: $e');
+    }
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('No user logged in!')),
+    );
+  }
+}
+
+
+
+
+
+
+@override
   Widget build(BuildContext context) {
     final top = coverHeight - profileHeight / 2;
     final bottom = profileHeight / 2;
@@ -30,7 +107,7 @@ final double profileHeight = 130;
         backgroundColor: Colors.white,
         automaticallyImplyLeading: false,
         actions: [
-          IconButton(onPressed: (){}, icon: const Icon(Icons.more_vert))
+          IconButton(onPressed: (){}, icon: const Icon(Icons.dehaze))
         ],
       ),
       body: Stack(
@@ -43,12 +120,13 @@ final double profileHeight = 130;
               child: buildProfileImage(),
           ),
 
+          //--------------------------------------------Display Info Section-----------------------------------------------------
 
         Container(
           margin: const EdgeInsets.only(top: 215),
           width: screenWidth,
           height: 150,
-          //color: Colors.black26,
+         // color: Colors.black12,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -67,34 +145,35 @@ final double profileHeight = 130;
                         padding: EdgeInsets.zero,
                         onPressed: (){
                           Navigator.push(
-                            context, MaterialPageRoute(builder: (context) => FullScreenForm(userId: 'uid!',),),);
+                            context, MaterialPageRoute(builder: (context) => FullScreenForm(),),);
                         },
                         icon: const Icon(Icons.edit,size: 20,color: Colors.white,),),
                   ),
                 ),
               ),
 
-              const Padding(
-                padding: EdgeInsets.only(left: 8.0,),
+               Padding(
+                padding: const EdgeInsets.only(left: 10.0,),
                 child: Row(
                   children: [
-                    Text('First Name.',style: TextStyle(fontSize: 20,fontWeight: FontWeight.w500),),
-                    SizedBox(width: 5,),
-                    Text('Last Name.',style: TextStyle(fontSize: 20,fontWeight: FontWeight.w500),),
+                    Text(firstName.isNotEmpty ? firstName : 'Your first',style: const TextStyle(fontSize: 20,fontWeight: FontWeight.w500),),
+                    const SizedBox(width: 5,),
+                    Text(lastName.isNotEmpty ? lastName : '& last name shown here',style: const TextStyle(fontSize: 20,fontWeight: FontWeight.w500),),
                   ],
                 ),
               ),
-              const Padding(
-                padding: EdgeInsets.only(left: 8.0),
-                child: Text('Description user first add then display from database.',style: TextStyle(fontSize: 15,)),
+              Padding(
+                padding: const EdgeInsets.only(left: 10.0),
+                child: Text(description.isNotEmpty ? description : 'description',style: const TextStyle(fontSize: 18,)),
               ),
-              const Padding(
-                  padding: EdgeInsets.only(left: 8.0),
-              child:  Text('Location',style: TextStyle(fontSize: 12,),),
+               Padding(
+                  padding: const EdgeInsets.only(left: 10.0),
+              child:  Text( location.isNotEmpty ? location : 'location',style: const TextStyle(fontSize: 17,),),
               ),
-              const Padding(padding: EdgeInsets.only(left: 8),
-              child:  Text('Hourly Rate',style: TextStyle(fontSize: 12),)
+               Padding(padding: const EdgeInsets.only(left: 10.0),
+              child:  Text(hourlyRate == null ?'hourly rate in dollars':'$hourlyRate',style: const TextStyle(fontSize: 17),)
               ),
+
             ],
           ),
         )
@@ -103,6 +182,11 @@ final double profileHeight = 130;
       ),
     );
   }
+
+
+//--------------------------------------------Cover Image-----------------------------------------------------
+
+
   Widget buildCoverImage() => Container(
     height: coverHeight,
     width: double.infinity,
@@ -131,10 +215,12 @@ final double profileHeight = 130;
     ),
   );
 
+  //--------------------------------------------Profile Image-----------------------------------------------------
+
   Widget buildProfileImage() => Stack(
     children:[
       Padding(
-        padding: const EdgeInsets.only(left: 8.0),
+        padding: const EdgeInsets.only(left: 10.0),
         child: CircleAvatar(
           radius: profileHeight / 2, //64,
           backgroundImage: const NetworkImage('https://t4.ftcdn.net/jpg/05/49/98/39/360_F_549983970_bRCkYfk0P6PP5fKbMhZMIb07mCJ6esXL.jpg'),
@@ -168,9 +254,8 @@ final double profileHeight = 130;
 
 
 class FullScreenForm extends StatefulWidget {
-  final String userId; // Add userId as a parameter
+  const FullScreenForm({super.key});
 
-  const FullScreenForm({super.key, required this.userId});
 
   @override
   State<FullScreenForm> createState() => _FullScreenFormState();
@@ -183,6 +268,11 @@ class _FullScreenFormState extends State<FullScreenForm> {
   final TextEditingController locationController = TextEditingController();
   final TextEditingController rateController = TextEditingController();
 
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+
+
   @override
   void dispose() {
     firstnameController.dispose();
@@ -193,71 +283,67 @@ class _FullScreenFormState extends State<FullScreenForm> {
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
 
-    //--------------------------------------------Function to save data to firestore-------------------------------------
+  //--------------------------------------------Function to save data to firestore-------------------------------------
 
-    final FirebaseAuth _auth = FirebaseAuth.instance;
-    final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  Future<void> saveData() async {
+    User? user = _auth.currentUser;
 
-    Future<void> saveData() async {
-      User? user = _auth.currentUser;
+    if (user != null) {
+      try {
+        // Query to find the document where email or username matches
+        QuerySnapshot querySnapshot = await _firestore.collection('users')
+            .where('email', isEqualTo: user.email) // or 'username', isEqualTo: 'someUsername'
+            .get();
 
-      if (user != null) {
-        try {
-          // Query to find the document where email or username matches
-          QuerySnapshot querySnapshot = await _firestore.collection('users')
-              .where('email', isEqualTo: user.email) // or 'username', isEqualTo: 'someUsername'
-              .get();
+        if (querySnapshot.docs.isNotEmpty) {
+          DocumentReference userDoc = querySnapshot.docs.first.reference;
 
-          if (querySnapshot.docs.isNotEmpty) {
-            DocumentReference userDoc = querySnapshot.docs.first.reference;
+          await userDoc.update({
+            'first_name': firstnameController.text,
+            'last_name': lastnameController.text,
+            'location': locationController.text,
+            'hourly_rate': double.parse(rateController.text),
+            'description': descriptionController.text,
+          });
 
-            await userDoc.update({
-              'first_name': firstnameController.text,
-              'last_name': lastnameController.text,
-              'location': locationController.text,
-              'hourly_rate': double.parse(rateController.text),
-              'description': descriptionController.text,
-            });
-
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Data updated successfully!')),
-            );
-            Navigator.pop(context);
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('No document found for the current user!')),
-            );
-          }
-        } catch (e) {
-          showDialog(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: const Text('Error'),
-              content: Text('Failed to update Data: $e'),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('OK'),
-                ),
-              ],
-            ),
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Data updated successfully!')),
+          );
+          Navigator.pop(context);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('No document found for the current user!')),
           );
         }
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No user logged in!')),
+      } catch (e) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Error'),
+            content: Text('Failed to update Data: $e'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
         );
       }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No user logged in!')),
+      );
     }
+  }
 
 
 
+  //--------------------------------------------Full Screen Form-----------------------------------------------------
 
-
-
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Edit Intro'),
@@ -328,9 +414,6 @@ class _FullScreenFormState extends State<FullScreenForm> {
                 ),
                 keyboardType: TextInputType.number,
                 maxLines: 1,
-                inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly, // Allow only digits
-                ],
               ),
             ),
             Padding(
@@ -364,7 +447,8 @@ class _FullScreenFormState extends State<FullScreenForm> {
                 onPressed: (){
                   saveData();
                 },
-                child: const Text('Save',style: TextStyle(fontSize: 18,color: Colors.white),))
+                child: const Text('Save',style: TextStyle(fontSize: 18,color: Colors.white),)
+            )
             ),
           ],
         ),
