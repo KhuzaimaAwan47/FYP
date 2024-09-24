@@ -44,6 +44,8 @@ dependencies:
   custom_navigation_bar: ^0.8.2
   ionicons: ^0.2.2
   image_picker: ^1.1.2
+  firebase_storage: ^12.2.0
+  cached_network_image: ^3.4.1
 
 
 dev_dependencies:

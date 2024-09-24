@@ -1,7 +1,11 @@
+import 'dart:io';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 
 
 class DashboardScreen extends StatefulWidget {
@@ -14,9 +18,14 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
 final double coverHeight = 150;
 final double profileHeight = 130;
-
 final FirebaseAuth _auth = FirebaseAuth.instance;
 final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+final ImagePicker _imagePicker = ImagePicker();
+String? imageUrl;
+String? _uploadedImageUrl;
+String? _profileImageUrl;
+String? profileUrl;
 
 // User data variables
 String firstName = '';
@@ -28,7 +37,9 @@ String description = '';
 @override
 void initState() {
   super.initState();
-  loadUserData();  // Call to load data from Firestore when the form is initialized
+  loadUserData();// Call to load data from Firestore when the form is initialized
+  _loadImageFromFirestore(); //fetch cover image
+  _loadprofileImageFromFirestore(); //fetch profile image
 }
 
 //--------------------------------------------Function to Load data from firestore-------------------------------------
@@ -70,8 +81,8 @@ Future<void> loadUserData() async {
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Error'),
-          content: Text('Failed to load data: $e'),
+          title: const Text('Alert'),
+          content: const Text('Please complete your profile. '), //$e
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
@@ -89,12 +100,217 @@ Future<void> loadUserData() async {
   }
 }
 
+//--------------------------------------------Function to upload & display cover image from fire storage-------------------------------------
+
+
+  Future<void> pickImage() async {
+    try {
+      XFile? res = await _imagePicker.pickImage(source: ImageSource.gallery);
+      if (res != null) {
+        await uploadImageToFirebase(File(res.path));
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red,
+          content: Text('Image not selected: $e'),
+        ),
+      );
+    }
+  }
+
+  Future<void> uploadImageToFirebase(File image) async {
+    try {
+      User? currentUser = _auth.currentUser; // Get the current user
+      if (currentUser != null) {
+        String userId = currentUser.uid;
+        Reference reference = FirebaseStorage.instance
+            .ref()
+            .child("user_coverImages/$userId/cover_image.png");
+
+        // Upload the image
+        await reference.putFile(image);
+
+        // Get the download URL
+        String imageUrl = await reference.getDownloadURL();
+        print("Cover image URL: $imageUrl"); // Print the URL for verification
+
+        // Save image URL to Firestore
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(userId)
+            .set({'imageUrl': imageUrl}, SetOptions(merge: true));
+
+        // Update the state to reflect the new image URL
+        setState(() {
+          _uploadedImageUrl = imageUrl;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            backgroundColor: Colors.green,
+            content: Text('Image uploaded successfully'),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            backgroundColor: Colors.red,
+            content: Text('No user is logged in!'),
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red,
+          content: Text('Failed to upload image: $e'),
+        ),
+      );
+    }
+  }
+
+ //Load image from Firestore
+  Future<void> _loadImageFromFirestore() async {
+    try {
+      User? currentUser = _auth.currentUser;
+      if (currentUser != null) {
+        String userId = currentUser.uid;
+        DocumentSnapshot<Map<String, dynamic>> snapshot = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(userId)
+            .get();
+
+        if (snapshot.exists && snapshot.data() != null) {
+          String? imageUrl = snapshot.data()!['imageUrl'];
+          if (imageUrl != null) {
+
+            setState(() {
+              _uploadedImageUrl = imageUrl;
+              print(" Cover Image URL: $imageUrl");
+            });
+            // Force image reload (example using CachedNetworkImage)
+            ImageProvider imageProvider = CachedNetworkImageProvider(imageUrl);
+            imageProvider.evict(); // Clear cache for this image
+          }
+        }
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red,
+          content: Text('Failed to load image: $e'),
+        ),
+      );
+    }
+  }
+
+//--------------------------------------------Function to upload & display profile image from fire storage-------------------------------------
+
+  Future<void> pickProfileImage() async {
+    try {
+      XFile? res = await _imagePicker.pickImage(source: ImageSource.gallery);
+      if (res != null) {
+        await uploadProfileImageToFirebase(File(res.path));
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red,
+          content: Text('Image not selected: $e'),
+        ),
+      );
+    }
+  }
+  Future<void> uploadProfileImageToFirebase(File image) async {
+    try {
+      User? currentUser = _auth.currentUser; // Get the current user
+      if (currentUser != null) {
+        String userId = currentUser.uid;
+        Reference reference = FirebaseStorage.instance
+            .ref()
+            .child("user_profileImages/$userId/profile_image.png");
+
+        // Upload the image
+        await reference.putFile(image);
+
+        // Get the download URL
+        String profileUrl = await reference.getDownloadURL();
+        print("Profile Image URL: $profileUrl"); // Print the URL for verification
+
+        // Save image URL to Firestore
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(userId)
+            .set({'profileUrl': profileUrl}, SetOptions(merge: true));
+
+        // Update the state to reflect the new image URL
+        setState(() {
+          _profileImageUrl = profileUrl;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            backgroundColor: Colors.green,
+            content: Text('Profile image uploaded successfully.'),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            backgroundColor: Colors.red,
+            content: Text('No user is logged in!'),
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red,
+          content: Text('Failed to upload image: $e'),
+        ),
+      );
+    }
+  }
+  //Load image from Firestore
+  Future<void> _loadprofileImageFromFirestore() async {
+    try {
+      User? currentUser = _auth.currentUser;
+      if (currentUser != null) {
+        String userId = currentUser.uid;
+        DocumentSnapshot<Map<String, dynamic>> snapshot = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(userId)
+            .get();
+
+        if (snapshot.exists && snapshot.data() != null) {
+          String? profileUrl = snapshot.data()!['profileUrl'];
+          if (profileUrl != null) {
+
+            setState(() {
+              _profileImageUrl = profileUrl;
+              print(" Profile Image URL: $profileUrl");
+            });
+            // Force image reload (example using CachedNetworkImage)
+            ImageProvider imageProvider = CachedNetworkImageProvider(profileUrl);
+            imageProvider.evict(); // Clear cache for this image
+          }
+        }
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red,
+          content: Text('Failed to load image: $e'),
+        ),
+      );
+    }
+  }
 
 
 
 
-
-@override
+  @override
   Widget build(BuildContext context) {
     final top = coverHeight - profileHeight / 2;
     final bottom = profileHeight / 2;
@@ -125,8 +341,8 @@ Future<void> loadUserData() async {
         Container(
           margin: const EdgeInsets.only(top: 215),
           width: screenWidth,
-          height: 150,
-         // color: Colors.black12,
+          height: 250,
+          //color: Colors.black12,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -145,7 +361,7 @@ Future<void> loadUserData() async {
                         padding: EdgeInsets.zero,
                         onPressed: (){
                           Navigator.push(
-                            context, MaterialPageRoute(builder: (context) => FullScreenForm(),),);
+                            context, MaterialPageRoute(builder: (context) => const FullScreenForm(),),);
                         },
                         icon: const Icon(Icons.edit,size: 20,color: Colors.white,),),
                   ),
@@ -168,10 +384,10 @@ Future<void> loadUserData() async {
               ),
                Padding(
                   padding: const EdgeInsets.only(left: 10.0),
-              child:  Text( location.isNotEmpty ? location : 'location',style: const TextStyle(fontSize: 17,),),
+              child:  Text( location.isNotEmpty ? location : 'location',style: const TextStyle(fontSize: 17,color: Colors.black54),),
               ),
                Padding(padding: const EdgeInsets.only(left: 10.0),
-              child:  Text(hourlyRate == null ?'hourly rate in dollars':'$hourlyRate',style: const TextStyle(fontSize: 17),)
+              child:  Text(hourlyRate == null ?'hourly rate in \$':'$hourlyRate \$/hour.',style: const TextStyle(fontSize: 17,color: Colors.black54),)
               ),
 
             ],
@@ -187,33 +403,58 @@ Future<void> loadUserData() async {
 //--------------------------------------------Cover Image-----------------------------------------------------
 
 
-  Widget buildCoverImage() => Container(
-    height: coverHeight,
-    width: double.infinity,
-    color: Colors.grey[300],
-    child: Align(
-      alignment: Alignment.centerRight,
-      child: Padding(
-        padding: const EdgeInsets.only(right: 15),
-        child: SizedBox(
-          width: 30,
-          height: 30,
-          child: Container(
-            padding: const EdgeInsets.all(1.0),
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.black87,
-            ),
-            child: IconButton(
-              padding: EdgeInsets.zero,
-              icon: const Icon(Icons.add_a_photo, size: 20,color: Colors.white,),
-              onPressed: () {},
+  Widget buildCoverImage() {
+    return Container(
+      height: coverHeight,
+      width: double.infinity,
+      color: Colors.grey[300],
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          // Display the image if imageUrl is not null, otherwise show a placeholder
+          _uploadedImageUrl != null
+              ? Image.network(
+            _uploadedImageUrl!,
+            fit: BoxFit.cover,
+            //width: 300,
+            //height: 300,
+          )
+              : const Center(
+            child: Text('Upload a cover image here.', style: TextStyle(fontSize: 16, color: Colors.black54),),
+          ),
+          Align(
+            alignment: Alignment.centerRight,
+            child: Padding(
+              padding: const EdgeInsets.only(right: 15),
+              child: SizedBox(
+                width: 30,
+                height: 30,
+                child: Container(
+                  padding: const EdgeInsets.all(1.0),
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.black87,
+                  ),
+                  child: IconButton(
+                    padding: EdgeInsets.zero,
+                    icon: const Icon(
+                      Icons.add_a_photo,
+                      size: 20,
+                      color: Colors.white,
+                    ),
+                    onPressed: () {
+                      pickImage();
+                    },
+                  ),
+                ),
+              ),
             ),
           ),
-        ),
+        ],
       ),
-    ),
-  );
+    );
+  }
+
 
   //--------------------------------------------Profile Image-----------------------------------------------------
 
@@ -222,8 +463,9 @@ Future<void> loadUserData() async {
       Padding(
         padding: const EdgeInsets.only(left: 10.0),
         child: CircleAvatar(
-          radius: profileHeight / 2, //64,
-          backgroundImage: const NetworkImage('https://t4.ftcdn.net/jpg/05/49/98/39/360_F_549983970_bRCkYfk0P6PP5fKbMhZMIb07mCJ6esXL.jpg'),
+          radius: profileHeight / 2,
+          backgroundImage: _profileImageUrl != null ? CachedNetworkImageProvider(_profileImageUrl!)
+         : const NetworkImage('https://t4.ftcdn.net/jpg/05/49/98/39/360_F_549983970_bRCkYfk0P6PP5fKbMhZMIb07mCJ6esXL.jpg'),
         ),
       ),
       Positioned(
@@ -242,7 +484,9 @@ Future<void> loadUserData() async {
             child: IconButton(
               padding: EdgeInsets.zero,
               icon: const Icon(Icons.add_circle_outlined,size: 20,color: Colors.white,),
-              onPressed: () {},
+              onPressed: () {
+                pickProfileImage();
+              },
             ),
           ),
         ),
@@ -363,9 +607,12 @@ class _FullScreenFormState extends State<FullScreenForm> {
               child: TextFormField(
                 autofocus: true,
                 controller: firstnameController,
-                decoration: const InputDecoration(
+                decoration:  InputDecoration(
                   hintText: 'Enter First Name',
-                  border: OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.man),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                 ),
                 keyboardType: TextInputType.text,
                 maxLines: 1,
@@ -378,9 +625,12 @@ class _FullScreenFormState extends State<FullScreenForm> {
               padding: const EdgeInsets.all(16.0),
               child: TextFormField(
                 controller: lastnameController,
-                decoration: const InputDecoration(
+                decoration:  InputDecoration(
                   hintText: 'Enter Last Name',
-                  border: OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.man),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                 ),
                 keyboardType: TextInputType.text,
                 maxLines: 1,
@@ -393,9 +643,12 @@ class _FullScreenFormState extends State<FullScreenForm> {
               padding: const EdgeInsets.all(16.0),
               child: TextFormField(
                 controller: locationController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   hintText: 'Your location',
-                  border: OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.location_on),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                 ),
                 keyboardType: TextInputType.text,
                 maxLines: 1,
@@ -408,9 +661,12 @@ class _FullScreenFormState extends State<FullScreenForm> {
               padding: const EdgeInsets.all(16.0),
               child: TextFormField(
                 controller: rateController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   hintText: 'Hourly rate',
-                  border: OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.money),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                 ),
                 keyboardType: TextInputType.number,
                 maxLines: 1,
@@ -422,9 +678,12 @@ class _FullScreenFormState extends State<FullScreenForm> {
                 height: 200,
                 child: TextFormField(
                   controller: descriptionController,
-                  decoration: const InputDecoration(
-                    hintText: 'Description',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    hintText: 'Description in max 100 words',
+                    prefixIcon: const Icon(Icons.description),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                   ),
                   keyboardType: TextInputType.text,
                   maxLines: null, // Allows for multi-line input
