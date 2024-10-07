@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:custom_navigation_bar/custom_navigation_bar.dart';
-//import 'package:ionicons/ionicons.dart';
 import 'package:my_fyp/Freelancer_Screens/Home.dart';
 import 'package:my_fyp/Freelancer_Screens/Chat.dart';
 import 'package:my_fyp/Freelancer_Screens/Feed.dart';
@@ -19,10 +18,10 @@ class _HomePageState extends State<F_navigator> {
   final PageController _pageController = PageController();
   int selectedIndex = 0;
   final List<Widget> _screens= [
-    HomeScreen(),
+    const HomeScreen(),
     ChatsScreen(),
-    FeedScreen(),
-    DashboardScreen(),
+    const FeedScreen(),
+    const DashboardScreen(),
   ];
 
 void _onPageChanged(int index){
@@ -39,6 +38,7 @@ void _onItemTapped(int i){
   Widget build(BuildContext context) {
     return SafeArea(
       child: Scaffold(
+        backgroundColor: Colors.white,
         body:PageView(
           controller: _pageController,
           onPageChanged: _onPageChanged,

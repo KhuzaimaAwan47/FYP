@@ -41,9 +41,11 @@ class forgot extends StatelessWidget{
                 Form(
                   key: _formKey,
                   child: TextFormField(
-                    controller: emailController,
-                    decoration: InputDecoration(
+                      style: const TextStyle(fontWeight: FontWeight.w500),
+                      controller: emailController,
+                      decoration: InputDecoration(
                       hintText: 'Enter your email',
+                      hintStyle: const TextStyle(color: Colors.grey),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(14),
                         borderSide: const BorderSide(
@@ -52,8 +54,7 @@ class forgot extends StatelessWidget{
                         ),
                       ),
                       prefixIcon: const Icon(Icons.email_outlined),
-
-                    ),
+                      ),
                     keyboardType: TextInputType.emailAddress,
                       validator: (value)
                       {

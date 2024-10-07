@@ -36,7 +36,7 @@ class _LoginPageState extends State<LoginPage> {
       );
 
       // Navigate to the HomePage after successful sign-in
-      Navigator.push( context, MaterialPageRoute(builder: (context) => F_navigator()),
+      Navigator.push( context, MaterialPageRoute(builder: (context) => const F_navigator()),
     );
     } on FirebaseAuthException catch (e) {
       // Handle FirebaseAuth-specific errors and show an error dialog
@@ -131,12 +131,14 @@ class _LoginPageState extends State<LoginPage> {
                       children: [
                         SizedBox( height: screenHeight*0.02,),
 
-                        //----------Email----------
+                        //---------------------------------------------Email-----------------------------------------------------
 
                         TextFormField(
                           controller: emailController,
+                          style: const TextStyle(fontWeight: FontWeight.w500),
                           decoration: InputDecoration(
                             hintText: 'Enter your email',
+                            hintStyle: const TextStyle(color: Colors.grey,),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(14),
                               borderSide: const BorderSide(
@@ -158,14 +160,16 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                         SizedBox(height: screenWidth*0.01,),
 
-                        //----------Password----------
+                        //------------------------------------------------Password-----------------------------------------------
 
                         TextFormField(
+                          style: const TextStyle(fontWeight: FontWeight.w500),
                           controller: passwordController,
                           obscureText: !isPasswordVisible,
                           obscuringCharacter: '*',
                           decoration: InputDecoration(
                             hintText: 'Password',
+                            hintStyle: const TextStyle(color: Colors.grey,),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(14),
                               borderSide: const BorderSide(
@@ -194,7 +198,7 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                        const SizedBox(height: 10,),
 
-                        //----------Button----------
+                        //---------------------------------------------Button---------------------------------------------------
 
                         ElevatedButton(
                           style: ElevatedButton.styleFrom(
@@ -216,7 +220,7 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ),
 
-                        //----------Text Button----------
+                        //-------------------------------------------Text Button------------------------------------------------
 
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -231,11 +235,11 @@ class _LoginPageState extends State<LoginPage> {
                                 onPressed: () {
                                   Navigator.push( context, MaterialPageRoute( builder: (context) => const SignupPage(),));
                                 },
-                                child: const Text('Signup',style: TextStyle(color: Colors.indigo,decoration: TextDecoration.underline),)),
+                                child: const Text('Signup',style: TextStyle(color: Colors.indigo,),)),
                           ],
                         ),
 
-                        //----------Text Button----------
+                        //-------------------------------------------Text Button------------------------------------------------
 
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,

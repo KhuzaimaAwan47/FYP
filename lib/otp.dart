@@ -76,6 +76,7 @@ class _OtpPageState extends State<OtpPage> {
                     return SizedBox(
                       width: 50,
                       child: TextFormField(
+                        style: const TextStyle(fontWeight: FontWeight.w600),
                         controller: otpControllers[index],
                         focusNode: otpFocusNodes[index],
                         keyboardType: TextInputType.number,

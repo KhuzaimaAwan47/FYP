@@ -1,20 +1,23 @@
 import 'package:flutter/material.dart';
 
-class FeedScreen extends StatelessWidget {
+class FeedScreen extends StatefulWidget {
   const FeedScreen({super.key});
-  final double coverHeight = 150;
-  final double profileHeight = 130;
 
   @override
+  State<FeedScreen> createState() => _FeedScreenState();
+}
+
+class _FeedScreenState extends State<FeedScreen> {
+  @override
   Widget build(BuildContext context) {
-    final top = coverHeight - profileHeight / 2;
+
 
 
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
         automaticallyImplyLeading: false,
-          title: const Text('Feed Screen'),
+          title: const Text('Feed'),
       ),
       body: Container(),
     );

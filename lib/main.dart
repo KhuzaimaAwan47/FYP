@@ -1,5 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'splash_page.dart';
 import 'login_page.dart';
 import 'signup_page.dart';
@@ -21,8 +22,13 @@ class MyApp extends StatelessWidget {
       title: 'FlutterApp',
       theme: ThemeData(
         primarySwatch: Colors.indigo,
-        applyElevationOverlayColor: true,
-
+        appBarTheme: AppBarTheme(
+          backgroundColor: Colors.grey[50],
+          systemOverlayStyle: SystemUiOverlayStyle(
+            statusBarColor: Colors.grey[200],
+            statusBarIconBrightness: Brightness.dark,
+          )
+        )
       ),
       initialRoute: '/',
       routes: {
