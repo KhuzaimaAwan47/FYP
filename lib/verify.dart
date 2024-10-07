@@ -45,11 +45,13 @@ class _verifyState extends State<verify> {
                   //----------------------------Password Section----------------------------
           
                   TextFormField(
+                    style: const TextStyle(fontWeight: FontWeight.w500),
                     controller: passwordController,
                     obscureText: !isPasswordVisible,
                     obscuringCharacter: '*',
                     decoration: InputDecoration(
                       hintText: 'New Password',
+                      hintStyle: const TextStyle(color: Colors.grey),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(14),
                         borderSide: const BorderSide(
@@ -83,11 +85,13 @@ class _verifyState extends State<verify> {
                   //----------------------------Confirm Password Section----------------------------
           
                   TextFormField(
+                    style: const TextStyle(fontWeight: FontWeight.w500),
                     controller: confirmpasswordController,
                     obscureText: !isCPasswordVisible,
                     obscuringCharacter: '*',
                     decoration: InputDecoration(
                       hintText: 'Confirm Password',
+                      hintStyle: const TextStyle(color: Colors.grey),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(14),
                         borderSide: const BorderSide(color: Colors.indigo, width: 1.5),

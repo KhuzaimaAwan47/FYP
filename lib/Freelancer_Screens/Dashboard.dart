@@ -149,6 +149,8 @@ Future<void> loadUserData() async {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating, // Floating above default position
+            margin: EdgeInsets.only(bottom: 80,left: 16,right: 16),
             content: Text('Image uploaded successfully'),
           ),
         );
@@ -252,6 +254,8 @@ Future<void> loadUserData() async {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating, // Floating above default position
+            margin: EdgeInsets.only(bottom: 80,left: 16,right: 16),
             content: Text('Profile image uploaded successfully.'),
           ),
         );
@@ -318,9 +322,10 @@ Future<void> loadUserData() async {
     var screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar:  AppBar(
+
         title: const Text('DashBoard'),
-        backgroundColor: Colors.white,
         automaticallyImplyLeading: false,
         actions: [
           IconButton(onPressed: (){}, icon: const Icon(Icons.dehaze))
@@ -609,7 +614,10 @@ class _FullScreenFormState extends State<FullScreenForm> {
                 controller: firstnameController,
                 decoration:  InputDecoration(
                   hintText: 'Enter First Name',
-                  prefixIcon: const Icon(Icons.man),
+                  hintStyle: const TextStyle(
+                    color: Colors.grey,
+                  ),
+                  prefixIcon: const Icon(Icons.account_circle_rounded),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
                   ),
@@ -627,7 +635,10 @@ class _FullScreenFormState extends State<FullScreenForm> {
                 controller: lastnameController,
                 decoration:  InputDecoration(
                   hintText: 'Enter Last Name',
-                  prefixIcon: const Icon(Icons.man),
+                  hintStyle: const TextStyle(
+                    color: Colors.grey,
+                  ),
+                  prefixIcon: const Icon(Icons.account_circle_rounded),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
                   ),
@@ -645,6 +656,9 @@ class _FullScreenFormState extends State<FullScreenForm> {
                 controller: locationController,
                 decoration: InputDecoration(
                   hintText: 'Your location',
+                  hintStyle: const TextStyle(
+                    color: Colors.grey,
+                  ),
                   prefixIcon: const Icon(Icons.location_on),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
@@ -663,6 +677,9 @@ class _FullScreenFormState extends State<FullScreenForm> {
                 controller: rateController,
                 decoration: InputDecoration(
                   hintText: 'Hourly rate',
+                  hintStyle: const TextStyle(
+                    color: Colors.grey,
+                  ),
                   prefixIcon: const Icon(Icons.money),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
@@ -680,6 +697,9 @@ class _FullScreenFormState extends State<FullScreenForm> {
                   controller: descriptionController,
                   decoration: InputDecoration(
                     hintText: 'Description in max 100 words',
+                    hintStyle: const TextStyle(
+                      color: Colors.grey,
+                    ),
                     prefixIcon: const Icon(Icons.description),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),

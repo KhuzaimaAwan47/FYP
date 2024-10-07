@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:my_fyp/login_page.dart';
 
 class passwordUpdated extends StatelessWidget{
+  const passwordUpdated({super.key});
+
   @override
   Widget build(BuildContext context) {
     var screenHeight = MediaQuery.of(context).size.height;
@@ -19,21 +21,21 @@ class passwordUpdated extends StatelessWidget{
       child: Column(
         children: [
           SizedBox(height: screenHeight*0.09,),
-          Text('PASSWORD UPDATED',style: TextStyle(fontSize: 50,fontWeight: FontWeight.w400,color: Colors.black87),textAlign: TextAlign.center),
+          const Text('PASSWORD UPDATED',style: TextStyle(fontSize: 50,fontWeight: FontWeight.w400,color: Colors.black87),textAlign: TextAlign.center),
           SizedBox(height: screenHeight*0.01,),
-          Icon(Icons.check_circle,color: Colors.black87,size: 200,),
+          const Icon(Icons.check_circle,color: Colors.black87,size: 200,),
           SizedBox(height: screenHeight*0.01,),
-          Text('Your password has been updated',style: TextStyle(fontSize: 20,fontWeight: FontWeight.w500,color: Colors.black54),textAlign: TextAlign.center,),
+          const Text('Your password has been updated',style: TextStyle(fontSize: 20,fontWeight: FontWeight.w500,color: Colors.black54),textAlign: TextAlign.center,),
           SizedBox(height: screenHeight*0.01,),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.black87,
-              padding: EdgeInsets.symmetric(horizontal: 135, vertical: 15),
+              padding: const EdgeInsets.symmetric(horizontal: 135, vertical: 15),
             ),
             onPressed: () {
               Navigator.push(context, MaterialPageRoute(builder: (context) => LoginPage()));
             },
-            child: Text(
+            child: const Text(
               'Login',
               style: TextStyle(fontSize: 18, color: Colors.white),
             ),

@@ -148,9 +148,11 @@ class _SignupPageState extends State<SignupPage> {
                     //----------Username----------
 
                     TextFormField(
+                      style: const TextStyle(fontWeight: FontWeight.w500),
                       controller: usernameController,
                       decoration: InputDecoration(
                         hintText: 'Username',
+                        hintStyle: const TextStyle(color: Colors.grey,),
                         border:  OutlineInputBorder(
                           borderRadius: BorderRadius.circular(14),
                           borderSide: const BorderSide(color: Colors.blue, width: 1.5),
@@ -173,9 +175,11 @@ class _SignupPageState extends State<SignupPage> {
                     //----------Email----------
 
                     TextFormField(
+                      style: const TextStyle(fontWeight: FontWeight.w500),
                       controller: emailController,
                       decoration: InputDecoration(
-                        hintText: 'Enter your email',
+                        hintText: 'Email',
+                        hintStyle: const TextStyle(color: Colors.grey,),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(14),
                           borderSide: const BorderSide(color: Colors.blue, width: 1.5),
@@ -196,6 +200,7 @@ class _SignupPageState extends State<SignupPage> {
                     //----------Password----------
 
                     TextFormField(
+                      style: const TextStyle(fontWeight: FontWeight.w500),
                       controller: passwordController,
                       obscureText: !isPasswordVisible,
                       validator: (value) {
@@ -216,6 +221,7 @@ class _SignupPageState extends State<SignupPage> {
                       obscuringCharacter: '*',
                       decoration: InputDecoration(
                         hintText: 'Password',
+                        hintStyle: const TextStyle(color: Colors.grey,),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(14),
                           borderSide: const BorderSide(color: Colors.indigo, width: 1.5),
@@ -237,6 +243,7 @@ class _SignupPageState extends State<SignupPage> {
                     //----------Confirm Password----------
 
                     TextFormField(
+                      style: const TextStyle(fontWeight: FontWeight.w500),
                       controller: confirmpasswordControllerText,
                       obscureText: !isCPasswordVisible,
                       validator: (value) {
@@ -251,6 +258,7 @@ class _SignupPageState extends State<SignupPage> {
                       obscuringCharacter: '*',
                       decoration: InputDecoration(
                         hintText: 'Confirm Password',
+                        hintStyle: const TextStyle(color: Colors.grey,),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(14),
                           borderSide: const BorderSide(color: Colors.indigo, width: 1.5),
