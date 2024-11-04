@@ -1,11 +1,12 @@
 import 'dart:io';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:shimmer/shimmer.dart';
 
 
 class DashboardScreen extends StatefulWidget {
@@ -20,12 +21,13 @@ final double coverHeight = 150;
 final double profileHeight = 130;
 final FirebaseAuth _auth = FirebaseAuth.instance;
 final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-
 final ImagePicker _imagePicker = ImagePicker();
+
 String? imageUrl;
 String? _uploadedImageUrl;
 String? _profileImageUrl;
 String? profileUrl;
+String? coverUrl;
 
 // User data variables
 String firstName = '';
@@ -33,13 +35,13 @@ String lastName = '';
 String location = '';
 double? hourlyRate ;
 String description = '';
+String headline = '';
+String skills = '';
 
 @override
 void initState() {
   super.initState();
   loadUserData();// Call to load data from Firestore when the form is initialized
-  _loadImageFromFirestore(); //fetch cover image
-  _loadprofileImageFromFirestore(); //fetch profile image
 }
 
 //--------------------------------------------Function to Load data from firestore-------------------------------------
@@ -49,7 +51,6 @@ void initState() {
 
 Future<void> loadUserData() async {
   User? user = _auth.currentUser;
-
   if (user != null) {
     try {
       // Query to find the document where email matches
@@ -70,8 +71,12 @@ Future<void> loadUserData() async {
               : userDoc['hourly_rate'])
               : null;
           description = userDoc['description'];
+          headline = userDoc['headline'];
+          skills = userDoc['skills'];
+          profileUrl = userDoc['profileUrl'];
+          coverUrl = userDoc['coverUrl'];
         });
-        print('User data loaded: $firstName, $lastName, $location, $hourlyRate, $description');
+        print('User data loaded: $firstName, $lastName, $location, $hourlyRate,$profileUrl,$coverUrl');
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('No data found for the current user!')),
@@ -100,24 +105,54 @@ Future<void> loadUserData() async {
   }
 }
 
-//--------------------------------------------Function to upload & display cover image from fire storage-------------------------------------
-
+//--------------------------------------------Function to upload cover image to fire storage-------------------------------------
 
   Future<void> pickImage() async {
     try {
-      XFile? res = await _imagePicker.pickImage(source: ImageSource.gallery);
+      // Pick image from gallery
+      final ImagePicker _picker = ImagePicker();
+      XFile? res = await _picker.pickImage(source: ImageSource.gallery);
+
       if (res != null) {
-        await uploadImageToFirebase(File(res.path));
+        // Crop Image
+        CroppedFile? croppedFile = await ImageCropper().cropImage(
+          sourcePath: res.path,
+
+          uiSettings: [
+            AndroidUiSettings(
+              aspectRatioPresets: [
+                CropAspectRatioPreset.ratio16x9,
+                CropAspectRatioPreset.original,
+              ],
+              toolbarTitle: 'Crop Cover Image',
+              toolbarColor: Colors.blueAccent,
+              toolbarWidgetColor: Colors.white,
+              initAspectRatio: CropAspectRatioPreset.original,
+              lockAspectRatio: false,
+            ),
+            IOSUiSettings(
+              title: 'Crop Cover Image',
+            ),
+          ],
+        );
+
+        if (croppedFile != null && croppedFile.path.isNotEmpty) {
+          // Upload cropped image
+          await uploadImageToFirebase(File(croppedFile.path));
+        }
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           backgroundColor: Colors.red,
-          content: Text('Image not selected: $e'),
+          content: Text('Error: $e'),
         ),
       );
     }
   }
+
+
+
 
   Future<void> uploadImageToFirebase(File image) async {
     try {
@@ -135,25 +170,30 @@ Future<void> loadUserData() async {
         String imageUrl = await reference.getDownloadURL();
         print("Cover image URL: $imageUrl"); // Print the URL for verification
 
-        // Save image URL to Firestore
-        await FirebaseFirestore.instance
-            .collection('users')
-            .doc(userId)
-            .set({'imageUrl': imageUrl}, SetOptions(merge: true));
-
         // Update the state to reflect the new image URL
         setState(() {
           _uploadedImageUrl = imageUrl;
         });
+
+        // Additional logic to update the profileUrl based on email or username
+        QuerySnapshot querySnapshot = await FirebaseFirestore.instance.collection('users')
+        .where('email',isEqualTo: currentUser.email).get();
+        if(querySnapshot.docs.isNotEmpty){
+          DocumentReference userDoc = querySnapshot.docs.first.reference;
+          await userDoc.update({
+            'coverUrl': imageUrl,
+          });
+        }
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             backgroundColor: Colors.green,
             behavior: SnackBarBehavior.floating, // Floating above default position
             margin: EdgeInsets.only(bottom: 80,left: 16,right: 16),
-            content: Text('Image uploaded successfully'),
+            content: Text('Cover image uploaded successfully!'),
           ),
         );
+        await loadUserData();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -172,48 +212,39 @@ Future<void> loadUserData() async {
     }
   }
 
- //Load image from Firestore
-  Future<void> _loadImageFromFirestore() async {
-    try {
-      User? currentUser = _auth.currentUser;
-      if (currentUser != null) {
-        String userId = currentUser.uid;
-        DocumentSnapshot<Map<String, dynamic>> snapshot = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(userId)
-            .get();
 
-        if (snapshot.exists && snapshot.data() != null) {
-          String? imageUrl = snapshot.data()!['imageUrl'];
-          if (imageUrl != null) {
-
-            setState(() {
-              _uploadedImageUrl = imageUrl;
-              print(" Cover Image URL: $imageUrl");
-            });
-            // Force image reload (example using CachedNetworkImage)
-            ImageProvider imageProvider = CachedNetworkImageProvider(imageUrl);
-            imageProvider.evict(); // Clear cache for this image
-          }
-        }
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: Colors.red,
-          content: Text('Failed to load image: $e'),
-        ),
-      );
-    }
-  }
-
-//--------------------------------------------Function to upload & display profile image from fire storage-------------------------------------
+//--------------------------------------------Function to upload profile image to fire storage-------------------------------------
 
   Future<void> pickProfileImage() async {
     try {
       XFile? res = await _imagePicker.pickImage(source: ImageSource.gallery);
       if (res != null) {
-        await uploadProfileImageToFirebase(File(res.path));
+
+        CroppedFile? croppedFile = await ImageCropper().cropImage(
+          sourcePath: res.path,
+
+          uiSettings: [
+            AndroidUiSettings(
+              aspectRatioPresets: [
+                CropAspectRatioPreset.square,
+                CropAspectRatioPreset.original,
+              ],
+              toolbarTitle: 'Crop Profile Image',
+              toolbarColor: Colors.indigoAccent,
+              toolbarWidgetColor: Colors.white,
+              initAspectRatio: CropAspectRatioPreset.original,
+              lockAspectRatio: false,
+            ),
+            IOSUiSettings(
+              title: 'Crop Profile Image',
+            ),
+          ],
+        );
+
+        if (croppedFile != null && croppedFile.path.isNotEmpty) {
+          // Upload cropped image
+          await uploadProfileImageToFirebase(File(croppedFile.path));
+        }
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -224,6 +255,7 @@ Future<void> loadUserData() async {
       );
     }
   }
+
   Future<void> uploadProfileImageToFirebase(File image) async {
     try {
       User? currentUser = _auth.currentUser; // Get the current user
@@ -240,25 +272,32 @@ Future<void> loadUserData() async {
         String profileUrl = await reference.getDownloadURL();
         print("Profile Image URL: $profileUrl"); // Print the URL for verification
 
-        // Save image URL to Firestore
-        await FirebaseFirestore.instance
-            .collection('users')
-            .doc(userId)
-            .set({'profileUrl': profileUrl}, SetOptions(merge: true));
-
         // Update the state to reflect the new image URL
         setState(() {
           _profileImageUrl = profileUrl;
         });
 
+        // Additional logic to update the profileUrl based on email or username
+        QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+            .collection('users')
+            .where('email', isEqualTo: currentUser.email) // Use currentUser.email to find the document
+            .get();
+
+        if (querySnapshot.docs.isNotEmpty) {
+          DocumentReference userDoc = querySnapshot.docs.first.reference;
+          await userDoc.update({
+            'profileUrl': profileUrl, // Update the profileUrl field
+          });
+        }
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             backgroundColor: Colors.green,
             behavior: SnackBarBehavior.floating, // Floating above default position
-            margin: EdgeInsets.only(bottom: 80,left: 16,right: 16),
-            content: Text('Profile image uploaded successfully.'),
+            margin: EdgeInsets.only(bottom: 80, left: 16, right: 16),
+            content: Text('Profile image uploaded successfully!'),
           ),
         );
+        await loadUserData(); // This will call the func after the new image is uploaded.
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -276,130 +315,300 @@ Future<void> loadUserData() async {
       );
     }
   }
-  //Load image from Firestore
-  Future<void> _loadprofileImageFromFirestore() async {
-    try {
-      User? currentUser = _auth.currentUser;
-      if (currentUser != null) {
-        String userId = currentUser.uid;
-        DocumentSnapshot<Map<String, dynamic>> snapshot = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(userId)
-            .get();
-
-        if (snapshot.exists && snapshot.data() != null) {
-          String? profileUrl = snapshot.data()!['profileUrl'];
-          if (profileUrl != null) {
-
-            setState(() {
-              _profileImageUrl = profileUrl;
-              print(" Profile Image URL: $profileUrl");
-            });
-            // Force image reload (example using CachedNetworkImage)
-            ImageProvider imageProvider = CachedNetworkImageProvider(profileUrl);
-            imageProvider.evict(); // Clear cache for this image
-          }
-        }
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: Colors.red,
-          content: Text('Failed to load image: $e'),
-        ),
-      );
-    }
-  }
-
-
 
 
   @override
   Widget build(BuildContext context) {
     final top = coverHeight - profileHeight / 2;
-    final bottom = profileHeight / 2;
-    var screenHeight = MediaQuery.of(context).size.height;
     var screenWidth = MediaQuery.of(context).size.width;
-
     return Scaffold(
       backgroundColor: Colors.white,
       appBar:  AppBar(
-
         title: const Text('DashBoard'),
         automaticallyImplyLeading: false,
         actions: [
           IconButton(onPressed: (){}, icon: const Icon(Icons.dehaze))
         ],
       ),
-      body: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          buildCoverImage(),
-          Positioned(
-            top: top,
+      body: SingleChildScrollView(
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            buildCoverImage(coverUrl),
+            Positioned(
+              top: top,
+                child: buildProfileImage(profileUrl),
+            ),
+        
+            //--------------------------------------------Display Info Section-----------------------------------------------------
+        
+            Container(
+              margin: const EdgeInsets.only(top: 215),
+              width: screenWidth,
+              color: Colors.white,
+              child: Stack(
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(left: 16.0),
+                        child: Row(
+                          children: [
+                            firstName.isNotEmpty
+                                ? Text(
+                              firstName,
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            )
+                                : Shimmer.fromColors(
+                              baseColor: Colors.grey[300]!,
+                              highlightColor: Colors.grey[100]!,
+                              child: Container(
+                                width: 100,
+                                height: 20,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(width: 5),
+                            lastName.isNotEmpty
+                                ? Text(
+                              lastName,
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            )
+                                : Shimmer.fromColors(
+                              baseColor: Colors.grey[300]!,
+                              highlightColor: Colors.grey[100]!,
+                              child: Container(
+                                width: 150,
+                                height: 20,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      SizedBox(height: 10,),
+                      Padding(
+                          padding: EdgeInsets.only(left: 16,right: 16),
+                        child:headline.isNotEmpty
+                          ? Text(headline,textAlign: TextAlign.justify,style: TextStyle(fontSize: 18,),
+                        )
+                            : Shimmer.fromColors(
+                            baseColor: Colors.grey[300]!, highlightColor: Colors.grey[100]!,
+                            child: Container(
+                              width: 200,
+                              height: 18,
+                              color: Colors.white,
+                            ))
+                      ),
 
-              child: buildProfileImage(),
-          ),
+                      Row(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.only(left: 16.0),
+                            child: location.isNotEmpty
+                                ? Row(
+                              children: [
+                                Icon(Icons.location_pin,size: 17,color: Colors.indigoAccent,),
+                                Text( location,
+                                  style: const TextStyle( fontSize: 17, color: Colors.black54,),
+                                ),
+                              ],
+                            )
+                                : Shimmer.fromColors(
+                              baseColor: Colors.grey[300]!,
+                              highlightColor: Colors.grey[100]!,
+                              child: Container(
+                                width: 150,
+                                height: 17,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          hourlyRate != null
+                              ? Row(
+                            children: [
+                              Icon(Icons.attach_money,size: 17,color: Colors.indigoAccent,),
+                              Text('\$$hourlyRate/hr',
+                                style: const TextStyle(fontSize: 17, color: Colors.black54,
+                                ),
+                              ),
+                            ],
+                          )
+                              : Shimmer.fromColors(
+                            baseColor: Colors.grey[300]!,
+                            highlightColor: Colors.grey[100]!,
+                            child: Container(
+                              width: 100,
+                              height: 17,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 16.0),
+                        child: skills.isNotEmpty
+                            ? Row(
+                          children: [
+                            Icon(Icons.star,size: 17,color: Colors.indigoAccent,),
+                            Text(skills,style: TextStyle(fontSize: 17,color: Colors.black54),
+                            ),
+                          ],
+                        )
+                            : Shimmer.fromColors(baseColor: Colors.grey[300]!, highlightColor: Colors.grey[100]!, child: Container(width: 100,height: 17,color: Colors.white,)),
+                      ),
+                      SizedBox(height: 10,),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 16.0, right: 16),
+                        child: description.isNotEmpty
+                            ? Text(
+                          description,
+                          textAlign: TextAlign.justify,
+                          style: const TextStyle(fontSize: 16,color: Colors.black54),
+                        )
+                            : Shimmer.fromColors(
+                          baseColor: Colors.grey[300]!,
+                          highlightColor: Colors.grey[100]!,
+                          child: Container(
+                            width: 200,
+                            height: 18,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
 
-          //--------------------------------------------Display Info Section-----------------------------------------------------
 
-        Container(
-          margin: const EdgeInsets.only(top: 215),
-          width: screenWidth,
-          height: 250,
-          //color: Colors.black12,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Align(
-                alignment: Alignment.centerRight,
-                child: Padding(
-                  padding: const EdgeInsets.only(right: 15.0),
-                  child: Container(
-                    width: 30,
-                    height: 30,
-                    decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.black87
-                    ),
-                    child: IconButton(
-                        padding: EdgeInsets.zero,
-                        onPressed: (){
-                          Navigator.push(
-                            context, MaterialPageRoute(builder: (context) => const FullScreenForm(),),);
-                        },
-                        icon: const Icon(Icons.edit,size: 20,color: Colors.white,),),
+                      SizedBox(height: 20), // Spacing
+
+                      //-------------------Card Widgets------------------
+
+                      Container(
+                        color: Colors.white,
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            children: [
+                              // Cards for Ongoing, Cancelled, and Completed Projects
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                children: [
+                                  projectCard('Ongoing Projects', 12, Colors.blue.withOpacity(0.8)),
+                                  projectCard('Cancelled Projects', 5, Colors.red.withOpacity(0.8)),
+                                  projectCard('Completed Projects', 20, Colors.green.withOpacity(0.8)),
+                                ],
+                              ),
+                              SizedBox(height: 20),
+                              // Additional Info Cards
+                              infoCard('Offers Received', 30),
+                              infoCard('No of Bided Projects', 15),
+                              infoCard('No of Groups', 8),
+                              infoCard('No of Posted Projects', 25),
+                              infoCard('Offers Sent', 22),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                    ],
                   ),
-                ),
+                  SizedBox(height: 20), // Spacing
+                  //Edit Button
+                  Positioned(
+                    top: 0,
+                    right: 0,
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 15.0),
+                      child: Container(
+                        alignment: Alignment.topRight,
+                        width: 30,
+                        height: 30,
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.indigoAccent,
+                        ),
+                        child: IconButton(
+                          padding: EdgeInsets.zero,
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => const FullScreenForm()),
+                            );
+                          },
+                          icon: const Icon(
+                            Icons.edit,
+                            size: 20,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-               Padding(
-                padding: const EdgeInsets.only(left: 10.0,),
-                child: Row(
-                  children: [
-                    Text(firstName.isNotEmpty ? firstName : 'Your first',style: const TextStyle(fontSize: 20,fontWeight: FontWeight.w500),),
-                    const SizedBox(width: 5,),
-                    Text(lastName.isNotEmpty ? lastName : '& last name shown here',style: const TextStyle(fontSize: 20,fontWeight: FontWeight.w500),),
-                  ],
-                ),
+  Widget projectCard(String title, int count, Color color) {
+    return Card(
+      elevation: 4,
+      color: Colors.grey[50],
+      //color: color.withOpacity(0.1),
+      child: Container(
+        width: 100,
+        height: 100,
+        padding: EdgeInsets.all(8),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: color,
               ),
-              Padding(
-                padding: const EdgeInsets.only(left: 10.0),
-                child: Text(description.isNotEmpty ? description : 'description',style: const TextStyle(fontSize: 18,)),
+            ),
+            SizedBox(height: 5),
+            Text(
+              count.toString(),
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: color,
               ),
-               Padding(
-                  padding: const EdgeInsets.only(left: 10.0),
-              child:  Text( location.isNotEmpty ? location : 'location',style: const TextStyle(fontSize: 17,color: Colors.black54),),
-              ),
-               Padding(padding: const EdgeInsets.only(left: 10.0),
-              child:  Text(hourlyRate == null ?'hourly rate in \$':'$hourlyRate \$/hour.',style: const TextStyle(fontSize: 17,color: Colors.black54),)
-              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-            ],
-          ),
-        )
-
-        ],
+  // Function to create additional info cards
+  Widget infoCard(String title, int count) {
+    return Card(
+      color: Colors.grey[50],
+      elevation: 4,
+      margin: EdgeInsets.symmetric(vertical: 8),
+      child: ListTile(
+        leading: Icon(Icons.info, color: Colors.blueAccent),
+        title: Text(title),
+        trailing: Text(
+          count.toString(),
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        ),
       ),
     );
   }
@@ -408,7 +617,7 @@ Future<void> loadUserData() async {
 //--------------------------------------------Cover Image-----------------------------------------------------
 
 
-  Widget buildCoverImage() {
+  Widget buildCoverImage(String? coverUrl) {
     return Container(
       height: coverHeight,
       width: double.infinity,
@@ -417,12 +626,10 @@ Future<void> loadUserData() async {
         fit: StackFit.expand,
         children: [
           // Display the image if imageUrl is not null, otherwise show a placeholder
-          _uploadedImageUrl != null
+          coverUrl != null
               ? Image.network(
-            _uploadedImageUrl!,
+            coverUrl,
             fit: BoxFit.cover,
-            //width: 300,
-            //height: 300,
           )
               : const Center(
             child: Text('Upload a cover image here.', style: TextStyle(fontSize: 16, color: Colors.black54),),
@@ -438,7 +645,7 @@ Future<void> loadUserData() async {
                   padding: const EdgeInsets.all(1.0),
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
-                    color: Colors.black87,
+                    color: Colors.indigoAccent,
                   ),
                   child: IconButton(
                     padding: EdgeInsets.zero,
@@ -463,14 +670,16 @@ Future<void> loadUserData() async {
 
   //--------------------------------------------Profile Image-----------------------------------------------------
 
-  Widget buildProfileImage() => Stack(
+  Widget buildProfileImage(String? profileUrl) => Stack(
     children:[
       Padding(
         padding: const EdgeInsets.only(left: 10.0),
         child: CircleAvatar(
           radius: profileHeight / 2,
-          backgroundImage: _profileImageUrl != null ? CachedNetworkImageProvider(_profileImageUrl!)
-         : const NetworkImage('https://t4.ftcdn.net/jpg/05/49/98/39/360_F_549983970_bRCkYfk0P6PP5fKbMhZMIb07mCJ6esXL.jpg'),
+          backgroundImage: profileUrl != null && profileUrl.isNotEmpty
+              ? NetworkImage(profileUrl)
+              : const NetworkImage('https://t4.ftcdn.net/jpg/05/49/98/39/360_F_549983970_bRCkYfk0P6PP5fKbMhZMIb07mCJ6esXL.jpg'
+          ),
         ),
       ),
       Positioned(
@@ -484,11 +693,11 @@ Future<void> loadUserData() async {
             padding: const EdgeInsets.all(1.0),
             decoration: const BoxDecoration(
               shape: BoxShape.circle,
-              color: Colors.black
+              color: Colors.indigoAccent
             ),
             child: IconButton(
               padding: EdgeInsets.zero,
-              icon: const Icon(Icons.add_circle_outlined,size: 20,color: Colors.white,),
+              icon: const Icon(Icons.add_circle_outlined,size: 22,color: Colors.white,),
               onPressed: () {
                 pickProfileImage();
               },
@@ -511,11 +720,14 @@ class FullScreenForm extends StatefulWidget {
 }
 
 class _FullScreenFormState extends State<FullScreenForm> {
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController firstnameController = TextEditingController();
   final TextEditingController lastnameController = TextEditingController();
   final TextEditingController descriptionController = TextEditingController();
   final TextEditingController locationController = TextEditingController();
   final TextEditingController rateController = TextEditingController();
+  final TextEditingController skillsController = TextEditingController();
+  final TextEditingController headlineController = TextEditingController();
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -529,6 +741,7 @@ class _FullScreenFormState extends State<FullScreenForm> {
     descriptionController.dispose();
     locationController.dispose();
     rateController.dispose();
+    headlineController.dispose();
     super.dispose();
   }
 
@@ -536,6 +749,20 @@ class _FullScreenFormState extends State<FullScreenForm> {
   //--------------------------------------------Function to save data to firestore-------------------------------------
 
   Future<void> saveData() async {
+    // Validate the form before proceeding
+    if (!_formKey.currentState!.validate()) {
+      // If the form is not valid, show an error message and return
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please fill out all required fields correctly.'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          margin: EdgeInsets.only(bottom: 80.0, left: 16.0, right: 16.0),
+        ),
+      );
+      return; // Don't proceed with saving if the form is invalid
+    }
+
     User? user = _auth.currentUser;
 
     if (user != null) {
@@ -554,10 +781,16 @@ class _FullScreenFormState extends State<FullScreenForm> {
             'location': locationController.text,
             'hourly_rate': double.parse(rateController.text),
             'description': descriptionController.text,
+            'skills': skillsController.text,
+            'headline' :headlineController.text,
           });
-
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Data updated successfully!')),
+            const SnackBar(
+                backgroundColor: Colors.green,
+                behavior: SnackBarBehavior.floating, // Make it float
+                margin: EdgeInsets.only(bottom: 80.0, left: 16.0, right: 16.0),
+                duration: Duration(seconds: 3),
+                content: Text('Profile Info added Successfully!'),),
           );
           Navigator.pop(context);
         } else {
@@ -589,13 +822,66 @@ class _FullScreenFormState extends State<FullScreenForm> {
 
 
 
+
   //--------------------------------------------Full Screen Form-----------------------------------------------------
+
+
+  @override
+  void initState() {
+    super.initState();
+    loadUserData(); // Load user data when the page opens
+  }
+
+  Future<void> loadUserData() async {
+    User? user = _auth.currentUser;
+
+    if (user != null) {
+      try {
+        // Query to find the document where email matches
+        QuerySnapshot querySnapshot = await _firestore.collection('users')
+            .where('email', isEqualTo: user.email)
+            .get();
+
+        if (querySnapshot.docs.isNotEmpty) {
+          DocumentSnapshot userDoc = querySnapshot.docs.first;
+
+          setState(() {
+            // Populate the controllers if data exists in Firestore
+            firstnameController.text = userDoc['first_name'] ?? '';
+            lastnameController.text = userDoc['last_name'] ?? '';
+            locationController.text = userDoc['location'] ?? '';
+            rateController.text = userDoc['hourly_rate']?.toString() ?? '';
+            skillsController.text = userDoc['skills'] ?? '';
+            descriptionController.text = userDoc['description'] ?? '';
+            headlineController.text = userDoc['headline'] ?? '';
+          });
+
+          print('User data loaded: ${firstnameController.text}, ${lastnameController.text}, ${locationController.text}, ${rateController.text}, ${skillsController.text}, ${descriptionController.text}');
+        } else {
+          // If no data is found, leave fields empty (user will input them)
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Please complete you profile!')),
+          );
+        }
+      } catch (e) {
+        print('Error: $e');
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No user logged in!')),
+      );
+    }
+  }
+
+
+
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Edit Intro'),
+        title: const Text('Add Profile Info'),
         leading: IconButton(
           icon: const Icon(Icons.close),
           onPressed: () {
@@ -604,132 +890,221 @@ class _FullScreenFormState extends State<FullScreenForm> {
         ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: TextFormField(
-                autofocus: true,
-                controller: firstnameController,
-                decoration:  InputDecoration(
-                  hintText: 'Enter First Name',
-                  hintStyle: const TextStyle(
-                    color: Colors.grey,
-                  ),
-                  prefixIcon: const Icon(Icons.account_circle_rounded),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                ),
-                keyboardType: TextInputType.text,
-                maxLines: 1,
-                inputFormatters: [
-                  LengthLimitingTextInputFormatter(20), // Limits input to 20 characters
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: TextFormField(
-                controller: lastnameController,
-                decoration:  InputDecoration(
-                  hintText: 'Enter Last Name',
-                  hintStyle: const TextStyle(
-                    color: Colors.grey,
-                  ),
-                  prefixIcon: const Icon(Icons.account_circle_rounded),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                ),
-                keyboardType: TextInputType.text,
-                maxLines: 1,
-                inputFormatters: [
-                  LengthLimitingTextInputFormatter(20), // Limits input to 20 characters
-                ],// Allows for multi-line input
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: TextFormField(
-                controller: locationController,
-                decoration: InputDecoration(
-                  hintText: 'Your location',
-                  hintStyle: const TextStyle(
-                    color: Colors.grey,
-                  ),
-                  prefixIcon: const Icon(Icons.location_on),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                ),
-                keyboardType: TextInputType.text,
-                maxLines: 1,
-                inputFormatters: [
-                  LengthLimitingTextInputFormatter(20), // Limits input to 20 characters
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: TextFormField(
-                controller: rateController,
-                decoration: InputDecoration(
-                  hintText: 'Hourly rate',
-                  hintStyle: const TextStyle(
-                    color: Colors.grey,
-                  ),
-                  prefixIcon: const Icon(Icons.money),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                ),
-                keyboardType: TextInputType.number,
-                maxLines: 1,
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: SizedBox(
-                height: 200,
+        padding: const EdgeInsets.only(left: 16.0,right: 16.0,bottom: 16.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16.0),
                 child: TextFormField(
-                  controller: descriptionController,
-                  decoration: InputDecoration(
-                    hintText: 'Description in max 100 words',
+                  controller: firstnameController,
+                  decoration:  InputDecoration(
+                    hintText: 'First Name',
                     hintStyle: const TextStyle(
                       color: Colors.grey,
                     ),
-                    prefixIcon: const Icon(Icons.description),
+                    prefixIcon: const Icon(Icons.account_circle_rounded),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  autocorrect: true,
+                  keyboardType: TextInputType.text,
+                  textCapitalization: TextCapitalization.words,
+                  maxLines: 1,
+                  validator: (value){
+                    if(value == null ||  value.isEmpty){
+                      return 'This field is required.';
+                    }
+                  },
+                  inputFormatters: [
+                    LengthLimitingTextInputFormatter(20), // Limits input to 20 characters
+                    FilteringTextInputFormatter.allow(RegExp("[a-zA-Z ]")), // Only allows letters and spaces
+                    //FirstLetterCapitalFormatter(),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: TextFormField(
+                  controller: lastnameController,
+                  decoration:  InputDecoration(
+                    hintText: 'Last Name',
+                    hintStyle: const TextStyle(
+                      color: Colors.grey,
+                    ),
+                    prefixIcon: const Icon(Icons.account_circle_rounded),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
                     ),
                   ),
                   keyboardType: TextInputType.text,
-                  maxLines: null, // Allows for multi-line input
+                  textCapitalization: TextCapitalization.words,
+                  maxLines: 1,
+                  validator: (value){
+                    if(value == null ||  value.isEmpty){
+                      return 'This field is required.';
+                    }
+                  },
                   inputFormatters: [
-                    LengthLimitingTextInputFormatter(600), // Limits input to 600 characters or 100 words
+                    LengthLimitingTextInputFormatter(20), // Limits input to 20 characters
+                    FilteringTextInputFormatter.allow(RegExp("[a-zA-Z ]")), // Only allows letters and spaces
+                  ],// Allows for multi-line input
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: TextFormField(
+                  controller: locationController,
+                  decoration: InputDecoration(
+                    hintText: 'Your Location',
+                    hintStyle: const TextStyle(
+                      color: Colors.grey,
+                    ),
+                    prefixIcon: const Icon(Icons.location_on),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  keyboardType: TextInputType.text,
+                  textCapitalization: TextCapitalization.words,
+                  maxLines: 1,
+                  validator: (value){
+                    if(value == null ||  value.isEmpty){
+                      return 'This field is required.';
+                    }
+                  },
+                  inputFormatters: [
+                    LengthLimitingTextInputFormatter(20), // Limits input to 20 characters
                   ],
                 ),
               ),
-            ),
-             Padding(
-              padding: const EdgeInsets.all(16.0),
-            child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.indigo,
-                  padding:  EdgeInsets.symmetric(
-                    horizontal: MediaQuery.of(context).size.width * 0.35, // 35% of the screen width
-                    vertical: 10,
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: TextFormField(
+                  controller: rateController,
+                  decoration: InputDecoration(
+                    hintText: 'Hourly rate',
+                    hintStyle: const TextStyle(
+                      color: Colors.grey,
+                    ),
+                    prefixIcon: const Icon(Icons.money),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  keyboardType: TextInputType.number,
+                  maxLines: 1,
+                  validator: (value){
+                    if(value == null ||  value.isEmpty){
+                      return 'This field is required.';
+                    }
+                  },
+                ),
+              ),
+              Padding(padding: const EdgeInsets.all(16.0),
+              child: TextFormField(
+                controller: skillsController,
+                decoration: InputDecoration(
+                  hintText: 'Your Skills',
+                  hintStyle: const TextStyle(
+                    color: Colors.grey,
+                  ),
+                  prefixIcon: const Icon(Icons.lightbulb),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  )
+                ),
+                keyboardType: TextInputType.text,
+                textCapitalization: TextCapitalization.words,
+                validator: (value){
+                  if(value == null ||  value.isEmpty){
+                    return 'This field is required.';
+                  }
+                },
+              ),
+              ),
+
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: TextFormField(
+                  controller: headlineController,
+                  decoration: InputDecoration(
+                    hintText: 'Headline',
+                    hintStyle: const TextStyle(
+                      color: Colors.grey,
+                    ),
+                    prefixIcon: const Icon(Icons.view_headline),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  keyboardType: TextInputType.text,
+                  textCapitalization: TextCapitalization.words,
+                  validator: (value){
+                    if(value == null ||  value.isEmpty){
+                      return 'This field is required.';
+                    }
+                  },
+                  maxLines: 1, // Allows for multi-line input
+                  inputFormatters: [
+                    LengthLimitingTextInputFormatter(100), // Limits input to 100 characters or 20 words
+                    //FilteringTextInputFormatter.allow(RegExp("[a-zA-Z ]")),
+                  ],
+                ),
+              ),
+
+              Padding(
+                padding: const EdgeInsets.only(left: 16.0,right: 16.0,top: 16.0),
+                child: SizedBox(
+                  height: 200,
+                  child: TextFormField(
+                    controller: descriptionController,
+                    decoration: InputDecoration(
+                      hintText: 'Description (max 100 words)',
+                      hintStyle: const TextStyle(
+                        color: Colors.grey,
+                      ),
+                      prefixIcon: const Icon(Icons.description),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    keyboardType: TextInputType.text,
+                    textCapitalization: TextCapitalization.sentences,
+                    validator: (value){
+                      if(value == null ||  value.isEmpty){
+                        return 'This field is required.';
+                      }
+                    },
+                    maxLines: null, // Allows for multi-line input
+                    inputFormatters: [
+                      LengthLimitingTextInputFormatter(600), // Limits input to 600 characters or 100 words
+                      FilteringTextInputFormatter.allow(RegExp("[a-zA-Z ]")),
+                    ],
                   ),
                 ),
-                onPressed: (){
-                  saveData();
-                },
-                child: const Text('Save',style: TextStyle(fontSize: 18,color: Colors.white),)
-            )
-            ),
-          ],
+              ),
+               Padding(
+                padding: const EdgeInsets.all(16.0),
+              child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    elevation: 3.0,
+                    backgroundColor: Colors.indigo,
+                    padding:  EdgeInsets.symmetric(
+                      horizontal: MediaQuery.of(context).size.width * 0.35, // 35% of the screen width
+                      vertical: 10,
+                    ),
+                  ),
+                  onPressed: (){
+                    saveData();
+                  },
+                  child: const Text('Save',style: TextStyle(fontSize: 18,color: Colors.white),)
+              )
+              ),
+            ],
+          ),
         ),
       ),
     );

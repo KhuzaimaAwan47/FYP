@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'Freelancerdetails.dart';
 import 'Projectdetails.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -12,12 +13,69 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  String? userName = '';
+  String? profileUrl;
+
+
+  @override
+  void initState(){
+    super.initState();
+  loadCurrentUser();
+  }
+
+  //Function to load current user
+  Future<void> loadCurrentUser() async {
+    User? user = _auth.currentUser;
+    if(user != null){
+      try{
+        QuerySnapshot querySnapshot = await _firestore.collection('users')
+            .where('email',isEqualTo: user.email)
+            .get();
+        if(querySnapshot.docs.isNotEmpty){
+          DocumentSnapshot userDoc = querySnapshot.docs.first;
+          setState(() {
+            userName = userDoc['username'];
+            profileUrl = userDoc['profileUrl'];
+          });
+          //print('user: $userName');
+        }else{
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('user name not found!')),
+          );
+        }
+      }
+      catch (e) {
+        // Handle any errors that occur during the process
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error: $e'),
+            ));
+        //print('Error loading current user: $e');
+      }
+    }
+  }
+
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      //backgroundColor:Color(0xFFEAE9E7),    //logic for writing color code: Color(0xFF-your-code),
       backgroundColor: Colors.white,
       appBar: AppBar(
         automaticallyImplyLeading: false,
+        leading: Padding(padding: EdgeInsets.only(left: 16.0),
+        child: GestureDetector(
+          onDoubleTap: (){},
+          child: CircleAvatar(
+              backgroundImage:profileUrl != null
+                  ? NetworkImage(profileUrl!):
+              NetworkImage('https://t4.ftcdn.net/jpg/05/49/98/39/360_F_549983970_bRCkYfk0P6PP5fKbMhZMIb07mCJ6esXL.jpg'),
+          radius: 20,
+                ),
+        ),
+        ),
         actions: [
           IconButton(onPressed: (){
             showModalBottomSheet(context: context,
@@ -29,21 +87,64 @@ class _HomeScreenState extends State<HomeScreen> {
               context, MaterialPageRoute(builder: (context) => const PostProject(),),);
           }, icon: const Icon(Icons.add))
         ],
-        title: const Text('Home Screen',style: TextStyle(fontWeight: FontWeight.w500),),
+        title: const Text('Unity Gig',style: TextStyle(
+          fontWeight: FontWeight.w500,color: Colors.indigo,fontSize: 27,),),
+        centerTitle: true,
       ),
       body: Column(
         children: [
-          const Padding(padding: EdgeInsets.all(8.0),
+          //Divider(color: Colors.grey[200],thickness: 2,height: 1,),
+          const Padding(padding: EdgeInsets.only(bottom: 8.0,left: 8.0,right: 8.0),
 
           ),
         Expanded(child:ListView(
-          children: const [
-            SectionHeader(title: 'Freelancers'),
-            FreelancerList(),
-            SectionHeader(title: 'Projects'),
-            ProjectList(),
-            SectionHeader(title: 'Groups'),
-            GroupList(),
+          children:  [
+            Padding(
+              padding: const EdgeInsets.only(left: 16.0),
+              child: Row(
+                children: [
+                  Text('Welcome, ',style: TextStyle(color: Colors.black87,fontSize: 25,fontWeight: FontWeight.w600),),
+                  Text('$userName',style: TextStyle(
+                    fontSize: 25,fontWeight: FontWeight.bold,
+                      foreground: Paint()..shader = LinearGradient(
+                          colors: [Color(0xFF007FFF),Color(0xFFFF0000),],
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight)
+                          .createShader(Rect.fromLTWH(100,0,200,0))
+                  ))
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(left: 16.0,bottom: 10),
+              child: Text('Explore and Discover',style: TextStyle(
+                  color: Colors.black87,fontSize: 25,fontWeight: FontWeight.w600,
+              ),),
+            ),
+            Padding(
+              padding: EdgeInsets.only(left: 10.0),
+              child: SectionHeader(title: 'Freelancers'),
+            ),
+            Padding(
+              padding: EdgeInsets.only(left: 10.0,right: 10),
+              child: FreelancerList(),
+            ),
+            Padding(
+              padding: EdgeInsets.only(left: 10.0),
+              child: SectionHeader(title: 'Projects'),
+            ),
+            Padding(
+              padding: EdgeInsets.only(left: 10.0,right: 10),
+              child: ProjectList(),
+            ),
+            Padding(
+              padding: EdgeInsets.only(left: 10.0),
+              child: SectionHeader(title: 'Groups'),
+            ),
+            Padding(
+              padding: EdgeInsets.only(left: 10.0,right: 10),
+              child: GroupList(),
+            ),
           ],
         ),
         ),
@@ -78,15 +179,62 @@ class SectionHeader extends StatelessWidget {
 class FreelancerList extends StatelessWidget {
   const FreelancerList({super.key});
 
+  Future<List<Map<String, dynamic>>> _fetchFreelancers() async {
+    // Get the current logged-in user
+    User? loggedInUser = FirebaseAuth.instance.currentUser;
+
+    // Fetch the list of freelancers from Firestore
+    QuerySnapshot snapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .where('userType', isEqualTo: 'freelancer')
+        .get();
+    // Filter out the logged-in user
+    List<Map<String, dynamic>> freelancers = snapshot.docs
+        .where((doc) => doc['email'] != loggedInUser?.email) // Exclude the logged-in user
+        .map((doc) => doc.data() as Map<String, dynamic>)
+        .toList();
+
+    return freelancers;
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       height: 150,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        itemCount: 10, // Replace with actual data
-        itemBuilder: (context, index) {
-          return const FreelancerCard(); // Freelancer card layout
+      child: FutureBuilder<List<Map<String, dynamic>>>(
+        future: _fetchFreelancers(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator(color: Colors.indigo,));
+          }
+
+          if (snapshot.hasError) {
+            return const Center(child: Text('Error loading freelancers'));
+          }
+
+          if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return const Center(child: Text('No freelancers found'));
+          }
+
+          // Display the list of freelancer cards
+          final freelancers = snapshot.data!;
+          return ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: freelancers.length,
+            itemBuilder: (context, index) {
+              final freelancer = freelancers[index];
+
+              return FreelancerCard(
+                firstName: freelancers[index]['first_name'],
+                lastName: freelancers[index]['last_name'],
+                skills: freelancers[index]['skills'],
+                hourlyRate: freelancers[index]['hourly_rate'].toString(),
+                imageUrl:freelancer['profileUrl'],
+                freelancer: freelancer,
+              );
+            },
+          );
         },
       ),
     );
@@ -95,26 +243,110 @@ class FreelancerList extends StatelessWidget {
 
 // Freelancer Card Widget
 class FreelancerCard extends StatelessWidget {
-  const FreelancerCard({super.key});
+  final String firstName;
+  final String lastName;
+  final String skills;
+  final String hourlyRate;
+  final String imageUrl;
+  final Map<String, dynamic> freelancer;
+
+  const FreelancerCard({
+    required this.firstName,
+    required this.lastName,
+    required this.skills,
+    required this.hourlyRate,
+    required this.imageUrl,
+    required this.freelancer,
+
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      color: Colors.grey[100],
-      shadowColor: Colors.grey[300],
-      elevation: 2.0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
-      margin: EdgeInsets.all(8.0),
-      child: Container(
-        width: 200,
-        padding: EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Khuzaima Awan', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            Text('Skills: Flutter, Firebase',style: TextStyle(color: Colors.grey[600]),),
-            Text('Hourly Rate: \$50',style: TextStyle(color: Colors.grey[600]),),
-          ],
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => FreelancerDetails(freelancer: freelancer),
+          ),
+        );
+      },
+      child: Card(
+        color: Colors.grey[50],
+        shadowColor: Colors.grey[300],
+        elevation: 4.0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
+        margin: const EdgeInsets.all(8.0),
+        child: Container(
+          width: 200,
+          padding: const EdgeInsets.all(10.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  ClipOval(
+                    child: Image.network(
+                      imageUrl, // Use the imageUrl here
+                      width: 50,
+                      height: 50,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          width: 50,
+                          height: 50,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.grey[300],
+                          ),
+                          child: const Icon(Icons.person, color: Colors.white),
+                        );
+                      },
+                    ),
+                  ),
+                  SizedBox(width: 5,),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '$firstName $lastName',
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold,),
+                        ),
+                        RichText(
+                          text: TextSpan(
+                            children: <TextSpan>[
+                              TextSpan(
+                                text: 'Price: ',
+                                style: TextStyle(color: Colors.grey[600]),
+                              ),
+                              TextSpan(
+                                text: '\$$hourlyRate/hr',
+                                style: TextStyle(
+                                  color: Colors.indigoAccent,
+                                  fontWeight: FontWeight.w500, // And make it bold
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                        //Text('Review')
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Text(
+                ' $skills',
+                maxLines: 1,
+                overflow: TextOverflow.visible,
+                style: TextStyle(color: Colors.grey[600]),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -153,6 +385,7 @@ class ProjectList extends StatelessWidget {
               // Handling possible null values with fallback default strings
               String projectName = projectData['project_name'] ?? 'Unnamed Project';
               String description = projectData['description'] ?? 'No Description';
+              String ownerName = projectData['owner_name'] ?? 'Unknown';
 
               double budget = (projectData['budget'] is int)
                   ? (projectData['budget'] as int).toDouble()
@@ -166,6 +399,7 @@ class ProjectList extends StatelessWidget {
                 description: description,
                 projectId: projectId,
                 postedById: postedById,
+                ownerName: ownerName,
               );
             },
           );
@@ -182,6 +416,7 @@ class ProjectCard extends StatelessWidget {
   final String description;
   final String projectId;
   final String postedById;
+  final String ownerName;
 
   const ProjectCard({
     super.key,
@@ -190,6 +425,7 @@ class ProjectCard extends StatelessWidget {
     required this.description,
     required this.projectId,
     required this.postedById,
+    required this.ownerName,
   });
 
   @override
@@ -209,24 +445,42 @@ class ProjectCard extends StatelessWidget {
       },
       child: Card(
         //color: const Color(0xFFEED3D9),
-          color:Colors.lightBlue[50],
-          shadowColor: Colors.grey[400],
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
-        elevation: 2.0,
+        color:Colors.grey[50],
+        shadowColor: Colors.grey[400],
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
+        elevation: 4.0,
         margin: const EdgeInsets.all(8.0),
         child: Container(
           width: 200,
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(10.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                projectName,
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              Row(
+                children: [
+                  Container(
+                      width: 50,
+                      height: 50,
+                      child: Image.network('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQQ0-PF3nQlSxFcXA2NdKlfsjg1atj1w5ZOWQ&s')),
+                  SizedBox(width: 10,),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          projectName,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+                        Text('Budget: \$${budget.toStringAsFixed(2)}',style: TextStyle(color: Colors.grey[700]),),
+                      ],
+                    ),
+                  ),
+
+                ],
               ),
               const SizedBox(height: 5),
-              Text('Budget: \$,${budget.toStringAsFixed(2)}',style: TextStyle(color: Colors.grey[700]),),
-              const SizedBox(height: 5),
+              Text('Posted By: $ownerName',style: TextStyle(color: Colors.grey[600]),),
               Text(
                 description,
                 maxLines: 2,
@@ -254,7 +508,7 @@ class GroupList extends StatelessWidget {
         scrollDirection: Axis.horizontal,
         itemCount: 10, // Replace with actual data
         itemBuilder: (context, index) {
-          return GroupCard(); // Group card layout
+          return const GroupCard(); // Group card layout
         },
       ),
     );
@@ -269,10 +523,10 @@ class GroupCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       //color: const Color(0xFFDECFDA),
-      color: Colors.green[50],
+      color: Colors.grey[50],
       shadowColor: Colors.grey[300],
-      elevation: 2.0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
+      elevation: 4.0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
       margin: const EdgeInsets.all(8.0),
       child: Container(
         width: 200,
@@ -434,7 +688,12 @@ final FirebaseFirestore _firestore = FirebaseFirestore.instance;
       // Check for empty fields
       if (projectName.isEmpty || ownerName.isEmpty || description.isEmpty || budget == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please fill in all fields')),
+          const SnackBar(
+              backgroundColor: Colors.redAccent,
+              behavior: SnackBarBehavior.floating, // Make it float
+              margin: EdgeInsets.only(bottom: 80.0, left: 16.0, right: 16.0),
+              duration: Duration(seconds: 3),
+              content: Text('Please fill all fields')),
         );
         return;
       }
@@ -491,12 +750,20 @@ final FirebaseFirestore _firestore = FirebaseFirestore.instance;
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Container(
+                  width: 150,
+                  height: 150,
+                  child: Image.network('https://cdn-icons-png.flaticon.com/512/1205/1205515.png')),
+            ),
             Padding(padding: const EdgeInsets.all(16.0),
               child: TextFormField(
                 style: const TextStyle(
                   fontWeight: FontWeight.w500
                 ),
-                autofocus: true,
+                autofocus: false,
+                autocorrect: true,
                 controller: nameController,
                 decoration: InputDecoration(
                   hintText: 'Project Name',
@@ -504,18 +771,19 @@ final FirebaseFirestore _firestore = FirebaseFirestore.instance;
                     color: Colors.grey
                   ),
                   focusColor: Colors.white,
-                  prefixIcon: const Icon(Icons.abc_outlined),
+                  prefixIcon: const Icon(Icons.abc_sharp,),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
                   ),
                 ),
+                textCapitalization: TextCapitalization.words,
                 keyboardType: TextInputType.text,
               ),
             ),
             Padding(padding: const EdgeInsets.all(16.0),
               child: TextFormField(
+                autocorrect: true,
                 style: const TextStyle(fontWeight: FontWeight.w500),
-                autofocus: true,
                 controller: ownerController,
                 decoration: InputDecoration(
                   hintText: 'Owner Name',
@@ -527,6 +795,7 @@ final FirebaseFirestore _firestore = FirebaseFirestore.instance;
                     borderRadius: BorderRadius.circular(14),
                   ),
                 ),
+                textCapitalization: TextCapitalization.words,
               ),
             ),
             Padding(padding: const EdgeInsets.all(16.0),
@@ -534,10 +803,9 @@ final FirebaseFirestore _firestore = FirebaseFirestore.instance;
               style: const TextStyle(
                   fontWeight: FontWeight.w500
               ),
-              autofocus: true,
               controller: budgetController,
               decoration: InputDecoration(
-                hintText: 'Budget in \$',
+                hintText: '\$ Budget',
                 hintStyle: const TextStyle(
                   color: Colors.grey,
                 ),
@@ -551,20 +819,22 @@ final FirebaseFirestore _firestore = FirebaseFirestore.instance;
             ),
 
             Padding(padding: const EdgeInsets.all(16.0),
-              child: TextFormField(
+              child: TextField(
+                autocorrect: true,
                 style: const TextStyle(fontWeight: FontWeight.w500),
-                autofocus: true,
                 controller: descriptionController,
                 decoration: InputDecoration(
-                  hintText: 'Description',
+                  hintText: 'Description max (100 words)',
                   hintStyle: const TextStyle(
                     color: Colors.grey,
                   ),
-                  prefixIcon: const Icon(Icons.description),
+                  prefixIcon: const Icon(Icons.description_outlined),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
+                    //borderSide: BorderSide.none,
                   ),
                 ),
+                textCapitalization: TextCapitalization.sentences,
                 keyboardType: TextInputType.text,
                 maxLines: null,
                 inputFormatters: [
@@ -572,11 +842,11 @@ final FirebaseFirestore _firestore = FirebaseFirestore.instance;
                 ],
               ),
             ),
-            const SizedBox(height: 50,),
+            const SizedBox(height: 30,),
             Padding(padding: const EdgeInsets.all(16.0),
             child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.indigo,
+                  backgroundColor: Colors.indigoAccent,
                   elevation: 2.0,
                   padding: EdgeInsets.symmetric(
                     horizontal: MediaQuery.of(context).size.width * 0.35, // 35% of the screen width
