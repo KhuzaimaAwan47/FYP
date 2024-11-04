@@ -21,11 +21,15 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'FlutterApp',
       theme: ThemeData(
-        primarySwatch: Colors.indigo,
+       primaryColor: Colors.indigo,
+       // primarySwatch: Colors.indigo,
         appBarTheme: AppBarTheme(
-          backgroundColor: Colors.grey[50],
+          //backgroundColor: Colors.indigo.withOpacity(0.2),
+          foregroundColor: Colors.black87,
+          backgroundColor: Colors.white,
           systemOverlayStyle: SystemUiOverlayStyle(
-            statusBarColor: Colors.grey[200],
+            //statusBarColor: Colors.indigo[100],
+            statusBarColor: Colors.white,
             statusBarIconBrightness: Brightness.dark,
           )
         )

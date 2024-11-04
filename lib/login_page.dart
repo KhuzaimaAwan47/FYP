@@ -63,7 +63,7 @@ class _LoginPageState extends State<LoginPage> {
       return 'Please provide a valid email or password.';
     } else {
       print('Unhandled FirebaseAuthException code: ${e.code}');
-      return 'An unexpected error occurred.... Please try again.';
+      return 'Connection Timed Out.... Please try again later.';
     }
   }
 
@@ -137,7 +137,7 @@ class _LoginPageState extends State<LoginPage> {
                           controller: emailController,
                           style: const TextStyle(fontWeight: FontWeight.w500),
                           decoration: InputDecoration(
-                            hintText: 'Enter your email',
+                            hintText: 'Email',
                             hintStyle: const TextStyle(color: Colors.grey,),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(14),
@@ -146,7 +146,7 @@ class _LoginPageState extends State<LoginPage> {
                                 width: 1.5,
                               ),
                             ),
-                            prefixIcon: const Icon(Icons.email_outlined),
+                            prefixIcon: const Icon(Icons.email_outlined,color: Colors.black54,),
                           ),
                             validator: (value)
                         {
@@ -177,9 +177,9 @@ class _LoginPageState extends State<LoginPage> {
                                 width: 1.5,
                               ),
                             ),
-                            prefixIcon: const Icon(Icons.password),
+                            prefixIcon: const Icon(Icons.password,color: Colors.black54,),
                             suffixIcon: IconButton(
-                              icon: Icon(isPasswordVisible ? Icons.visibility:Icons.visibility_off,),
+                              icon: Icon(isPasswordVisible ? Icons.visibility:Icons.visibility_off,color: Colors.black54,),
                               onPressed: ()
                               {
                                 setState((){
@@ -202,6 +202,7 @@ class _LoginPageState extends State<LoginPage> {
 
                         ElevatedButton(
                           style: ElevatedButton.styleFrom(
+                            elevation: 3.0,
                             backgroundColor: Colors.indigo,
                             padding:  EdgeInsets.symmetric(
                               horizontal: MediaQuery.of(context).size.width * 0.35, // 35% of the screen width
@@ -216,7 +217,7 @@ class _LoginPageState extends State<LoginPage> {
                           },
                           child: const Text(
                             'Login',
-                            style: TextStyle(fontSize: 15, color: Colors.white),
+                            style: TextStyle(fontSize: 15, color: Colors.white,),
                           ),
                         ),
 

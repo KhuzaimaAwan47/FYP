@@ -157,7 +157,7 @@ class _SignupPageState extends State<SignupPage> {
                           borderRadius: BorderRadius.circular(14),
                           borderSide: const BorderSide(color: Colors.blue, width: 1.5),
                         ),
-                        prefixIcon: const Icon(Icons.account_circle_outlined),
+                        prefixIcon: const Icon(Icons.account_circle_outlined,color: Colors.black54,),
                       ),
                       keyboardType: TextInputType.name,
                       validator: (value){
@@ -184,7 +184,7 @@ class _SignupPageState extends State<SignupPage> {
                           borderRadius: BorderRadius.circular(14),
                           borderSide: const BorderSide(color: Colors.blue, width: 1.5),
                         ),
-                        prefixIcon: const Icon(Icons.email_outlined),
+                        prefixIcon: const Icon(Icons.email_outlined,color: Colors.black54,),
                       ),
                       keyboardType: TextInputType.emailAddress,
                       validator: (value){
@@ -226,9 +226,9 @@ class _SignupPageState extends State<SignupPage> {
                           borderRadius: BorderRadius.circular(14),
                           borderSide: const BorderSide(color: Colors.indigo, width: 1.5),
                         ),
-                        prefixIcon: const Icon(Icons.password),
+                        prefixIcon: const Icon(Icons.password,color: Colors.black54,),
                         suffixIcon: IconButton(
-                          icon: Icon(isPasswordVisible ? Icons.visibility:Icons.visibility_off,),
+                          icon: Icon(isPasswordVisible ? Icons.visibility:Icons.visibility_off,color: Colors.black54,),
                           onPressed: ()
                           {
                             setState((){
@@ -263,9 +263,9 @@ class _SignupPageState extends State<SignupPage> {
                           borderRadius: BorderRadius.circular(14),
                           borderSide: const BorderSide(color: Colors.indigo, width: 1.5),
                         ),
-                        prefixIcon: const Icon(Icons.password),
+                        prefixIcon: const Icon(Icons.password,color: Colors.black54,),
                         suffixIcon: IconButton(
-                          icon: Icon(isCPasswordVisible ? Icons.visibility:Icons.visibility_off,),
+                          icon: Icon(isCPasswordVisible ? Icons.visibility:Icons.visibility_off,color: Colors.black54,),
                           onPressed: ()
                           {
                             setState((){
