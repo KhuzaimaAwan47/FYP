@@ -1,7 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:my_fyp/Freelancer_Screens/Home.dart';
 
 class ProjectDetails extends StatefulWidget {
   final String projectId;
@@ -107,18 +106,9 @@ class _ProjectDetailsState extends State<ProjectDetails> {
       print('Error loading proposals: $e');
     }
   }
-
-  // Future<void> _deleteProject() async {
-  //   try {
-  //     await _firestore.collection('projects').doc(widget.projectId).delete();
-  //     Navigator.pop(context); // Go back to the previous screen
-  //   } catch (e) {
-  //     print('Error deleting project: $e');
-  //   }
-  // }
-
+  //delete project
   Future<void>_deleteProject() async {
-    // 1. Show a confirmation dialog
+    //Show a confirmation dialog
     bool confirmDelete = await showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -145,7 +135,7 @@ class _ProjectDetailsState extends State<ProjectDetails> {
       },
     );
 
-    // 2. Proceed with deletion if confirmed
+    // Proceed with deletion if confirmed
     if (confirmDelete== true) {
       try {
         await _firestore.collection('projects').doc(widget.projectId).delete();
@@ -165,7 +155,7 @@ class _ProjectDetailsState extends State<ProjectDetails> {
   //---------------------------------------------Edit project-------------------------------------------
 
   Future<void> _editProject() async {
-    // 1. Show a dialog or navigate toa new screen for editing
+    // Show a dialog or navigate to a new screen for editing
     // Here, we'll use a dialog for simplicity
     await showDialog(
       context: context,
@@ -205,7 +195,7 @@ class _ProjectDetailsState extends State<ProjectDetails> {
             ),
             TextButton(
               onPressed: () async {
-                // 2. Update Firestore document
+                // Update Firestore document
                 try {
                   await _firestore.collection('projects').doc(widget.projectId).update({
                     'project_name': nameController.text,
@@ -214,7 +204,7 @@ class _ProjectDetailsState extends State<ProjectDetails> {
                     'budget': double.tryParse(budgetController.text) ?? 0.0, // Handle parsing
                   });
 
-                  // 3. Update the UI with the new values
+                  //  Update the UI with the new values
                   setState(() {
                     projectName = nameController.text;
                     ownerName = ownerController.text;
@@ -256,12 +246,14 @@ class _ProjectDetailsState extends State<ProjectDetails> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Project Details'),
-
+        title: Text('Project Details'),
+        centerTitle: true,
+        actions: [
+          IconButton(onPressed: (){}, icon: Icon(Icons.info)
+          )
+        ],
       ),
-      body: Card(elevation: 3.0,
-        color:Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
+      body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
@@ -274,11 +266,11 @@ class _ProjectDetailsState extends State<ProjectDetails> {
               const SizedBox(height: 8),
               Row(
                 children: [
-                  const Icon(Icons.attach_money,color: Colors.purple,),
-                  const SizedBox(width: 8,),
+                  // const Icon(Icons.attach_money,color: Colors.purple,),
+                  // const SizedBox(width: 0,),
                   Text(
                     'Budget: \$${budget.toStringAsFixed(2)}',
-                    style: const TextStyle(fontSize: 18,fontWeight: FontWeight.w500,color: Colors.purple),
+                    style: const TextStyle(fontSize: 24,fontWeight: FontWeight.w500,color: Colors.blue),
                   ),
                 ],
               ),
@@ -344,7 +336,7 @@ class _ProjectDetailsState extends State<ProjectDetails> {
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         elevation: 3.0,
-                        backgroundColor: Colors.purple,
+                        backgroundColor: Colors.blueAccent,
                         padding: EdgeInsets.symmetric(
                           horizontal: MediaQuery.of(context).size.width * 0.25, // 35% of the screen width
                           vertical: 10,
