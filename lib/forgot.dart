@@ -12,20 +12,16 @@ class forgot extends StatelessWidget{
     var screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
+      backgroundColor: Colors.indigo.shade50,
       appBar: AppBar(
       automaticallyImplyLeading: true,
       backgroundColor: Colors.indigo.shade50,
+        iconTheme: IconThemeData(color: Colors.black54),
       ),
       body: SingleChildScrollView(
-        child: Center(
-          child: Container(
-            width: screenWidth,
-            height: screenHeight,
-            padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.1),
-            color: Colors.indigo.shade50,
-
-                //----------------------------Icon Section----------------------------
-
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Center(
             child: Column(
               children: [
                 SizedBox(height: screenHeight*0.09,),
@@ -44,7 +40,7 @@ class forgot extends StatelessWidget{
                       style: const TextStyle(fontWeight: FontWeight.w500),
                       controller: emailController,
                       decoration: InputDecoration(
-                      hintText: 'Enter your email',
+                      hintText: 'Email',
                       hintStyle: const TextStyle(color: Colors.grey),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(14),
@@ -53,7 +49,7 @@ class forgot extends StatelessWidget{
                           width: 1.5,
                         ),
                       ),
-                      prefixIcon: const Icon(Icons.email_outlined),
+                      prefixIcon: const Icon(Icons.email_outlined,color: Colors.grey,),
                       ),
                     keyboardType: TextInputType.emailAddress,
                       validator: (value)
@@ -73,8 +69,10 @@ class forgot extends StatelessWidget{
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.indigo,
-                    padding: EdgeInsets.symmetric(horizontal: MediaQuery.of(context).size.width * 0.35, // 35% of the screen width
-                      vertical: 10,),
+                    minimumSize: Size(double.infinity, 56),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                   ),
                   onPressed: () {
                     Navigator.push( context, MaterialPageRoute( builder: (context) => OtpPage(),));

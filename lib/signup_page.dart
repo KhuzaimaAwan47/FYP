@@ -40,12 +40,14 @@ class _SignupPageState extends State<SignupPage> {
     FocusScope.of(context).unfocus(); //keyboard closes when button is pressed.
     try {
       if (passwordConfirmed()) {
-        await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
           email: emailController.text.trim(),
           password: passwordController.text.trim(),
         );
+        String uid = userCredential.user!.uid;
         // Add user details to Firestore
         addUserDetails(
+          uid,
           usernameController.text.trim(),
           emailController.text.trim(),
           isClientChecked ? 'client' : 'freelancer',
@@ -79,8 +81,9 @@ class _SignupPageState extends State<SignupPage> {
       return 'An unexpected error occurred. Please try again.';
     }
   }// SignUpUser
-  Future addUserDetails(String username, String email, String userType, String password,) async {
+  Future addUserDetails(String uid, String username, String email, String userType, String password,) async {
     await FirebaseFirestore.instance.collection('users').add({
+      'uid'      : uid,
       'username' : username,
       'userType' : userType,
       'email'    : email,

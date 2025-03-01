@@ -24,8 +24,6 @@ final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 final ImagePicker _imagePicker = ImagePicker();
 
 String? imageUrl;
-String? _uploadedImageUrl;
-String? _profileImageUrl;
 String? profileUrl;
 String? coverUrl;
 
@@ -172,7 +170,6 @@ Future<void> loadUserData() async {
 
         // Update the state to reflect the new image URL
         setState(() {
-          _uploadedImageUrl = imageUrl;
         });
 
         // Additional logic to update the profileUrl based on email or username
@@ -189,7 +186,7 @@ Future<void> loadUserData() async {
           const SnackBar(
             backgroundColor: Colors.green,
             behavior: SnackBarBehavior.floating, // Floating above default position
-            margin: EdgeInsets.only(bottom: 80,left: 16,right: 16),
+            margin: EdgeInsets.only(bottom: 50,left: 16,right: 16),
             content: Text('Cover image uploaded successfully!'),
           ),
         );
@@ -274,7 +271,6 @@ Future<void> loadUserData() async {
 
         // Update the state to reflect the new image URL
         setState(() {
-          _profileImageUrl = profileUrl;
         });
 
         // Additional logic to update the profileUrl based on email or username
@@ -385,7 +381,7 @@ Future<void> loadUserData() async {
                               baseColor: Colors.grey[300]!,
                               highlightColor: Colors.grey[100]!,
                               child: Container(
-                                width: 150,
+                                width: 100,
                                 height: 20,
                                 color: Colors.white,
                               ),
@@ -425,7 +421,7 @@ Future<void> loadUserData() async {
                               baseColor: Colors.grey[300]!,
                               highlightColor: Colors.grey[100]!,
                               child: Container(
-                                width: 150,
+                                width: 100,
                                 height: 17,
                                 color: Colors.white,
                               ),
@@ -458,7 +454,7 @@ Future<void> loadUserData() async {
                         child: skills.isNotEmpty
                             ? Row(
                           children: [
-                            Icon(Icons.star,size: 17,color: Colors.indigoAccent,),
+                            Icon(Icons.stars,size: 17,color: Colors.indigoAccent,),
                             Text(skills,style: TextStyle(fontSize: 17,color: Colors.black54),
                             ),
                           ],
@@ -501,7 +497,7 @@ Future<void> loadUserData() async {
                                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                 children: [
                                   projectCard('Ongoing Projects', 12, Colors.blue.withOpacity(0.8)),
-                                  projectCard('Cancelled Projects', 5, Colors.red.withOpacity(0.8)),
+                                  projectCard('Pending Projects', 5, Colors.orange.withOpacity(0.8)),
                                   projectCard('Completed Projects', 20, Colors.green.withOpacity(0.8)),
                                 ],
                               ),
@@ -749,6 +745,7 @@ class _FullScreenFormState extends State<FullScreenForm> {
   //--------------------------------------------Function to save data to firestore-------------------------------------
 
   Future<void> saveData() async {
+    FocusScope.of(context).unfocus(); //keyboard closes when button is pressed.
     // Validate the form before proceeding
     if (!_formKey.currentState!.validate()) {
       // If the form is not valid, show an error message and return
@@ -823,7 +820,7 @@ class _FullScreenFormState extends State<FullScreenForm> {
 
 
 
-  //--------------------------------------------Full Screen Form-----------------------------------------------------
+  //--------------------------------------------Full Screen Form for editing user record-----------------------------------------------------
 
 
   @override
@@ -890,13 +887,12 @@ class _FullScreenFormState extends State<FullScreenForm> {
         ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.only(left: 16.0,right: 16.0,bottom: 16.0),
         child: Form(
           key: _formKey,
           child: Column(
             children: [
               Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: const EdgeInsets.only(top: 16.0,left: 16.0,right: 16.0),
                 child: TextFormField(
                   controller: firstnameController,
                   decoration:  InputDecoration(
@@ -904,7 +900,7 @@ class _FullScreenFormState extends State<FullScreenForm> {
                     hintStyle: const TextStyle(
                       color: Colors.grey,
                     ),
-                    prefixIcon: const Icon(Icons.account_circle_rounded),
+                    prefixIcon: const Icon(Icons.account_circle_outlined,color: Colors.grey,),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
                     ),
@@ -926,7 +922,7 @@ class _FullScreenFormState extends State<FullScreenForm> {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: const EdgeInsets.only(top: 16.0,left: 16.0,right: 16.0),
                 child: TextFormField(
                   controller: lastnameController,
                   decoration:  InputDecoration(
@@ -934,7 +930,7 @@ class _FullScreenFormState extends State<FullScreenForm> {
                     hintStyle: const TextStyle(
                       color: Colors.grey,
                     ),
-                    prefixIcon: const Icon(Icons.account_circle_rounded),
+                    prefixIcon: const Icon(Icons.account_circle_outlined,color: Colors.grey,),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
                     ),
@@ -954,7 +950,7 @@ class _FullScreenFormState extends State<FullScreenForm> {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: const EdgeInsets.only(top: 16.0,left: 16.0,right: 16.0),
                 child: TextFormField(
                   controller: locationController,
                   decoration: InputDecoration(
@@ -962,7 +958,7 @@ class _FullScreenFormState extends State<FullScreenForm> {
                     hintStyle: const TextStyle(
                       color: Colors.grey,
                     ),
-                    prefixIcon: const Icon(Icons.location_on),
+                    prefixIcon: const Icon(Icons.location_on_outlined,color: Colors.grey,),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
                     ),
@@ -981,15 +977,15 @@ class _FullScreenFormState extends State<FullScreenForm> {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: const EdgeInsets.only(top: 16.0,left: 16.0,right: 16.0),
                 child: TextFormField(
                   controller: rateController,
                   decoration: InputDecoration(
-                    hintText: 'Hourly rate',
+                    hintText: '\$ Hourly rate',
                     hintStyle: const TextStyle(
                       color: Colors.grey,
                     ),
-                    prefixIcon: const Icon(Icons.money),
+                    prefixIcon: const Icon(Icons.attach_money_outlined,color: Colors.grey,),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
                     ),
@@ -1003,7 +999,7 @@ class _FullScreenFormState extends State<FullScreenForm> {
                   },
                 ),
               ),
-              Padding(padding: const EdgeInsets.all(16.0),
+              Padding(padding: const EdgeInsets.only(top: 16.0,left: 16.0,right: 16.0),
               child: TextFormField(
                 controller: skillsController,
                 decoration: InputDecoration(
@@ -1011,7 +1007,7 @@ class _FullScreenFormState extends State<FullScreenForm> {
                   hintStyle: const TextStyle(
                     color: Colors.grey,
                   ),
-                  prefixIcon: const Icon(Icons.lightbulb),
+                  prefixIcon: const Icon(Icons.lightbulb_outline,color: Colors.grey,),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
                   )
@@ -1027,7 +1023,7 @@ class _FullScreenFormState extends State<FullScreenForm> {
               ),
 
               Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: const EdgeInsets.only(top: 16.0,left: 16.0,right: 16.0),
                 child: TextFormField(
                   controller: headlineController,
                   decoration: InputDecoration(
@@ -1035,7 +1031,7 @@ class _FullScreenFormState extends State<FullScreenForm> {
                     hintStyle: const TextStyle(
                       color: Colors.grey,
                     ),
-                    prefixIcon: const Icon(Icons.view_headline),
+                    prefixIcon: const Icon(Icons.view_headline_outlined,color: Colors.grey,),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
                     ),
@@ -1062,11 +1058,12 @@ class _FullScreenFormState extends State<FullScreenForm> {
                   child: TextFormField(
                     controller: descriptionController,
                     decoration: InputDecoration(
+                      label: Text('Description (max 100 words)'),
                       hintText: 'Description (max 100 words)',
                       hintStyle: const TextStyle(
                         color: Colors.grey,
                       ),
-                      prefixIcon: const Icon(Icons.description),
+                      //prefixIcon: const Icon(Icons.description_outlined,color: Colors.grey,),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(14),
                       ),
@@ -1078,7 +1075,7 @@ class _FullScreenFormState extends State<FullScreenForm> {
                         return 'This field is required.';
                       }
                     },
-                    maxLines: null, // Allows for multi-line input
+                    maxLines: 10, // Allows for multi-line input
                     inputFormatters: [
                       LengthLimitingTextInputFormatter(600), // Limits input to 600 characters or 100 words
                       FilteringTextInputFormatter.allow(RegExp("[a-zA-Z ]")),
@@ -1086,23 +1083,25 @@ class _FullScreenFormState extends State<FullScreenForm> {
                   ),
                 ),
               ),
-               Padding(
-                padding: const EdgeInsets.all(16.0),
-              child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    elevation: 3.0,
-                    backgroundColor: Colors.indigo,
-                    padding:  EdgeInsets.symmetric(
-                      horizontal: MediaQuery.of(context).size.width * 0.35, // 35% of the screen width
-                      vertical: 10,
+               Center(
+                 child: Padding(
+                  padding: const EdgeInsets.only(left: 16.0,right: 16.0,top: 32),
+                               child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      elevation: 3.0,
+                      backgroundColor: Colors.indigoAccent,
+                      minimumSize: Size(double.infinity, 56),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
                     ),
-                  ),
-                  onPressed: (){
-                    saveData();
-                  },
-                  child: const Text('Save',style: TextStyle(fontSize: 18,color: Colors.white),)
-              )
-              ),
+                    onPressed: (){
+                      saveData();
+                    },
+                    child: const Text('Save',style: TextStyle(fontSize: 18,color: Colors.white),)
+                               )
+                               ),
+               ),
             ],
           ),
         ),

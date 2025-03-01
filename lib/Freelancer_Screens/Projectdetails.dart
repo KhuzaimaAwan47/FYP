@@ -1,13 +1,18 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:my_fyp/Freelancer_Screens/Bid.dart';
+
+
 
 class ProjectDetails extends StatefulWidget {
   final String projectId;
+  final String projectName;
   final String postedById; // This is the user ID of the project owner
   const ProjectDetails({
     super.key,
     required this.projectId,
+    required this.projectName,
     required this.postedById,
   });
 
@@ -77,11 +82,13 @@ class _ProjectDetailsState extends State<ProjectDetails> {
           budget = projectDoc['budget'];
         });
 
+
         // Fetch the total number of projects posted by the user
         QuerySnapshot userProjects = await _firestore
             .collection('projects')
             .where('posted_by', isEqualTo: widget.postedById)
             .get();
+
 
         setState(() {
           totalProjectsByUser = userProjects.docs.length;
@@ -91,21 +98,43 @@ class _ProjectDetailsState extends State<ProjectDetails> {
       print('Error loading project details: $e');
     }
   }
-
+  //loadProposals
   Future<void> loadProposals() async {
     try {
-      QuerySnapshot proposalDocs = await _firestore
-          .collection('proposals')
-          .where('project_id', isEqualTo: widget.projectId)
+      // Find the specific document using the `project_name`
+      QuerySnapshot bidSnapshot = await _firestore
+          .collection('bids')
+          .where('project_name', isEqualTo: widget.projectName) // Match based on project name
           .get();
 
-      setState(() {
-        totalProposals = proposalDocs.docs.length;
-      });
+      if (bidSnapshot.docs.isNotEmpty) {
+        // Get the first matching document (if multiple, update logic as needed)
+        DocumentSnapshot bidDoc = bidSnapshot.docs.first;
+
+        setState(() {
+          ownerName = bidDoc['owner_name'];
+          projectName = bidDoc['project_name'];
+        });
+
+        // Count total proposals for this project
+        QuerySnapshot userBids = await _firestore
+            .collection('bids')
+            .where('project_name', isEqualTo: widget.projectName)
+            .get();
+
+        setState(() {
+          totalProposals = userBids.docs.length;
+        });
+
+        print('bids loaded: $totalProposals, for $ownerName');
+      } else {
+        print('No bids found for the project.');
+      }
     } catch (e) {
       print('Error loading proposals: $e');
     }
   }
+
   //delete project
   Future<void>_deleteProject() async {
     //Show a confirmation dialog
@@ -171,10 +200,6 @@ class _ProjectDetailsState extends State<ProjectDetails> {
                   decoration: const InputDecoration(labelText: 'Project Name'),
                 ),
                 TextFormField(
-                  controller: ownerController..text = ownerName,
-                  decoration: const InputDecoration(labelText: 'Owner Name'),
-                ),
-                TextFormField(
                   controller: budgetController..text = budget.toString(),
                   decoration: const InputDecoration(labelText: 'Budget'),
                   keyboardType: TextInputType.number,
@@ -191,7 +216,7 @@ class _ProjectDetailsState extends State<ProjectDetails> {
             TextButton(onPressed: () {
               Navigator.of(context).pop(); // Close the dialog
             },
-              child: const Text('Cancel'),
+              child: const Text('Cancel',style: TextStyle(color: Colors.red),),
             ),
             TextButton(
               onPressed: () async {
@@ -233,7 +258,7 @@ class _ProjectDetailsState extends State<ProjectDetails> {
                   );
                 }
               },
-              child: const Text('Save'),
+              child: const Text('Save',style: TextStyle(color: Colors.green),),
             ),
           ],
         );
@@ -270,7 +295,7 @@ class _ProjectDetailsState extends State<ProjectDetails> {
                   // const SizedBox(width: 0,),
                   Text(
                     'Budget: \$${budget.toStringAsFixed(2)}',
-                    style: const TextStyle(fontSize: 24,fontWeight: FontWeight.w500,color: Colors.blue),
+                    style: const TextStyle(fontSize: 24,fontWeight: FontWeight.w500,color: Colors.indigoAccent),
                   ),
                 ],
               ),
@@ -278,7 +303,6 @@ class _ProjectDetailsState extends State<ProjectDetails> {
               Text(
                 description,
                 textAlign: TextAlign.justify,
-
                 style: TextStyle(fontSize: 16,height: 1.5,color: Colors.grey[800]),
               ),
               const SizedBox(height: 16),
@@ -336,14 +360,25 @@ class _ProjectDetailsState extends State<ProjectDetails> {
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         elevation: 3.0,
-                        backgroundColor: Colors.blueAccent,
-                        padding: EdgeInsets.symmetric(
-                          horizontal: MediaQuery.of(context).size.width * 0.25, // 35% of the screen width
-                          vertical: 10,
+                        backgroundColor: Colors.indigoAccent,
+                        minimumSize: Size(double.infinity, 56),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
                         ),
                       ),
-                      onPressed: () {},
-                      child: const Text('Bid Now',style: TextStyle(fontSize: 16,color: Colors.white),),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => BidForm(
+                              projectName:projectName,
+                              ownerName: ownerName,
+                              projectId: widget.projectId,
+                            ),
+                          ),
+                        );
+                      },
+                      child: const Text('Bid Now',style: TextStyle(fontSize: 18,color: Colors.white),),
                     ),
                   ),
             ],

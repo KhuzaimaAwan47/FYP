@@ -1,9 +1,15 @@
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:my_fyp/Freelancer_Screens/Groupdetails.dart';
 import 'Freelancerdetails.dart';
 import 'Projectdetails.dart';
+import 'notifications.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -57,98 +63,160 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
 
+  //rating
+
+
+
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      //backgroundColor:Color(0xFFEAE9E7),    //logic for writing color code: Color(0xFF-your-code),
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        leading: Padding(padding: EdgeInsets.only(left: 16.0),
-        child: GestureDetector(
-          onDoubleTap: (){},
-          child: CircleAvatar(
-              backgroundImage:profileUrl != null
-                  ? NetworkImage(profileUrl!):
-              NetworkImage('https://t4.ftcdn.net/jpg/05/49/98/39/360_F_549983970_bRCkYfk0P6PP5fKbMhZMIb07mCJ6esXL.jpg'),
-          radius: 20,
-                ),
-        ),
-        ),
-        actions: [
-          IconButton(onPressed: (){
-            showModalBottomSheet(context: context,
-              builder: (context) => const AdvancedSearchFilters(),
-            );
-          }, icon: const Icon(Icons.search_outlined)),
-          IconButton(onPressed: (){
-            Navigator.push(
-              context, MaterialPageRoute(builder: (context) => const PostProject(),),);
-          }, icon: const Icon(Icons.add))
-        ],
-        title: const Text('Unity Gig',style: TextStyle(
-          fontWeight: FontWeight.w500,color: Colors.indigo,fontSize: 27,),),
-        centerTitle: true,
-      ),
-      body: Column(
-        children: [
-          //Divider(color: Colors.grey[200],thickness: 2,height: 1,),
-          const Padding(padding: EdgeInsets.only(bottom: 8.0,left: 8.0,right: 8.0),
 
+    return PopScope(
+      canPop: false,
+      child: Scaffold(
+        //backgroundColor:Color(0xFFEAE9E7),    //logic for writing color code: Color(0xFF-your-code),
+        backgroundColor: Colors.white,
+        appBar: AppBar(
+          automaticallyImplyLeading: false,
+          leading: Padding(padding: EdgeInsets.only(left: 16.0),
+          child: GestureDetector(
+            onDoubleTap: (){},
+            child: CircleAvatar(
+                backgroundImage:profileUrl != null
+                    ? NetworkImage(profileUrl!):
+                NetworkImage('https://t4.ftcdn.net/jpg/05/49/98/39/360_F_549983970_bRCkYfk0P6PP5fKbMhZMIb07mCJ6esXL.jpg'),
+            radius: 20,
+                  ),
           ),
-        Expanded(child:ListView(
-          children:  [
-            Padding(
-              padding: const EdgeInsets.only(left: 16.0),
-              child: Row(
-                children: [
-                  Text('Welcome, ',style: TextStyle(color: Colors.black87,fontSize: 25,fontWeight: FontWeight.w600),),
-                  Text('$userName',style: TextStyle(
-                    fontSize: 25,fontWeight: FontWeight.bold,
-                      foreground: Paint()..shader = LinearGradient(
-                          colors: [Color(0xFF007FFF),Color(0xFFFF0000),],
-                          begin: Alignment.centerLeft,
-                          end: Alignment.centerRight)
-                          .createShader(Rect.fromLTWH(100,0,200,0))
-                  ))
-                ],
+          ),
+          actions: [
+            IconButton(onPressed: (){
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => Notifications()),
+              );
+            },
+                icon: const Icon(Icons.notifications_none)),
+            PopupMenuButton<String>(
+              color: Colors.white,
+              onSelected: (value) {
+                if (value == 'item1') {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => PostProject()),
+                  );
+                } else if (value == 'item2') {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => CreateGroup()),
+                  );
+                } else if (value == 'item3') {
+                  Navigator.pop(context,);
+                }
+              },
+              itemBuilder: (BuildContext context) {
+                return [
+                  PopupMenuItem<String>(
+                    value: 'item1',
+                    child: Text('New Project'),
+                  ),
+                  PopupMenuItem<String>(
+                    value: 'item2',
+                    child: Text('New Group'),
+                  ),
+                  PopupMenuItem<String>(
+                    value: 'item3',
+                    child: Text('Sign out'),
+                  ),
+                ];
+              },
+              offset:  Offset(0, kToolbarHeight),   // This places the dropdown slightly below the app bar.
+            )
+          ],
+          title: const Text('Unity Gig',style: TextStyle(
+            fontWeight: FontWeight.w500,color: Colors.white,fontSize: 27,),),
+          centerTitle: true,
+        ),
+        body: Column(
+          children: [
+            //Divider(color: Colors.grey[200],thickness: 2,height: 1,),
+            const Padding(padding: EdgeInsets.only(bottom: 8.0,left: 8.0,right: 8.0),
+
+            ),
+          Expanded(child:ListView(
+            children:  [
+              Padding(
+                padding: const EdgeInsets.only(left: 16.0),
+                child: Row(
+                  children: [
+                    Text('Welcome, ',style: TextStyle(color: Colors.black87,fontSize: 25,fontWeight: FontWeight.w600),),
+                    Text('$userName',style: TextStyle(
+                      fontSize: 25,fontWeight: FontWeight.bold,
+                        foreground: Paint()..shader = LinearGradient(
+                            colors: [Color(0xFF007FFF),Color(0xFFFF0000),],
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight)
+                            .createShader(Rect.fromLTWH(100,0,200,0))
+                    ))
+                  ],
+                ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(left: 16.0,bottom: 10),
-              child: Text('Explore and Discover',style: TextStyle(
-                  color: Colors.black87,fontSize: 25,fontWeight: FontWeight.w600,
-              ),),
-            ),
-            Padding(
-              padding: EdgeInsets.only(left: 10.0),
-              child: SectionHeader(title: 'Freelancers'),
-            ),
-            Padding(
-              padding: EdgeInsets.only(left: 10.0,right: 10),
-              child: FreelancerList(),
-            ),
-            Padding(
-              padding: EdgeInsets.only(left: 10.0),
-              child: SectionHeader(title: 'Projects'),
-            ),
-            Padding(
-              padding: EdgeInsets.only(left: 10.0,right: 10),
-              child: ProjectList(),
-            ),
-            Padding(
-              padding: EdgeInsets.only(left: 10.0),
-              child: SectionHeader(title: 'Groups'),
-            ),
-            Padding(
-              padding: EdgeInsets.only(left: 10.0,right: 10),
-              child: GroupList(),
-            ),
+              Padding(
+                padding: const EdgeInsets.only(left: 16.0,bottom: 10),
+                child: Text('Explore and Discover',style: TextStyle(
+                    color: Colors.black87,fontSize: 25,fontWeight: FontWeight.w600,
+                ),),
+              ),
+              Padding(padding: EdgeInsets.only(left: 16.0,right: 16),
+                child: TextFormField(
+                  decoration: InputDecoration(
+                    prefixIcon: IconButton(onPressed: (){}, icon: Icon(Icons.search,color: Colors.black45,size: 30,),),
+                      suffixIcon: IconButton(onPressed: ()
+                      {
+                        showModalBottomSheet(context: context,
+                          builder: (context) => const AdvancedSearchFilters(),
+                        );
+                      }, icon: Icon(Icons.filter_list,color: Colors.black45,)),
+                      hintText: 'Search freelancers, groups, & projects',
+                      hintStyle: TextStyle(color: Colors.black38),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide.none),
+                      fillColor: Colors.grey.shade200,
+                      filled: true,
+                  ),
+
+                ),
+              ),
+              Padding(
+                padding: EdgeInsets.only(left: 10.0),
+                child: SectionHeader(title: 'Freelancers'),
+              ),
+              Padding(
+                padding: EdgeInsets.only(left: 10.0,right: 10),
+                child: FreelancerList(),
+              ),
+              Padding(
+                padding: EdgeInsets.only(left: 10.0),
+                child: SectionHeader(title: 'Projects'),
+              ),
+              Padding(
+                padding: EdgeInsets.only(left: 10.0,right: 10),
+                child: ProjectList(),
+              ),
+              Padding(
+                padding: EdgeInsets.only(left: 10.0),
+                child: SectionHeader(title: 'Groups'),
+              ),
+              Padding(
+                padding: EdgeInsets.only(left: 10.0,right: 10),
+                child: GroupList(),
+              ),
+            ],
+          ),
+          ),
           ],
         ),
-        ),
-        ],
       ),
     );
   }
@@ -188,12 +256,14 @@ class FreelancerList extends StatelessWidget {
         .collection('users')
         .where('userType', isEqualTo: 'freelancer')
         .get();
-    // Filter out the logged-in user
+    // Filter out the current logged-in user
     List<Map<String, dynamic>> freelancers = snapshot.docs
-        .where((doc) => doc['email'] != loggedInUser?.email) // Exclude the logged-in user
-        .map((doc) => doc.data() as Map<String, dynamic>)
-        .toList();
-
+        .where((doc) => doc['email'] != loggedInUser?.email)
+        .map((doc) {
+      var data = doc.data() as Map<String, dynamic>;
+      data['id'] = doc.id; // Add document ID
+      return data;
+    }).toList();
     return freelancers;
   }
 
@@ -206,7 +276,7 @@ class FreelancerList extends StatelessWidget {
         future: _fetchFreelancers(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(color: Colors.indigo,));
+            return const Center(child: CircularProgressIndicator(color: Colors.indigoAccent,));
           }
 
           if (snapshot.hasError) {
@@ -228,9 +298,12 @@ class FreelancerList extends StatelessWidget {
               return FreelancerCard(
                 firstName: freelancers[index]['first_name'],
                 lastName: freelancers[index]['last_name'],
-                skills: freelancers[index]['skills'],
+                headline: freelancers[index]['headline'],
                 hourlyRate: freelancers[index]['hourly_rate'].toString(),
                 imageUrl:freelancer['profileUrl'],
+                averageRating: freelancers[index]['averageRating'].toString(),
+                totalReviews: freelancers[index]['totalReviews'].toString(),
+                location: freelancers[index]['location'],
                 freelancer: freelancer,
               );
             },
@@ -245,18 +318,24 @@ class FreelancerList extends StatelessWidget {
 class FreelancerCard extends StatelessWidget {
   final String firstName;
   final String lastName;
-  final String skills;
+  final String headline;
   final String hourlyRate;
   final String imageUrl;
+  final String averageRating;
+  final String totalReviews;
+  final String location;
   final Map<String, dynamic> freelancer;
 
   const FreelancerCard({
     required this.firstName,
     required this.lastName,
-    required this.skills,
+    required this.headline,
     required this.hourlyRate,
     required this.imageUrl,
     required this.freelancer,
+    required this.averageRating,
+    required this.totalReviews,
+    required this.location,
 
     super.key,
   });
@@ -315,34 +394,54 @@ class FreelancerCard extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold,),
                         ),
-                        RichText(
-                          text: TextSpan(
-                            children: <TextSpan>[
-                              TextSpan(
-                                text: 'Price: ',
-                                style: TextStyle(color: Colors.grey[600]),
-                              ),
-                              TextSpan(
-                                text: '\$$hourlyRate/hr',
-                                style: TextStyle(
-                                  color: Colors.indigoAccent,
-                                  fontWeight: FontWeight.w500, // And make it bold
-                                ),
-                              ),
-                            ],
-                          ),
+                        Row(
+                          children: [
+                            Icon(Icons.attach_money,color: Colors.indigoAccent,size: 18,),
+                            Text('\$$hourlyRate/hr',style: TextStyle(color: Colors.grey[600
+                            ]),),
+                          ],
+                        ),
+                        Row(
+                          children: [
+                            Icon(Icons.location_on,color: Colors.indigoAccent,size: 18,),
+                            Text(location,style: TextStyle(color: Colors.grey[600]),)
+                          ],
                         )
-                        //Text('Review')
                       ],
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 5),
+              Row(
+                children: [
+                  Icon(Icons.star,size: 18,color: Colors.amber,),
+                  RichText(
+                    text: TextSpan(
+                        children: <TextSpan>[
+                          TextSpan(
+                              text: averageRating,
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                              )
+                          ),
+                          TextSpan(
+                              text: '/5',
+                              style: TextStyle(color: Colors.grey[600],fontSize: 12)
+                          ),
+                          TextSpan(
+                            text: (" ($totalReviews Review)"),
+                            style: TextStyle(color: Colors.blue),
+                          )
+                        ]
+                    ),
+                  )
+                ],
+              ),
               Text(
-                ' $skills',
+                ' $headline',
                 maxLines: 1,
-                overflow: TextOverflow.visible,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(color: Colors.grey[600]),
               ),
             ],
@@ -393,6 +492,8 @@ class ProjectList extends StatelessWidget {
 
               String postedById = projectData['posted_by'] ?? 'Unknown User';
 
+
+
               return ProjectCard(
                 projectName: projectName,
                 budget: budget,
@@ -408,6 +509,7 @@ class ProjectList extends StatelessWidget {
     );
   }
 }
+
 
 // Project Card Widget
 class ProjectCard extends StatelessWidget {
@@ -439,6 +541,7 @@ class ProjectCard extends StatelessWidget {
             builder: (context) => ProjectDetails(
               projectId: projectId,
               postedById: postedById,
+              projectName: projectName,
             ),
           ),
         );
@@ -458,10 +561,7 @@ class ProjectCard extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Container(
-                      width: 50,
-                      height: 50,
-                      child: Image.network('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQQ0-PF3nQlSxFcXA2NdKlfsjg1atj1w5ZOWQ&s')),
+                  Icon(Icons.assignment,size: 50,color: Colors.black87,),
                   SizedBox(width: 10,),
                   Expanded(
                     child: Column(
@@ -472,15 +572,188 @@ class ProjectCard extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                         ),
-                        Text('Budget: \$${budget.toStringAsFixed(2)}',style: TextStyle(color: Colors.grey[700]),),
+                        Row(
+                          children: [
+                            Icon(Icons.account_balance_wallet,size: 15,color: Colors.grey[700],),
+                            Text('Budget: \$${budget.toStringAsFixed(2)}',style: TextStyle(color: Colors.grey[700]),),
+                          ],
+                        ),
                       ],
                     ),
                   ),
 
                 ],
               ),
+              Divider(color: Colors.grey[300],thickness: 1,height: 1,),
               const SizedBox(height: 5),
-              Text('Posted By: $ownerName',style: TextStyle(color: Colors.grey[600]),),
+              Row(
+                children: [
+                  Icon(Icons.person_2_rounded,size: 15,color: Colors.grey[700],),
+                  Text('Posted By: $ownerName',style: TextStyle(color: Colors.grey[600]),),
+                ],
+              ),
+              Text(
+                description,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,style: TextStyle(color:Colors.grey[600] ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// Group List Widget
+class GroupList extends StatelessWidget {
+  const GroupList({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 150,
+      child: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance.collection('groups').snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return const Center(child: Text('No groups available'));
+          }
+
+          final projectDocs = snapshot.data!.docs;
+
+          return ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: projectDocs.length,
+            itemBuilder: (context, index) {
+              var groupData = projectDocs[index].data() as Map<String, dynamic>;
+
+              // Handling possible null values with fallback default strings
+              String groupName = groupData['group_name'] ?? 'Unnamed Group';
+              String description = groupData['description'] ?? 'No Description';
+              String ownerName = groupData['creator_name'] ?? 'Unknown';
+              String postedById = groupData['created_by'] ?? 'Unknown User';
+              String profileImage = groupData['profile_image'];
+              String members = (groupData['members'] as List<dynamic>?)?.length.toString() ?? '0';
+
+
+              return GroupCard(
+                groupId :projectDocs[index].id,
+                groupName: groupName,
+                description: description,
+                postedById: postedById,
+                ownerName: ownerName,
+                profileImage: profileImage,
+                members: members,
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+}
+
+// Group Card Widget
+class GroupCard extends StatelessWidget {
+  final String groupId;
+  final String groupName;
+  final String description;
+  final String postedById;
+  final String ownerName;
+  final String profileImage;
+  final String members;
+
+  const GroupCard({
+    super.key,
+    required this.groupId,
+    required this.groupName,
+    required this.description,
+    required this.postedById,
+    required this.ownerName,
+    required this.profileImage,
+    required this.members,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => GroupDetails(groupId: groupId),
+          ),
+        );
+      },
+      child: Card(
+        //color: const Color(0xFFEED3D9),
+        color:Colors.grey[50],
+        shadowColor: Colors.grey[400],
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
+        elevation: 4.0,
+        margin: const EdgeInsets.all(8.0),
+        child: Container(
+          width: 200,
+          padding: const EdgeInsets.all(10.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  ClipOval(
+                    child: Image.network(
+                      profileImage, // Use the imageUrl here
+                      width: 50,
+                      height: 50,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          width: 50,
+                          height: 50,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.grey[300],
+                          ),
+                          child: const Icon(Icons.person, color: Colors.white),
+                        );
+                      },
+                    ),
+                  ),
+                  SizedBox(width: 10,),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          groupName,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+                        Row(
+                          children: [
+                            Icon(Icons.group,size: 15,color: Colors.grey[700],),
+                            Text('Members: $members',style: TextStyle(color: Colors.grey[600]),)
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+
+                ],
+              ),
+              Divider(color: Colors.grey[300],thickness: 1,height: 1,),
+              const SizedBox(height: 5),
+              Row(
+                children: [
+                  Icon(Icons.person_2_rounded,size: 15,color: Colors.grey[700],),
+                  Text('Created By: $ownerName',style: TextStyle(color: Colors.grey[600]),),
+                ],
+              ),
               Text(
                 description,
                 maxLines: 2,
@@ -495,53 +768,6 @@ class ProjectCard extends StatelessWidget {
 }
 
 
-
-// Group List Widget
-class GroupList extends StatelessWidget {
-  const GroupList({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 150,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        itemCount: 10, // Replace with actual data
-        itemBuilder: (context, index) {
-          return const GroupCard(); // Group card layout
-        },
-      ),
-    );
-  }
-}
-
-// Group Card Widget
-class GroupCard extends StatelessWidget {
-  const GroupCard({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      //color: const Color(0xFFDECFDA),
-      color: Colors.grey[50],
-      shadowColor: Colors.grey[300],
-      elevation: 4.0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
-      margin: const EdgeInsets.all(8.0),
-      child: Container(
-        width: 200,
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Pakistan Flutter Interns', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold,)),
-            Text('Members: 4',style: TextStyle(color: Colors.grey[600]),),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 // Advanced Search Filters Widget
 class AdvancedSearchFilters extends StatefulWidget {
@@ -674,6 +900,50 @@ final TextEditingController ownerController = TextEditingController();
 
 
 final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+final FirebaseAuth _auth = FirebaseAuth.instance;
+String? userName = '';
+
+@override
+void initState(){
+  super.initState();
+  loadCurrentUser();
+  publishProject();
+}
+
+//Function to load current user
+Future<void> loadCurrentUser() async {
+  User? user = _auth.currentUser;
+  if(user != null){
+    try{
+      QuerySnapshot querySnapshot = await _firestore.collection('users')
+          .where('email',isEqualTo: user.email)
+          .get();
+      if(querySnapshot.docs.isNotEmpty){
+        DocumentSnapshot userDoc = querySnapshot.docs.first;
+        setState(() {
+          userName = userDoc['username'];
+        });
+        //print('user: $userName');
+      }else{
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('user name not found!')),
+        );
+      }
+    }
+    catch (e) {
+      // Handle any errors that occur during the process
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'),
+          ));
+      //print('Error loading current user: $e');
+    }
+  }
+}
+
+
+
+
+
 
 //--------------------------------------------Function to save project to firestore-------------------------------------
 
@@ -681,12 +951,11 @@ final FirebaseFirestore _firestore = FirebaseFirestore.instance;
     try {
       // Retrieve form data
       String projectName = nameController.text;
-      String ownerName = ownerController.text;
       String description = descriptionController.text;
       double? budget = double.tryParse(budgetController.text); // Parse budget as double
 
       // Check for empty fields
-      if (projectName.isEmpty || ownerName.isEmpty || description.isEmpty || budget == null) {
+      if (projectName.isEmpty || description.isEmpty || budget == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
               backgroundColor: Colors.redAccent,
@@ -707,13 +976,14 @@ final FirebaseFirestore _firestore = FirebaseFirestore.instance;
       // Create a new document in the "projects" collection
       await _firestore.collection('projects').add({
         'project_name': projectName,
-        'owner_name': ownerName,
+        'owner_name': userName,
         'description': description,
         'budget': budget,
         'project_created_at': FieldValue.serverTimestamp(), // Timestamp for project creation
         'posted_by': user.uid,
+        'project_status': 'Not Started',
       });
-
+      print('owner name: $userName');
       // Show success message and clear the form
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -750,56 +1020,30 @@ final FirebaseFirestore _firestore = FirebaseFirestore.instance;
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Container(
-                  width: 150,
-                  height: 150,
-                  child: Image.network('https://cdn-icons-png.flaticon.com/512/1205/1205515.png')),
-            ),
-            Padding(padding: const EdgeInsets.all(16.0),
-              child: TextFormField(
-                style: const TextStyle(
-                  fontWeight: FontWeight.w500
-                ),
-                autofocus: false,
-                autocorrect: true,
-                controller: nameController,
-                decoration: InputDecoration(
-                  hintText: 'Project Name',
-                  hintStyle: const TextStyle(
-                    color: Colors.grey
-                  ),
-                  focusColor: Colors.white,
-                  prefixIcon: const Icon(Icons.abc_sharp,),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                ),
-                textCapitalization: TextCapitalization.words,
-                keyboardType: TextInputType.text,
+            Icon(Icons.assignment_outlined,color: Colors.indigoAccent,size: 150,),
+            TextFormField(
+              style: const TextStyle(
+                fontWeight: FontWeight.w500
               ),
-            ),
-            Padding(padding: const EdgeInsets.all(16.0),
-              child: TextFormField(
-                autocorrect: true,
-                style: const TextStyle(fontWeight: FontWeight.w500),
-                controller: ownerController,
-                decoration: InputDecoration(
-                  hintText: 'Owner Name',
-                  hintStyle: const TextStyle(
-                    color: Colors.grey,
-                  ),
-                  prefixIcon: const Icon(Icons.perm_identity_rounded),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
+              autofocus: false,
+              autocorrect: true,
+              controller: nameController,
+              decoration: InputDecoration(
+                hintText: 'Project Name',
+                hintStyle: const TextStyle(
+                  color: Colors.grey
                 ),
-                textCapitalization: TextCapitalization.words,
+                focusColor: Colors.white,
+                prefixIcon: const Icon(Icons.work_outline,color: Colors.grey,),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
               ),
+              textCapitalization: TextCapitalization.words,
+              keyboardType: TextInputType.text,
             ),
-            Padding(padding: const EdgeInsets.all(16.0),
-            child: TextFormField(
+            SizedBox(height: 16,),
+            TextFormField(
               style: const TextStyle(
                   fontWeight: FontWeight.w500
               ),
@@ -809,59 +1053,398 @@ final FirebaseFirestore _firestore = FirebaseFirestore.instance;
                 hintStyle: const TextStyle(
                   color: Colors.grey,
                 ),
-                prefixIcon: const Icon(Icons.money_rounded),
+                prefixIcon: const Icon(Icons.account_balance_outlined,color: Colors.grey,),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
                 ),
               ),
               keyboardType: TextInputType.number,
             ),
-            ),
-
-            Padding(padding: const EdgeInsets.all(16.0),
-              child: TextField(
-                autocorrect: true,
-                style: const TextStyle(fontWeight: FontWeight.w500),
-                controller: descriptionController,
-                decoration: InputDecoration(
-                  hintText: 'Description max (100 words)',
-                  hintStyle: const TextStyle(
-                    color: Colors.grey,
-                  ),
-                  prefixIcon: const Icon(Icons.description_outlined),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    //borderSide: BorderSide.none,
-                  ),
+            SizedBox(height: 16,),
+            TextField(
+              autocorrect: true,
+              style: const TextStyle(fontWeight: FontWeight.w500),
+              controller: descriptionController,
+              minLines: 5,
+              decoration: InputDecoration(
+                labelText: 'Description max (100 words)',
+                labelStyle: const TextStyle(
+                  color: Colors.grey,
                 ),
-                textCapitalization: TextCapitalization.sentences,
-                keyboardType: TextInputType.text,
-                maxLines: null,
-                inputFormatters: [
-                  LengthLimitingTextInputFormatter(600), // Limits input to 600 characters or 100 words
-                ],
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  //borderSide: BorderSide.none,
+                ),
               ),
+              textCapitalization: TextCapitalization.sentences,
+              keyboardType: TextInputType.text,
+              maxLines: null,
+              inputFormatters: [
+                LengthLimitingTextInputFormatter(600), // Limits input to 600 characters or 100 words
+              ],
             ),
             const SizedBox(height: 30,),
-            Padding(padding: const EdgeInsets.all(16.0),
-            child: ElevatedButton(
+            ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.indigoAccent,
                   elevation: 2.0,
-                  padding: EdgeInsets.symmetric(
-                    horizontal: MediaQuery.of(context).size.width * 0.35, // 35% of the screen width
-                    vertical: 10,
+                  minimumSize: Size(double.infinity, 56),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
                   ),
                 ),
                 onPressed: (){
                   publishProject();
-                }, child: const Text('Publish',style: TextStyle(fontSize: 18,color: Colors.white),)),)
+                }, child: const Text('Publish',style: TextStyle(fontSize: 18,color: Colors.white),))
           ],
         ),
       ),
     );
   }
   }
- 
 
-  
+class CreateGroup extends StatefulWidget {
+  const CreateGroup({super.key});
+
+  @override
+  State<StatefulWidget> createState() => _CreateGroupState();
+}
+
+class _CreateGroupState extends State<CreateGroup> {
+  final TextEditingController groupNameController = TextEditingController();
+  final TextEditingController groupDescriptionController = TextEditingController();
+  final TextEditingController groupRulesController = TextEditingController();
+  final TextEditingController groupMembersController = TextEditingController();
+  File? _profileImage;
+  String? imageUrl;
+
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  String? userName = '';
+  String userEmail = '';
+  List<String> groupMembers = [];
+  List<Map<String, dynamic>> freelancersList = [];
+  List<String> selectedFreelancerEmails = [];
+  List<String> selectedFreelancerUsernames = [];
+
+  @override
+  void initState() {
+    super.initState();
+    loadCurrentUser();
+    _fetchFreelancers();
+  }
+
+  Future<void> loadCurrentUser() async {
+    User? user = _auth.currentUser;
+    if (user != null) {
+      try {
+        QuerySnapshot querySnapshot = await _firestore
+            .collection('users')
+            .where('email', isEqualTo: user.email)
+            .get();
+        if (querySnapshot.docs.isNotEmpty) {
+          DocumentSnapshot userDoc = querySnapshot.docs.first;
+          setState(() {
+            userName = userDoc['username'];
+            userEmail = userDoc ['email'];
+          });
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('User name not found!')),
+          );
+        }
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
+    }
+  }
+
+  Future _fetchFreelancers() async {
+    try {
+      QuerySnapshot snapshot = await _firestore
+          .collection('users')
+          .where('userType', isEqualTo: 'freelancer')
+          .get();
+
+      List<Map<String, String>> freelancers = [];
+      User? currentUser = _auth.currentUser;
+
+      for (var doc in snapshot.docs) {
+        Map data = doc.data() as Map;
+        String email = data['email'];
+        String username = data['username'];
+
+        // Exclude the current user from the list
+        if (currentUser != null && email != currentUser.email) {
+          freelancers.add({
+            'email': email,
+            'username': username,
+          });
+        }
+      }
+
+      setState(() {
+        freelancersList = freelancers;
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error fetching freelancers: $e')),
+      );
+    }
+  }
+
+  Future<void> createGroup() async {
+    try {
+      String groupName = groupNameController.text;
+      String groupDescription = groupDescriptionController.text;
+      String groupRules = groupRulesController.text;
+
+      if (groupName.isEmpty || groupDescription.isEmpty || groupRules.isEmpty  ) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            backgroundColor: Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
+            margin: EdgeInsets.only(bottom: 16.0,left: 16.0,right: 16.0),
+            duration: Duration(seconds: 3),
+            content: Text('Please fill all fields!'),
+          ),
+        );
+        return;
+      }
+
+      User? user = _auth.currentUser;
+      if (user == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No user is logged in!')),
+        );
+        return;
+      }
+
+      Set<String> allMembers = Set.from(selectedFreelancerEmails.where((email) => userEmail.isNotEmpty));
+      if (userEmail.isNotEmpty) {
+        allMembers.add(userEmail);
+      }
+      groupMembers = allMembers.toList();
+
+
+
+      if (_profileImage != null) {
+        // Upload image to Firebase Storage and get the URL
+        // Add Firebase Storage implementation here if needed
+        imageUrl = await uploadGroupImage(_profileImage!); // Replace this with actual URL after upload
+      }
+
+      await _firestore.collection('groups').add({
+        'group_name': groupName,
+        'description': groupDescription,
+        'rules': groupRules,
+        'members': groupMembers,
+        'created_by': user.uid,
+        'creator_name': userName,
+        'group_admin': userEmail,
+        'profile_image': imageUrl,
+        'created_at': FieldValue.serverTimestamp(),
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+          margin: EdgeInsets.only(bottom: 16.0,left: 16.0,right: 16.0),
+          content: Text('Group created successfully!'),
+        ),
+      );
+
+      Navigator.pop(context);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red,
+          content: Text('Error: $e'),
+        ),
+      );
+    }
+  }
+
+  Future<void> pickProfileImage() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _profileImage = File(pickedFile.path);
+
+      });
+    }
+  }
+
+  Future<String?>uploadGroupImage(File image)async {
+    try{
+      User? currentUser = _auth.currentUser; // Get the current user
+      if (currentUser != null) {
+        String userId = currentUser.uid;
+        Reference reference = FirebaseStorage.instance
+            .ref()
+            .child("group_profileImages/$userId/Group_Profile.png");
+        await reference.putFile(image);
+         return await reference.getDownloadURL();
+
+      }
+      else{
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            backgroundColor: Colors.red,
+            content: Text('No user is logged in!'),
+          ),
+        );
+      }
+    }
+    catch(e){
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red,
+          content: Text('Failed to upload image: $e'),
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Create a Group'),
+        leading: IconButton(
+          onPressed: () {
+            Navigator.pop(context);
+          },
+          icon: const Icon(Icons.close),
+        ),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            GestureDetector(
+              onTap: pickProfileImage,
+              child: CircleAvatar(
+                backgroundColor: Colors.indigo.shade50,
+                radius: 60,
+                backgroundImage: _profileImage != null
+                    ? FileImage(_profileImage!)
+                    : null,
+                child: _profileImage == null
+                    ? const Icon(
+                  Icons.camera_alt,
+                  size: 40,
+                  color: Colors.grey,
+                )
+                    : null,
+              ),
+            ),
+            const SizedBox(height: 16.0),
+            TextFormField(
+              style: TextStyle(fontWeight: FontWeight.w500),
+              controller: groupNameController,
+              decoration: InputDecoration(
+                hintText: 'Group Name',
+                hintStyle: TextStyle(color: Colors.grey,fontWeight: FontWeight.normal),
+                prefixIcon: Icon(Icons.group_add_outlined,color: Colors.grey,),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16.0),
+            TextFormField(
+              controller: groupDescriptionController,
+              maxLines: 3,
+              decoration: InputDecoration(
+                label: Text('Group Description'),
+                labelStyle: TextStyle(color: Colors.grey,),
+                hintText: 'Group Description',
+                hintStyle: TextStyle(color: Colors.grey),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16.0),
+            TextFormField(
+              controller: groupRulesController,
+              maxLines: 3,
+              decoration: InputDecoration(
+                label: Text('Group Rules'),
+                labelStyle: TextStyle(color: Colors.grey),
+                hintText: 'Group Rules',
+                hintStyle: TextStyle(color: Colors.grey),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8.0),
+            const Text('Select Members:', style: TextStyle(fontSize: 16)),
+            SingleChildScrollView(
+              child: Container(
+                decoration: BoxDecoration(
+                  border: Border.all(width: 1.0,color: Colors.grey),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  physics: NeverScrollableScrollPhysics(),
+                  itemCount: freelancersList.length,
+                  itemBuilder: (context, index) => CheckboxListTile(
+                    title: Text(freelancersList[index]['email']),
+                    value: selectedFreelancerEmails.contains(freelancersList[index]['email']),
+                    onChanged: (value) => setState(() {
+                      if (value!) {
+                        selectedFreelancerEmails.add(freelancersList[index]['email']);
+                      } else {
+                        selectedFreelancerEmails.remove(freelancersList[index]['email']);
+                      }
+                    }),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8.0),
+            Column(
+              children: [
+                if (userEmail.isNotEmpty || selectedFreelancerEmails.isNotEmpty) // Conditionally render Wrap
+                  Wrap(
+                    spacing: 8.0,
+                    runSpacing: 4.0,
+                    children: [
+                      if (userEmail.isNotEmpty) // Display current user's email
+                        Chip(label: Text(userEmail)),
+                      ...selectedFreelancerEmails.map((email) => Chip(
+                        label: Text(email),
+                        onDeleted: () => setState(() => selectedFreelancerEmails.remove(email)),
+                      )).toList(),
+                    ],
+                  ),
+              ],
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.indigoAccent,
+                minimumSize: Size(double.infinity, 56),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              onPressed: createGroup,
+              child: const Text(
+                'Create',
+                style: TextStyle(fontSize: 18, color: Colors.white),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

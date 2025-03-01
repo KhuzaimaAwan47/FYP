@@ -133,11 +133,13 @@ class GroupDetails extends StatelessWidget {
 
                 // Description
                 RichText(
+                  textAlign: TextAlign.justify,
                   text: TextSpan(
                     children: [
                       TextSpan(
                         text:'Description: ',
-                        style: TextStyle(fontSize: 16,color: Colors.grey[800],fontWeight: FontWeight.w500),
+                        style: TextStyle(
+                          fontSize: 16,color: Colors.grey[800],fontWeight: FontWeight.w500,),
                       ),
                     TextSpan(text:description,style: TextStyle(color: Colors.grey[800],fontSize: 14) )
                     ]
@@ -145,7 +147,9 @@ class GroupDetails extends StatelessWidget {
                 ),
                 const SizedBox(height: 8.0),
                 // Rules
-                RichText(text: TextSpan(
+                RichText(
+                    textAlign: TextAlign.justify,
+                    text: TextSpan(
                   children: [
                     TextSpan(
                       text: 'Rules: ',style: TextStyle(color: Colors.grey[800],fontSize: 16,fontWeight: FontWeight.w500)
@@ -348,10 +352,18 @@ class GroupDetails extends StatelessWidget {
               ),
               const SizedBox(height: 16.0),
               ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  elevation: 2.0,
+                  backgroundColor: Colors.indigoAccent,
+                  minimumSize: const Size(double.infinity, 56),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
                 onPressed: () {
                   _addAdminDialog(context, members, admins, groupId);
                 },
-                child: const Text('Add Admin'),
+                child: const Text('Add Admin',style: TextStyle(color: Colors.white,fontSize: 18),),
               ),
             ],
           ),
