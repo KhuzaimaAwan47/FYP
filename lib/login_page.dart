@@ -28,6 +28,7 @@ class _LoginPageState extends State<LoginPage> {
   //--------------------------------------Functions for handling authentication-------------------------------------------
 
   Future<void> signInUser() async {
+    FocusScope.of(context).unfocus(); //keyboard closes when button is pressed.
     try {
       // Attempt to sign in the user
       await FirebaseAuth.instance.signInWithEmailAndPassword(
@@ -94,17 +95,12 @@ class _LoginPageState extends State<LoginPage> {
 
     return PopScope(
       canPop: false,
-      onPopInvoked : (didPop){
-        // logic
-      },
       child: Scaffold(
+        backgroundColor: Colors.indigo.shade50,
         appBar: null,
         body: SingleChildScrollView(
-          child: Container(
-            height: screenHeight,
-            width: screenWidth,
-            color: Colors.indigo.shade50,
-            padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.1),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
             child: Column(
               children: [
                 const SizedBox(height: 240,),
@@ -123,140 +119,143 @@ class _LoginPageState extends State<LoginPage> {
                       fontSize: 18,
                       fontWeight: FontWeight.w500),
                 ),
-                Padding(
-                  padding: const EdgeInsets.all(0),//this padding is used to  add formkey.
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      children: [
-                        SizedBox( height: screenHeight*0.02,),
+                Form(
+                  key: _formKey,
+                  child: Column(
+                    children: [
+                      SizedBox( height: screenHeight*0.02,),
 
-                        //---------------------------------------------Email-----------------------------------------------------
+                      //---------------------------------------------Email-----------------------------------------------------
 
-                        TextFormField(
-                          controller: emailController,
-                          style: const TextStyle(fontWeight: FontWeight.w500),
-                          decoration: InputDecoration(
-                            hintText: 'Email',
-                            hintStyle: const TextStyle(color: Colors.grey,),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(14),
-                              borderSide: const BorderSide(
-                                color: Colors.indigo,
-                                width: 1.5,
-                              ),
+                      TextFormField(
+                        controller: emailController,
+                        style: const TextStyle(fontWeight: FontWeight.w500),
+                        decoration: InputDecoration(
+                          hintText: 'Email',
+                          hintStyle: const TextStyle(color: Colors.grey,),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            borderSide: const BorderSide(
+                              color: Colors.indigo,
+                              width: 1.5,
                             ),
-                            prefixIcon: const Icon(Icons.email_outlined,color: Colors.black54,),
                           ),
-                            validator: (value)
-                        {
-                            final RegExp emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-                            if (!emailRegex.hasMatch(value!)) {
-                              return 'Please enter a valid email address';
-                            }
-                            return null;
-                            },
-                          keyboardType: TextInputType.emailAddress,
+                          prefixIcon: const Icon(Icons.email_outlined,color: Colors.grey,),
                         ),
-                        SizedBox(height: screenWidth*0.01,),
-
-                        //------------------------------------------------Password-----------------------------------------------
-
-                        TextFormField(
-                          style: const TextStyle(fontWeight: FontWeight.w500),
-                          controller: passwordController,
-                          obscureText: !isPasswordVisible,
-                          obscuringCharacter: '*',
-                          decoration: InputDecoration(
-                            hintText: 'Password',
-                            hintStyle: const TextStyle(color: Colors.grey,),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(14),
-                              borderSide: const BorderSide(
-                                color: Colors.indigo,
-                                width: 1.5,
-                              ),
-                            ),
-                            prefixIcon: const Icon(Icons.password,color: Colors.black54,),
-                            suffixIcon: IconButton(
-                              icon: Icon(isPasswordVisible ? Icons.visibility:Icons.visibility_off,color: Colors.black54,),
-                              onPressed: ()
-                              {
-                                setState((){
-                                  isPasswordVisible  =  !isPasswordVisible;
-                                });
-
-                              },),
-                          ),
-                          keyboardType: TextInputType.text,
-                          validator: (value) {
-                            if (value!.isEmpty) {
-                              return 'Please enter a password';
-                            }
-                            return null;
+                          validator: (value)
+                      {
+                          final RegExp emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                          if (!emailRegex.hasMatch(value!)) {
+                            return 'Please enter a valid email address';
+                          }
+                          return null;
                           },
-                        ),
-                       const SizedBox(height: 10,),
+                        keyboardType: TextInputType.emailAddress,
+                      ),
+                      SizedBox(height: screenWidth*0.02,),
 
-                        //---------------------------------------------Button---------------------------------------------------
+                      //------------------------------------------------Password-----------------------------------------------
 
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            elevation: 3.0,
-                            backgroundColor: Colors.indigo,
-                            padding:  EdgeInsets.symmetric(
-                              horizontal: MediaQuery.of(context).size.width * 0.35, // 35% of the screen width
-                              vertical: 10,
+                      TextFormField(
+                        style: const TextStyle(fontWeight: FontWeight.w500),
+                        controller: passwordController,
+                        obscureText: !isPasswordVisible,
+                        obscuringCharacter: '*',
+                        decoration: InputDecoration(
+                          hintText: 'Password',
+                          hintStyle: const TextStyle(color: Colors.grey,),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            borderSide: const BorderSide(
+                              color: Colors.indigo,
+                              width: 1.5,
                             ),
                           ),
-                          onPressed: (){
-                            if (_formKey.currentState!.validate()){
-                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Checking credetials...')),);
-                            }
-                            signInUser();
+                          prefixIcon: const Icon(Icons.password,color: Colors.grey,),
+                          suffixIcon: IconButton(
+                            icon: Icon(isPasswordVisible ? Icons.visibility:Icons.visibility_off,color: Colors.black45,),
+                            onPressed: ()
+                            {
+                              setState((){
+                                isPasswordVisible  =  !isPasswordVisible;
+                              });
+
+                            },),
+                        ),
+                        keyboardType: TextInputType.text,
+                        validator: (value) {
+                          if (value!.isEmpty) {
+                            return 'Please enter a password';
+                          }
+                          return null;
+                        },
+                      ),
+                     //const SizedBox(height: 10,),
+
+
+                      //-------------------------------------------Text Button------------------------------------------------
+
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          TextButton(onPressed: (){
+                            Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => forgot(),
+                                ));
                           },
-                          child: const Text(
-                            'Login',
-                            style: TextStyle(fontSize: 15, color: Colors.white,),
+                              child: const Text('Forgot Password?',style: TextStyle(color: Colors.indigo),))],
+                      ),
+
+
+
+                      //---------------------------------------------Button---------------------------------------------------
+
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          elevation: 3.0,
+                          backgroundColor: Colors.indigo,
+                          minimumSize: Size(double.infinity, 56),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
                           ),
                         ),
-
-                        //-------------------------------------------Text Button------------------------------------------------
-
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Text(
-                              "    Don't have an account?",
-                              style: TextStyle(
-                                  fontWeight: FontWeight.w400, color: Colors.black),
-                              textAlign: TextAlign.center,
-                            ),
-                            TextButton(
-                                onPressed: () {
-                                  Navigator.push( context, MaterialPageRoute( builder: (context) => const SignupPage(),));
-                                },
-                                child: const Text('Signup',style: TextStyle(color: Colors.indigo,),)),
-                          ],
+                        onPressed: (){
+                          if (_formKey.currentState!.validate()){
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Checking credetials...')
+                              ,backgroundColor: Colors.green,duration:Durations.short2,),);
+                          }
+                          signInUser();
+                        },
+                        child: const Text(
+                          'Login',
+                          style: TextStyle(fontSize: 18, color: Colors.white,),
                         ),
+                      ),
 
-                        //-------------------------------------------Text Button------------------------------------------------
+                      //-------------------------------------------Text Button------------------------------------------------
 
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            TextButton(onPressed: (){
-                              Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => forgot(),
-                                  ));
-                            },
-                                child: const Text('Forgot Password?',style: TextStyle(color: Colors.indigo),))],
-                        )
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Text(
+                            "    Don't have an account?",
+                            style: TextStyle(
+                                fontWeight: FontWeight.w400, color: Colors.black),
+                            textAlign: TextAlign.center,
+                          ),
+                          TextButton(
+                              onPressed: () {
+                                Navigator.push( context, MaterialPageRoute( builder: (context) => const SignupPage(),));
+                              },
+                              child: const Text('Signup',style: TextStyle(color: Colors.indigo,),)),
+                        ],
+                      ),
 
-                      ],
-                    ),
+
+
+                    ],
                   ),
                 ),
               ],

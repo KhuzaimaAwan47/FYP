@@ -90,21 +90,6 @@ class _NotificationsState extends State<Notifications> {
     );
   }
 
-  // Future<void> _updateNotificationStatus(String notificationId, String status) async {
-  //   try {
-  //     await _firestore.collection('notifications').doc(notificationId).update({
-  //       'status': status,
-  //     });
-  //     if (mounted) {
-  //       _showSuccessSnackbar('Bid is $status');
-  //       Navigator.of(context).pop();
-  //       await _loadAllBids();
-  //     }
-  //   } catch (e) {
-  //     _showErrorSnackbar('Error updating bid: $e');
-  //   }
-  // }
-
 
   Future<void> _updateNotificationStatus(String notificationId, String status) async {
     try {
@@ -131,6 +116,13 @@ class _NotificationsState extends State<Notifications> {
               .doc(projectId)
               .update({'assigned_to': bidderName});
         }
+      }
+      if (status == 'Rejected'){
+        String projectId = receivedNotifications.first['project_id'];
+        await _firestore
+            .collection('projects')
+            .doc(projectId)
+            .update({'assigned_to': null});
       }
 
       if (mounted) {
@@ -161,26 +153,28 @@ class _NotificationsState extends State<Notifications> {
         title: const Text('Bid Details'),
         content: RichText(
           text: TextSpan(
-            style: const TextStyle(color: Colors.black45),
+
+
+            style: const TextStyle(color: Colors.black87),
             children: [
               TextSpan(
                 text: '"${notification['project_name'] ?? 'Unknown Project'}"',
-                style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue),
+                style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.indigo),
               ),
               const TextSpan(text: '\n\nBidder: '),
               TextSpan(
                 text: '${notification['bidder_name']}',
-                style: const TextStyle(fontWeight:FontWeight.bold, color: Colors.blue),
+                style: const TextStyle(fontWeight:FontWeight.bold, color: Colors.grey),
               ),
               const TextSpan(text: '\nBid Amount: '),
               TextSpan(
                 text: '\$${notification['bid_amount']}',
-                style: const TextStyle(color: Colors.green),
+                style: const TextStyle(color: Colors.grey,fontWeight: FontWeight.bold),
               ),
               const TextSpan(text: '\nEstimated Time: '),
               TextSpan(
                 text: '${notification['estimated_time']}',
-                style: const TextStyle(color: Colors.orange),
+                style: const TextStyle(color: Colors.grey,fontWeight: FontWeight.bold),
               ),
             ],
           ),
@@ -192,7 +186,7 @@ class _NotificationsState extends State<Notifications> {
           ),
           TextButton(
             onPressed: () => _updateNotificationStatus(notification.id, 'Rejected'),
-            child: const Text('Reject', style: TextStyle(color: Colors.red)),
+            child: const Text('Reject', style: TextStyle(color: Colors.redAccent)),
           ),
           TextButton(
             onPressed: () => _updateNotificationStatus(notification.id, 'Accepted'),
@@ -279,25 +273,37 @@ class _NotificationsState extends State<Notifications> {
         builder: (context) => AlertDialog(
           title: Text('Update Project Status'),
           content: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
+              Text('Congrats🎉 your bid is accepted by ${notification['owner_name']}.',style: TextStyle(color: Colors.grey[600]),),
               Text('Current Status: $currentStatus'),
-              //IconButton(onPressed: (){}, icon: Icon(Icons.message_outlined,color: Colors.indigo,)),
             ],
           ),
           actions: [
-            TextButton(
-              onPressed: () => _updateProjectStatus(notification, 'Pending'),
-              child: const Text('Pending', style: TextStyle(color: Colors.orangeAccent)),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                TextButton(
+                  onPressed: () => _updateProjectStatus(notification, 'Cancelled'),
+                  child: const Text('Cancelled', style: TextStyle(color: Colors.redAccent,fontSize: 13)),
+                ),
+                TextButton(
+                  onPressed: () => _updateProjectStatus(notification, 'Pending'),
+                  child: const Text('Pending', style: TextStyle(color: Colors.orangeAccent,fontSize: 13)),
+                ),
+                TextButton(
+                  onPressed: () => _updateProjectStatus(notification, 'Ongoing'),
+                  child: const Text('Ongoing', style: TextStyle(color: Colors.blue,fontSize: 13)),
+                ),
+                TextButton(
+                  onPressed: () => _updateProjectStatus(notification, 'Completed'),
+                  child: const Text('Completed', style: TextStyle(color: Colors.green,fontSize: 13)),
+                ),
+
+              ],
             ),
-            TextButton(
-              onPressed: () => _updateProjectStatus(notification, 'Ongoing'),
-              child: const Text('Ongoing', style: TextStyle(color: Colors.blue)),
-            ),
-            TextButton(
-              onPressed: () => _updateProjectStatus(notification, 'Completed'),
-              child: const Text('Completed', style: TextStyle(color: Colors.green)),
-            ),
+
           ],
         ),
       );

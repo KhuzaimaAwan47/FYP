@@ -40,19 +40,15 @@ class _OtpPageState extends State<OtpPage> {
     var screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
+      backgroundColor: Colors.indigo.shade50,
       appBar: AppBar(
         automaticallyImplyLeading: true,
         backgroundColor: Colors.indigo.shade50,
+        iconTheme: IconThemeData(color: Colors.black54),
       ),
       body: SingleChildScrollView(
-        child: Container(
-          width: screenWidth,
-          height: screenHeight,
-          padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.1),
-          color: Colors.indigo.shade50,
-
-          //----------------------------Text Section----------------------------
-
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
           child: Column(
             children: [
               SizedBox(height: screenHeight * 0.15),
@@ -105,8 +101,10 @@ class _OtpPageState extends State<OtpPage> {
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.indigo,
-                  padding: EdgeInsets.symmetric(horizontal: MediaQuery.of(context).size.width * 0.34, // 34% of the screen width
-                    vertical: 10,),
+                  minimumSize: Size(double.infinity, 56),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                 ),
                 onPressed: () {
                   print("Entered OTP: $_otp");
@@ -117,7 +115,7 @@ class _OtpPageState extends State<OtpPage> {
                     ),
                   );
                 },
-                child: const AutoSizeText('Register', style: TextStyle(fontSize: 20, color: Colors.white),maxLines: 1,minFontSize: 12,),
+                child: const AutoSizeText('Verify Code', style: TextStyle(fontSize: 20, color: Colors.white)),
                 ),
             ],
           ),

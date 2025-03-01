@@ -9,28 +9,25 @@ class passwordUpdated extends StatelessWidget{
     var screenHeight = MediaQuery.of(context).size.height;
     var screenWidth = MediaQuery.of(context).size.width;
   return Scaffold(
-    appBar: AppBar(
-      automaticallyImplyLeading: false,
-      backgroundColor: Colors.indigo.shade50,
-    ),
-    body: Container(
-      width: screenWidth,
-      height: screenHeight,
-      padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.1),
-      color: Colors.indigo.shade50,
+    appBar: null,
+    body: Padding(
+      padding: const EdgeInsets.all(16.0),
       child: Column(
         children: [
-          SizedBox(height: screenHeight*0.09,),
-          const Text('PASSWORD UPDATED',style: TextStyle(fontSize: 50,fontWeight: FontWeight.w400,color: Colors.black87),textAlign: TextAlign.center),
+          SizedBox(height: 200,),
+          const Icon(Icons.check_circle,color: Colors.green,size: 200,),
           SizedBox(height: screenHeight*0.01,),
-          const Icon(Icons.check_circle,color: Colors.black87,size: 200,),
+          const Text('PASSWORD UPDATED',style: TextStyle(fontSize: 40,fontWeight: FontWeight.w500,color: Colors.green),textAlign: TextAlign.center),
           SizedBox(height: screenHeight*0.01,),
           const Text('Your password has been updated',style: TextStyle(fontSize: 20,fontWeight: FontWeight.w500,color: Colors.black54),textAlign: TextAlign.center,),
           SizedBox(height: screenHeight*0.01,),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.black87,
-              padding: const EdgeInsets.symmetric(horizontal: 135, vertical: 15),
+              backgroundColor: Colors.green,
+              minimumSize: Size(double.infinity, 56),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
             ),
             onPressed: () {
               Navigator.push(context, MaterialPageRoute(builder: (context) => LoginPage()));

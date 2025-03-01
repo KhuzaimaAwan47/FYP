@@ -21,17 +21,20 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'FlutterApp',
       theme: ThemeData(
+
        primaryColor: Colors.indigo,
        // primarySwatch: Colors.indigo,
         appBarTheme: AppBarTheme(
-          //backgroundColor: Colors.indigo.withOpacity(0.2),
-          foregroundColor: Colors.black87,
-          backgroundColor: Colors.white,
+          backgroundColor: Colors.indigoAccent.withOpacity(1.0),
+          foregroundColor: Colors.white,
+          //backgroundColor: Colors.indigoAccent.shade200,
           systemOverlayStyle: SystemUiOverlayStyle(
+            //systemNavigationBarColor: Colors.indigoAccent,
+            //systemNavigationBarIconBrightness: Brightness.light,
             //statusBarColor: Colors.indigo[100],
-            statusBarColor: Colors.white,
-            statusBarIconBrightness: Brightness.dark,
-          )
+            statusBarColor: Colors.indigoAccent.withOpacity(1.0),
+            statusBarIconBrightness: Brightness.light,
+          ),
         )
       ),
       initialRoute: '/',
