@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "520632808972",
+    "project_id": "unitygig",
+    "storage_bucket": "unitygig.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:520632808972:android:0c9d5437708f801dd0e029",
+        "android_client_info": {
+          "package_name": "com.example.my_fyp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCtw1w3AzoMAms_FBv0EZseMFj0I_9612s"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
