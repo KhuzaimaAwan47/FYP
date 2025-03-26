@@ -74,7 +74,7 @@ Future<void> loadUserData() async {
           profileUrl = userDoc['profileUrl'];
           coverUrl = userDoc['coverUrl'];
         });
-        print('User data loaded: $firstName, $lastName, $location, $hourlyRate,$profileUrl,$coverUrl');
+      //  print('User data loaded: $firstName, $lastName, $location, $hourlyRate,$profileUrl,$coverUrl');
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('No data found for the current user!')),

@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:my_fyp/auth/signup_page.dart';
 import 'package:my_fyp/auth/validators.dart';
-
-import '../bottom_navigation/f_navigator.dart';
+import '../widgets/bottom_navigation/f_navigator.dart';
 import 'forgot.dart';
 
 

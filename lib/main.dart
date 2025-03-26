@@ -1,11 +1,10 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:my_fyp/widgets/bottom_navigation/f_navigator.dart';
 import 'auth/login_page.dart';
 import 'auth/signup_page.dart';
-import 'bottom_navigation/f_navigator.dart';
 import 'splash_page.dart';
-
 
 Future main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,17 +21,15 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'FlutterApp',
       theme: ThemeData(
-
-       primaryColor: Colors.indigo,
-        appBarTheme: AppBarTheme(
-          backgroundColor: Colors.indigoAccent.withOpacity(1.0),
-          foregroundColor: Colors.white,
-          systemOverlayStyle: SystemUiOverlayStyle(
-            statusBarColor: Colors.indigoAccent.withOpacity(1.0),
-            statusBarIconBrightness: Brightness.light,
-          ),
-        )
-      ),
+          primaryColor: Colors.indigo,
+          appBarTheme: AppBarTheme(
+            backgroundColor: Colors.indigoAccent.withOpacity(1.0),
+            foregroundColor: Colors.white,
+            systemOverlayStyle: SystemUiOverlayStyle(
+              statusBarColor: Colors.indigoAccent.withOpacity(1.0),
+              statusBarIconBrightness: Brightness.light,
+            ),
+          )),
       initialRoute: '/',
       routes: {
         '/': (context) => SplashScreen(),

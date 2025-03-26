@@ -7,54 +7,53 @@ class BidForm extends StatefulWidget {
   final String projectId;
   final String ownerName;
 
-
-
-  const BidForm({Key? key, required this.projectName, required this.ownerName, required this.projectId})
-      : super(key: key);
+  const BidForm(
+      {super.key,
+      required this.projectName,
+      required this.ownerName,
+      required this.projectId});
 
   @override
   State<BidForm> createState() => _BidFormState();
 }
 
 class _BidFormState extends State<BidForm> {
+  // Controllers
   final TextEditingController amountController = TextEditingController();
   final TextEditingController timeController = TextEditingController();
   final TextEditingController messageController = TextEditingController();
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final _formKey = GlobalKey<FormState>();
+
+  // user state
   String? userName = '';
 
+  // Firebase services
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
+  // form validation
+  final _formKey = GlobalKey<FormState>();
 
+/* --------------------------- Data Loading Methods --------------------------- */
 
   //Function to load current user
   Future<void> loadCurrentUser() async {
     User? user = _auth.currentUser;
-    if(user != null){
-      try{
-        QuerySnapshot querySnapshot = await _firestore.collection('users')
-            .where('email',isEqualTo: user.email)
+    if (user != null) {
+      try {
+        QuerySnapshot querySnapshot = await _firestore
+            .collection('users')
+            .where('email', isEqualTo: user.email)
             .get();
-        if(querySnapshot.docs.isNotEmpty){
+        if (querySnapshot.docs.isNotEmpty) {
           DocumentSnapshot userDoc = querySnapshot.docs.first;
           setState(() {
             userName = userDoc['username'];
           });
-          //print('user: $userName');
-        }else{
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('user name not found!')),
-          );
+        } else {
+          _showErrorSnackBar('Username not found');
         }
-      }
-      catch (e) {
-        // Handle any errors that occur during the process
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error: $e'),
-            ));
-        print('loaded: $userName');
-        //print('Error loading current user: $e');
+      } catch (e) {
+        _showErrorSnackBar('Error loading username: $e');
       }
     }
   }
@@ -62,12 +61,14 @@ class _BidFormState extends State<BidForm> {
   @override
   void initState() {
     super.initState();
-    loadCurrentUser(); // Fetch userName when the widget initializes
+    loadCurrentUser();
   }
+
+  /* --------------------------- Submitting bid Method --------------------------- */
 
   Future<void> _submitBid() async {
     FocusScope.of(context).unfocus(); //keyboard closes when button is pressed.
-    if (_formKey.currentState!.validate()){
+    if (_formKey.currentState!.validate()) {
       try {
         final querySnapshot = await _firestore
             .collection('bids')
@@ -77,67 +78,80 @@ class _BidFormState extends State<BidForm> {
 
         if (querySnapshot.docs.isNotEmpty) {
           // Bid already exists
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('You have already submitted a bid for this project.'),
-              backgroundColor: Colors.orange,
-              behavior: SnackBarBehavior.floating, // Floating above default position
-              margin: EdgeInsets.only(bottom: 30,left: 16,right: 16),
-            ),
-          );
+          _showAlertSnackBar(
+              'You have already submitted a bid for this project.');
           return;
         }
-
-
         // Add bid details to Firestore
         await _firestore.collection('bids').add({
-          'project_id':widget.projectId,
+          'project_id': widget.projectId,
           'project_name': widget.projectName,
           'owner_name': widget.ownerName,
           'bidder_name': userName,
           'bid_amount': double.tryParse(amountController.text) ?? 0.0,
-          'estimated_time':timeController.text,
+          'estimated_time': timeController.text,
           'message': messageController.text,
           'status': 'pending', // Initial status
           'created_at': FieldValue.serverTimestamp(),
         });
+        // Add bid details in notifications collection
         await _firestore.collection('notifications').add({
-          'project_id':widget.projectId,
-          'project_name':widget.projectName,
+          'project_id': widget.projectId,
+          'project_name': widget.projectName,
           'owner_name': widget.ownerName,
           'bidder_name': userName,
           'notification_message':
-          'A new bid has been submitted for your project "${widget.projectName}" by $userName.',
-          'bid_amount':amountController.text,
-          'estimated_time':timeController.text,
+              'A new bid has been submitted for your project "${widget.projectName}" by $userName.',
+          'bid_amount': amountController.text,
+          'estimated_time': timeController.text,
           'created_at': FieldValue.serverTimestamp(),
-          'read': false, // Status to track whether the notification is read
-          'status': "Pending", // Status to set by project owner if bid is accepted or rejected
+          'read': false,
+          // Status to track whether the notification is read
+          'status': "Pending",
+          // Status to set by project owner if bid is accepted or rejected
         });
-
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Bid submitted successfully!'),
-            backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating, // Floating above default position
-            margin: EdgeInsets.only(bottom: 30,left: 16,right: 16),
-          ),
-        );
-
-
+        _showSuccessSnackBar('Bid submitted successfully!');
         Navigator.pop(context);
       } catch (e) {
-        print('Error submitting bid: $e');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error submitting bid: $e'),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating, // Floating above default position
-            margin: EdgeInsets.only(bottom: 30,left: 16,right: 16),
-          ),
-        );
+        _showErrorSnackBar('Error submitting bid: $e');
       }
     }
-
   }
+
+  /* --------------------------- SnackBars --------------------------- */
+
+  void _showSuccessSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.greenAccent,
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(16),
+      ),
+    );
+  }
+
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.redAccent,
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(16),
+      ),
+    );
+  }
+
+  void _showAlertSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(message),
+      backgroundColor: Colors.orangeAccent,
+      behavior: SnackBarBehavior.floating,
+      margin: const EdgeInsets.all(16),
+    ));
+  }
+
+  /* --------------------------- Main Build Widget --------------------------- */
 
   @override
   Widget build(BuildContext context) {
@@ -158,55 +172,63 @@ class _BidFormState extends State<BidForm> {
                 child: TextFormField(
                   controller: amountController,
                   decoration: InputDecoration(
-                      hintText: 'Bid Amount (\$)',
-                      prefixIcon: Icon(Icons.account_balance_outlined,color: Colors.grey,),
-                      hintStyle: TextStyle(color: Colors.grey,fontWeight: FontWeight.normal),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14.0),
-                      ),
+                    hintText: 'Bid Amount (\$)',
+                    prefixIcon: Icon(
+                      Icons.account_balance_outlined,
+                      color: Colors.grey,
+                    ),
+                    hintStyle: TextStyle(
+                        color: Colors.grey, fontWeight: FontWeight.normal),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14.0),
+                    ),
                   ),
                   keyboardType: TextInputType.number,
-                  validator: (value){
-                    if(value == null || value.isEmpty){
-                      return'*This field is required';
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return '*This field is required';
                     }
                     return null;
                   },
                 ),
               ),
-
               Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: TextFormField(
                   controller: timeController,
                   decoration: InputDecoration(
                     hintText: 'Estimated Time',
-                    prefixIcon: Icon(Icons.timelapse_outlined,color: Colors.grey,),
-                    hintStyle: TextStyle(color: Colors.grey,fontWeight: FontWeight.normal),
+                    prefixIcon: Icon(
+                      Icons.timelapse_outlined,
+                      color: Colors.grey,
+                    ),
+                    hintStyle: TextStyle(
+                        color: Colors.grey, fontWeight: FontWeight.normal),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14.0),
                     ),
                   ),
                   keyboardType: TextInputType.text,
-                  validator: (value){
-                    if(value == null || value.isEmpty){
-                      return'*This field is required';
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return '*This field is required';
                     }
                     return null;
                   },
                 ),
               ),
-
               Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: TextFormField(
                   controller: messageController,
                   decoration: InputDecoration(
-                  label: Text('Message(Optional)',style: TextStyle(color: Colors.grey),),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14.0),
-                  )
-                  ),
+                      label: Text(
+                        'Message(Optional)',
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14.0),
+                      )),
                   maxLines: 3,
                 ),
               ),
@@ -224,7 +246,10 @@ class _BidFormState extends State<BidForm> {
                       ),
                     ),
                     onPressed: _submitBid,
-                    child: const Text('Submit ',style: TextStyle(color: Colors.white,fontSize: 18),),
+                    child: const Text(
+                      'Submit ',
+                      style: TextStyle(color: Colors.white, fontSize: 18),
+                    ),
                   ),
                 ),
               ),

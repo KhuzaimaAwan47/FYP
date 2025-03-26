@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:custom_navigation_bar/custom_navigation_bar.dart';
-import '../Client_Screens/Chat.dart';
-import '../Client_Screens/Dashboard.dart';
-import '../Client_Screens/Feed.dart';
-import '../Client_Screens/Home.dart';
+import '../../pages/Client_Screens/Chat.dart';
+import '../../pages/Client_Screens/Dashboard.dart';
+import '../../pages/Client_Screens/Feed.dart';
+import '../../pages/Client_Screens/Home.dart';
+
 
 
 

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:custom_navigation_bar/custom_navigation_bar.dart';
-import 'package:my_fyp/Freelancer_Screens/Home.dart';
-import 'package:my_fyp/Freelancer_Screens/Chat.dart';
-import 'package:my_fyp/Freelancer_Screens/Feed.dart';
-import 'package:my_fyp/Freelancer_Screens/Dashboard.dart';
+
+import '../../pages/Client_Screens/Chat.dart';
+import '../../pages/Client_Screens/Dashboard.dart';
+import '../../pages/Client_Screens/Feed.dart';
+import '../../pages/Client_Screens/Home.dart';
+
 
 //F_navigator class is a navigator used for freelancer bottom naviagtion.
 
@@ -19,7 +21,7 @@ class _HomePageState extends State<F_navigator> {
   int selectedIndex = 0;
   final List<Widget> _screens= [
     const HomeScreen(),
-    const ChatsScreen(),
+    ChatsScreen(),
     const FeedScreen(),
     const DashboardScreen(),
   ];
