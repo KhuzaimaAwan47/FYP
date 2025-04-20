@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/services.dart';
 import 'package:my_fyp/auth/signup_page.dart';
 import 'package:my_fyp/auth/validators.dart';
 import '../widgets/bottom_navigation/f_navigator.dart';
 import 'forgot.dart';
-
-
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -40,8 +39,10 @@ class _LoginPageState extends State<LoginPage> {
       );
 
       // Navigate to the HomePage after successful sign-in
-      Navigator.push( context, MaterialPageRoute(builder: (context) => const F_navigator()),
-    );
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const F_navigator()),
+      );
     } on FirebaseAuthException catch (e) {
       // Handle FirebaseAuth-specific errors and show an error dialog
       String errorMessage = _handleFirebaseAuthError(e);
@@ -49,7 +50,8 @@ class _LoginPageState extends State<LoginPage> {
     } catch (e) {
       // Handle other exceptions (e.g., network errors) and show an error dialog
       _showErrorDialog('An unexpected error occurred. Please try again.');
-     print("Error occurred: $e"); // Log the actual error for debugging purposes
+      print(
+          "Error occurred: $e"); // Log the actual error for debugging purposes
     }
   }
 
@@ -59,11 +61,11 @@ class _LoginPageState extends State<LoginPage> {
       return 'Email not found. Please check your email and try again.';
     } else if (e.code == 'invalid-credential') {
       return 'Incorrect password. Please try again.';
-    }else if (e.code == 'too-many-requests'){
+    } else if (e.code == 'too-many-requests') {
       return 'We have blocked all requests from this device due to unusual activity. Try again later.  Access to this account has been temporarily disabled due to many failed login attempts. You can immediately restore it by resetting your password or you can try again later.';
     } else if (e.code == 'invalid-email') {
       return 'The email address is not valid. Please enter a correct email.';
-    }else if (e.code == 'channel-error'){
+    } else if (e.code == 'channel-error') {
       return 'Please provide a valid email or password.';
     } else {
       print('Unhandled FirebaseAuthException code: ${e.code}');
@@ -81,14 +83,17 @@ class _LoginPageState extends State<LoginPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('OK' ,style: TextStyle(color: Colors.indigo),),
+            child: const Text(
+              'OK',
+              style: TextStyle(color: Colors.indigo),
+            ),
           ),
         ],
       ),
     );
-}
+  }
 
-//Note the "const" keyword is used to improve performance. Not to be confused to seen "const" keyword along widgets.
+
   @override
   Widget build(BuildContext context) {
     var screenHeight = MediaQuery.of(context).size.height;
@@ -99,20 +104,27 @@ class _LoginPageState extends State<LoginPage> {
     return PopScope(
       canPop: false,
       child: Scaffold(
-        backgroundColor: Colors.indigo.shade50,
+        backgroundColor: Colors.white,
         appBar: null,
         body: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
               children: [
-                const SizedBox(height: 240,),
-                const  Text(
-                  'Welcome back',
+                SizedBox(
+                  height: screenHeight * 0.15,
+                ),
+                Image.asset(
+                  'assets/images/Signin.png',
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                ),
+                const Text(
+                  'Welcome back!',
                   style: TextStyle(
-                      fontSize: 45,
-                      fontWeight: FontWeight.w400,
-                      color: Colors.black45),
+                      fontSize: 36,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87),
                   textAlign: TextAlign.center,
                 ),
                 const Text(
@@ -122,104 +134,111 @@ class _LoginPageState extends State<LoginPage> {
                       fontSize: 18,
                       fontWeight: FontWeight.w500),
                 ),
+                SizedBox(
+                  height: screenHeight * 0.03,
+                ),
                 Form(
                   key: _formKey,
                   child: Column(
                     children: [
-                      SizedBox( height: screenHeight*0.02,),
+                      SizedBox(
+                        height: screenHeight * 0.02,
+                      ),
 
                       //---------------------------------------------Email-----------------------------------------------------
 
                       TextFormField(
                         controller: emailController,
-                        style: const TextStyle(fontWeight: FontWeight.w500),
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w500, fontSize: 16),
                         decoration: InputDecoration(
                           hintText: 'Email',
-                          hintStyle: const TextStyle(color: Colors.grey,),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(14),
-                            borderSide: const BorderSide(
-                              color: Colors.indigo,
-                              width: 1.5,
-                            ),
+                          filled: true,
+                          fillColor: Colors.indigo.shade50,
+                          hintStyle: const TextStyle(
+                            color: Colors.black54,
                           ),
-                          prefixIcon: const Icon(Icons.email_outlined,color: Colors.grey,),
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide.none),
+                          prefixIcon: const Icon(
+                            Icons.email_outlined,
+                            color: Colors.black54,
+                          ),
+                          contentPadding:
+                              const EdgeInsets.symmetric(vertical: 18),
                         ),
-                          validator: Validators.validateEmail,
+                        validator: Validators.validateEmail,
                         keyboardType: TextInputType.emailAddress,
                       ),
-                      SizedBox(height: screenWidth*0.02,),
+                      SizedBox(
+                        height: screenWidth * 0.02,
+                      ),
 
                       //------------------------------------------------Password-----------------------------------------------
 
                       TextFormField(
-                        style: const TextStyle(fontWeight: FontWeight.w500),
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w500, fontSize: 16),
                         controller: passwordController,
                         obscureText: !isPasswordVisible,
                         obscuringCharacter: '*',
                         decoration: InputDecoration(
                           hintText: 'Password',
-                          hintStyle: const TextStyle(color: Colors.grey,),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(14),
-                            borderSide: const BorderSide(
-                              color: Colors.indigo,
-                              width: 1.5,
-                            ),
+                          filled: true,
+                          fillColor: Colors.indigo.shade50,
+                          hintStyle: const TextStyle(
+                            color: Colors.black54,
                           ),
-                          prefixIcon: const Icon(Icons.password,color: Colors.grey,),
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide.none),
+                          prefixIcon: const Icon(
+                            Icons.lock_outline,
+                            color: Colors.black54,
+                          ),
+                          contentPadding:
+                              const EdgeInsets.symmetric(vertical: 18),
                           suffixIcon: IconButton(
-                            icon: Icon(isPasswordVisible ? Icons.visibility:Icons.visibility_off,color: Colors.black45,),
-                            onPressed: ()
-                            {
-                              setState((){
-                                isPasswordVisible  =  !isPasswordVisible;
+                            icon: Icon(
+                              isPasswordVisible
+                                  ? Icons.visibility
+                                  : Icons.visibility_off,
+                              color: Colors.black54,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                isPasswordVisible = !isPasswordVisible;
                               });
-
-                            },),
+                            },
+                          ),
                         ),
                         keyboardType: TextInputType.text,
-                        validator: Validators.validatePassword,
                       ),
-
-                      //-------------------------------------------Text Button------------------------------------------------
-
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          TextButton(onPressed: (){
-                            Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => forgot(),
-                                ));
-                          },
-                              child: const Text('Forgot Password?',style: TextStyle(color: Colors.indigo),))],
-                      ),
-
-
+                      SizedBox(height: 24),
 
                       //---------------------------------------------Button---------------------------------------------------
 
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          elevation: 3.0,
+                          elevation: 2.0,
                           backgroundColor: Colors.indigo,
                           minimumSize: Size(double.infinity, 56),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
                           ),
                         ),
-                        onPressed: (){
-                          if (_formKey.currentState!.validate()){
-                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Checking credetials...')
-                              ,backgroundColor: Colors.green,duration:Durations.short2,),);
+                        onPressed: () {
+                          if (_formKey.currentState!.validate()) {
+                            signInUser();
                           }
-                          signInUser();
                         },
                         child: const Text(
                           'Login',
-                          style: TextStyle(fontSize: 18, color: Colors.white,),
+                          style: TextStyle(
+                            fontSize: 20,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
 
@@ -229,21 +248,50 @@ class _LoginPageState extends State<LoginPage> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           const Text(
-                            "    Don't have an account?",
-                            style: TextStyle(
-                                fontWeight: FontWeight.w400, color: Colors.black),
-                            textAlign: TextAlign.center,
+                            "Don't have an account?",
+                            style: TextStyle(fontSize: 16, color: Colors.black),
                           ),
                           TextButton(
                               onPressed: () {
-                                Navigator.push( context, MaterialPageRoute( builder: (context) => const SignupPage(),));
+                                Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const SignupPage(),
+                                    ));
                               },
-                              child: const Text('Signup',style: TextStyle(color: Colors.indigo,),)),
+                              child: const Text(
+                                'Signup',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.indigo,
+                                ),
+                              )),
                         ],
                       ),
 
+                      //-------------------------------------------Text Button------------------------------------------------
 
-
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          TextButton(
+                              onPressed: () {
+                                Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => forgot(),
+                                    ));
+                              },
+                              child: const Text(
+                                'Forgot Password?',
+                                style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.indigo),
+                              ))
+                        ],
+                      ),
                     ],
                   ),
                 ),
@@ -255,7 +303,3 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 }
-
-
-
-

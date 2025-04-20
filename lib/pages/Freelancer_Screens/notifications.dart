@@ -71,6 +71,7 @@ class _NotificationsState extends State<Notifications> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text('Notifications'),
       ),
@@ -251,7 +252,7 @@ class _NotificationsState extends State<Notifications> {
     );
   }
 
-  /* --------------------------- Data Loading --------------------------- */
+  /* --------------------------- Data Loading Methods --------------------------- */
 
   // Function to Load all offers
   Future<void> _loadAllOffers() async {
@@ -950,9 +951,10 @@ class _NotificationsState extends State<Notifications> {
   // Build offer list item
   Widget _buildOfferItem(QueryDocumentSnapshot offer, bool isReceived) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 8,),
       child: Card(
-        elevation: 2,
+        color: Colors.grey[100],
+        elevation: 0,
         child: ListTile(
           title: Text(
             offer['project_name'] ?? 'Unknown Project',
@@ -993,9 +995,10 @@ class _NotificationsState extends State<Notifications> {
   Widget _buildNotificationItem(QueryDocumentSnapshot notification,
       bool isReceived) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 8,),
       child: Card(
-        elevation: 2,
+        color: Colors.grey[100],
+        elevation: 0,
         child: ListTile(
           title: Text(
             notification['project_name'] ?? 'Unknown Project',

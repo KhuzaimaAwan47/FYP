@@ -38,7 +38,7 @@ void showWarningSnackbar(BuildContext context, String message) {
     SnackBar(
       elevation: 0,
       content: AwesomeSnackbarContent(
-        color: Colors.amber,
+        color: Colors.orangeAccent,
         title: 'Warning',
         message: message,
         contentType: ContentType.warning,

@@ -6,6 +6,7 @@ import 'package:my_fyp/utlis/snack_bars.dart';
 class GroupDetails extends StatefulWidget {
   final String groupId;
 
+
   const GroupDetails({super.key, required this.groupId});
 
   @override
@@ -52,6 +53,7 @@ class _GroupDetailsState extends State<GroupDetails> {
         bool isMember = members.contains(currentUser?.email);
 
         return Scaffold(
+          backgroundColor: Colors.white,
           appBar: AppBar(
             title: const Text('Group Details'),
             actions: [
@@ -192,6 +194,7 @@ class _GroupDetailsState extends State<GroupDetails> {
                   children: [
                     // Description Section
                     Card(
+                      color: Colors.grey[50],
                       elevation: 0,
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -231,6 +234,7 @@ class _GroupDetailsState extends State<GroupDetails> {
 
                     // Rules Section
                     Card(
+                      color: Colors.grey[50],
                       elevation: 0,
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -544,12 +548,16 @@ class _GroupDetailsState extends State<GroupDetails> {
                             onTap: () {},
                             child: CircleAvatar(
                               backgroundColor: Colors.blue.shade100,
-                              child: Text(
-                                member['username'][0].toUpperCase(),
-                                style: const TextStyle(
-                                    fontSize: 16, fontWeight: FontWeight.bold),
-                              ),
-                            ),
+                              child:  member['profileUrl'] != null
+                                ? CircleAvatar(
+                                backgroundImage: NetworkImage(member['profileUrl']),
+                                radius: 20,
+                              )
+                                  :CircleAvatar(
+                                radius: 20,
+                                child: const Icon(Icons.person, color: Colors.white),
+                              )
+                            )
                           ),
                           title: Text(
                             member['username'],
@@ -693,8 +701,14 @@ class _GroupDetailsState extends State<GroupDetails> {
             .where('email', isEqualTo: email)
             .get();
         if (snapshot.docs.isNotEmpty) {
-          String username = snapshot.docs.first['username'];
-          memberDetails.add({'email': email, 'username': username});
+          var userData = snapshot.docs.first.data() as Map<String, dynamic>;
+          String username = userData['username'];
+          String? profileUrl = userData['profileUrl']; // Get from Firestore
+          memberDetails.add({
+            'email': email,
+            'username': username,
+            'profileUrl': profileUrl,
+          });
         }
       }
     } catch (e) {

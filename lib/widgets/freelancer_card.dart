@@ -40,7 +40,7 @@ class FreelancerCard extends StatelessWidget {
       child: Card(
         color: Colors.grey[50],
         shadowColor: Colors.grey[300],
-        elevation: 4.0,
+        elevation: 1,
         shape:
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
         margin: const EdgeInsets.all(8.0),

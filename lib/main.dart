@@ -9,6 +9,17 @@ import 'splash_page.dart';
 Future main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+
+  // Set status bar style
+  SystemChrome.setSystemUIOverlayStyle(
+    SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent, // Transparent background
+      statusBarIconBrightness: Brightness.dark,
+      statusBarBrightness:
+          Brightness.light,
+    ),
+  );
+
   runApp(const MyApp());
 }
 
@@ -21,15 +32,17 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'FlutterApp',
       theme: ThemeData(
-          primaryColor: Colors.indigo,
-          appBarTheme: AppBarTheme(
-            backgroundColor: Colors.indigoAccent.withOpacity(1.0),
-            foregroundColor: Colors.white,
-            systemOverlayStyle: SystemUiOverlayStyle(
-              statusBarColor: Colors.indigoAccent.withOpacity(1.0),
-              statusBarIconBrightness: Brightness.light,
-            ),
-          )),
+        primaryColor: Colors.indigo,
+        appBarTheme: AppBarTheme(
+          backgroundColor: Colors.indigoAccent,
+          foregroundColor: Colors.white,
+          systemOverlayStyle: SystemUiOverlayStyle(
+            statusBarColor: Colors.transparent,
+            statusBarIconBrightness: Brightness.dark,
+            statusBarBrightness: Brightness.light,
+          ),
+        ),
+      ),
       initialRoute: '/',
       routes: {
         '/': (context) => SplashScreen(),

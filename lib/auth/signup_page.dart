@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:auto_size_text/auto_size_text.dart';
+import 'package:flutter/services.dart';
 import 'package:my_fyp/auth/validators.dart';
 
 import 'login_page.dart';
 
-
-class  SignupPage extends StatefulWidget {
+class SignupPage extends StatefulWidget {
   const SignupPage({super.key});
 
   @override
@@ -18,7 +18,8 @@ class _SignupPageState extends State<SignupPage> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController usernameController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  final TextEditingController confirmpasswordControllerText = TextEditingController();
+  final TextEditingController confirmpasswordControllerText =
+      TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   bool isClientChecked = false;
   bool isfreelancerChecked = false;
@@ -27,22 +28,33 @@ class _SignupPageState extends State<SignupPage> {
   bool isLoading = false;
 
   @override
-  void dispose(){
+  void initState() {
+    super.initState();
+    // Hide status bar and other system overlays for an immersive experience.
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+  }
+
+  @override
+  void dispose() {
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     usernameController.dispose();
     emailController.dispose();
     passwordController.dispose();
     confirmpasswordControllerText.dispose();
     super.dispose();
   }
+
   bool passwordConfirmed() {
-    return passwordController.text.trim() == confirmpasswordControllerText.text.trim();
+    return passwordController.text.trim() ==
+        confirmpasswordControllerText.text.trim();
   }
 
   Future<void> signUpUser() async {
     FocusScope.of(context).unfocus(); //keyboard closes when button is pressed.
     try {
       if (passwordConfirmed()) {
-        UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        UserCredential userCredential =
+            await FirebaseAuth.instance.createUserWithEmailAndPassword(
           email: emailController.text.trim(),
           password: passwordController.text.trim(),
         );
@@ -56,7 +68,10 @@ class _SignupPageState extends State<SignupPage> {
           passwordController.text.trim(),
         );
         // Navigate to the Login Page
-        Navigator.push(context, MaterialPageRoute(builder: (context) => LoginPage()),);
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => LoginPage()),
+        );
       } else {
         _showErrorDialog('Passwords do not match.');
       }
@@ -67,9 +82,7 @@ class _SignupPageState extends State<SignupPage> {
     } catch (e) {
       // Handle other errors and show an error dialog
       _showErrorDialog('An unexpected error occurred. Please try again.');
-    } finally {
-
-    }
+    } finally {}
   }
 
   String _handleFirebaseAuthError(FirebaseAuthException e) {
@@ -82,14 +95,31 @@ class _SignupPageState extends State<SignupPage> {
     } else {
       return 'An unexpected error occurred. Please try again.';
     }
-  }// SignUpUser
-  Future addUserDetails(String uid, String username, String email, String userType, String password,) async {
+  } // SignUpUser
+
+  Future addUserDetails(
+    String uid,
+    String username,
+    String email,
+    String userType,
+    String password,
+  ) async {
     await FirebaseFirestore.instance.collection('users').add({
-      'uid'      : uid,
-      'username' : username,
-      'userType' : userType,
-      'email'    : email,
-      'passowrd' : password,
+      'uid': uid,
+      'username': username,
+      'userType': userType,
+      'email': email,
+      'passowrd': password,
+      'first_name': 'first_name',
+      'last_name': 'last_name',
+      'location': 'None',
+      'hourly_rate': 0,
+      'description': 'No description',
+      'headline': 'No headline',
+      'skills': 'None',
+      'rating': 0,
+      'averageRating': 'averageRating',
+      'totalReviews': 'totalReviews',
     });
   }
 
@@ -115,143 +145,204 @@ class _SignupPageState extends State<SignupPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Get screen height and width
+    // Get screen height
     var screenHeight = MediaQuery.of(context).size.height;
 
     // PopScope block user to leave screen such as swapback or going back.
     return PopScope(
       canPop: false,
       child: Scaffold(
-        backgroundColor: Colors.indigo.shade50,
+        backgroundColor: Colors.white,
         appBar: null,
         body: SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.all(16.0),//this padding is used to add formkey.
+            padding: const EdgeInsets.all(16.0),
             child: Form(
               key: _formKey,
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  SizedBox(height: 100,),
-                   const Text('Register',
-                    style: TextStyle(fontSize: 60, fontWeight: FontWeight.w400, color: Colors.black45),
+                  SizedBox(height: screenHeight * 0.05),
+                  Image.asset(
+                    'assets/images/Signup.png',
+                    width: double.infinity,
+                    height: screenHeight * 0.3,
+                    fit: BoxFit.cover,
+                  ),
+                  const Text(
+                    'Join Unity Gig Today ',
+                    style: TextStyle(
+                        fontSize: 36,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87),
                     textAlign: TextAlign.center,
                   ),
                   const Text(
-                    'Create your account',
-                    style: TextStyle(color: Colors.black54, fontSize: 20, fontWeight: FontWeight.w500),
+                    'Your journey to productivity starts here',
+                    style: TextStyle(
+                        color: Colors.black54,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w500),
                   ),
-                  SizedBox(height: screenHeight * 0.05), // Add vertical space based on screen height
+                  SizedBox(height: screenHeight * 0.02),
+                  // Add vertical space based on screen height
 
                   //----------Username----------
 
                   TextFormField(
-                    style: const TextStyle(fontWeight: FontWeight.w500),
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w500, fontSize: 16),
                     controller: usernameController,
                     decoration: InputDecoration(
                       hintText: 'Username',
-                      hintStyle: const TextStyle(color: Colors.grey,),
-                      border:  OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        borderSide: const BorderSide(color: Colors.blue, width: 1.5),
+                      fillColor: Colors.indigo.shade50,
+                      filled: true,
+                      hintStyle: const TextStyle(
+                        color: Colors.black54,
                       ),
-                      prefixIcon: const Icon(Icons.account_circle_outlined,color: Colors.grey,),
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide.none),
+                      prefixIcon: const Icon(
+                        Icons.account_circle_outlined,
+                        color: Colors.black54,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 18),
                     ),
                     keyboardType: TextInputType.name,
                     validator: Validators.validateUsername,
                   ),
-                  SizedBox(height: screenHeight * 0.01), // Add vertical space based on screen height
+                  SizedBox(height: screenHeight * 0.01),
+                  // Add vertical space based on screen height
 
                   //----------Email----------
 
                   TextFormField(
-                    style: const TextStyle(fontWeight: FontWeight.w500),
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w500, fontSize: 16),
                     controller: emailController,
                     decoration: InputDecoration(
                       hintText: 'Email',
-                      hintStyle: const TextStyle(color: Colors.grey,),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        borderSide: const BorderSide(color: Colors.blue, width: 1.5),
+                      filled: true,
+                      fillColor: Colors.indigo.shade50,
+                      hintStyle: const TextStyle(
+                        color: Colors.black54,
                       ),
-                      prefixIcon: const Icon(Icons.email_outlined,color: Colors.grey,),
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide.none),
+                      prefixIcon: const Icon(
+                        Icons.email_outlined,
+                        color: Colors.black54,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 18),
                     ),
                     keyboardType: TextInputType.emailAddress,
                     validator: Validators.validateEmail,
                   ),
-                  SizedBox(height: screenHeight * 0.01), // Add vertical space based on screen height
+                  SizedBox(height: screenHeight * 0.01),
+                  // Add vertical space based on screen height
 
                   //----------Password----------
 
                   TextFormField(
-                    style: const TextStyle(fontWeight: FontWeight.w500),
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w500, fontSize: 16),
                     controller: passwordController,
                     obscureText: !isPasswordVisible,
                     validator: Validators.validatePassword,
                     obscuringCharacter: '*',
                     decoration: InputDecoration(
                       hintText: 'Password',
-                      hintStyle: const TextStyle(color: Colors.grey,),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        borderSide: const BorderSide(color: Colors.indigo, width: 1.5),
+                      hintStyle: const TextStyle(
+                        color: Colors.black54,
                       ),
-                      prefixIcon: const Icon(Icons.password,color: Colors.grey,),
+                      filled: true,
+                      fillColor: Colors.indigo.shade50,
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide.none),
+                      prefixIcon: const Icon(
+                        Icons.lock_outline,
+                        color: Colors.black54,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 18),
                       suffixIcon: IconButton(
-                        icon: Icon(isPasswordVisible ? Icons.visibility:Icons.visibility_off,color: Colors.black45,),
-                        onPressed: ()
-                        {
-                          setState((){
-                            isPasswordVisible  =  !isPasswordVisible;
+                        icon: Icon(
+                          isPasswordVisible
+                              ? Icons.visibility
+                              : Icons.visibility_off,
+                          color: Colors.black54,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            isPasswordVisible = !isPasswordVisible;
                           });
-
-                        },),
+                        },
+                      ),
                     ),
                   ),
-                  SizedBox(height: screenHeight * 0.01), // Add vertical space based on screen height
+                  SizedBox(height: screenHeight * 0.01),
+                  // Add vertical space based on screen height
 
                   //----------Confirm Password----------
 
                   TextFormField(
-                    style: const TextStyle(fontWeight: FontWeight.w500),
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w500, fontSize: 16),
                     controller: confirmpasswordControllerText,
                     obscureText: !isCPasswordVisible,
-                    validator: (value) => Validators.validateConfirmPassword(value, passwordController.text),
+                    validator: (value) => Validators.validateConfirmPassword(
+                        value, passwordController.text),
                     obscuringCharacter: '*',
                     decoration: InputDecoration(
                       hintText: 'Confirm Password',
-                      hintStyle: const TextStyle(color: Colors.grey,),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        borderSide: const BorderSide(color: Colors.indigo, width: 1.5),
+                      hintStyle: const TextStyle(
+                        color: Colors.black54,
                       ),
-                      prefixIcon: const Icon(Icons.password,color: Colors.grey,),
+                      filled: true,
+                      fillColor: Colors.indigo.shade50,
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide.none),
+                      prefixIcon: const Icon(
+                        Icons.lock_outline,
+                        color: Colors.black54,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 18),
                       suffixIcon: IconButton(
-                        icon: Icon(isCPasswordVisible ? Icons.visibility:Icons.visibility_off,color: Colors.black45,),
-                        onPressed: ()
-                        {
-                          setState((){
-                            isCPasswordVisible  =  !isCPasswordVisible;
+                        icon: Icon(
+                          isCPasswordVisible
+                              ? Icons.visibility
+                              : Icons.visibility_off,
+                          color: Colors.black54,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            isCPasswordVisible = !isCPasswordVisible;
                           });
-
-                        },),
+                        },
+                      ),
                     ),
                   ),
-                  SizedBox(height: screenHeight * 0.01), // Add vertical space based on screen height
+                  SizedBox(height: screenHeight * 0.01),
+                  // Add vertical space based on screen height
 
                   //----------Check Box----------
 
                   SizedBox(
                     width: MediaQuery.of(context).size.width * 0.9,
                     child: FittedBox(
-                      fit: BoxFit.scaleDown, // Scale down the content to fit the available space
+                      fit: BoxFit.scaleDown,
+                      // Scale down the content to fit the available space
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           const Text('Mention yourself as:'),
                           Checkbox(
                             value: isClientChecked,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(5)),
                             onChanged: (bool? newValue) {
                               setState(() {
                                 isClientChecked = newValue!;
@@ -261,14 +352,17 @@ class _SignupPageState extends State<SignupPage> {
                             activeColor: Colors.indigo,
                           ),
                           const Text('Client'),
-                          Checkbox(value: isfreelancerChecked,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-                            onChanged: (bool? newValue){
-                            setState(() {
-                              isfreelancerChecked = newValue!;
-                              isClientChecked = !newValue; // uncheck the other
-                            });
-                          },
+                          Checkbox(
+                            value: isfreelancerChecked,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(5)),
+                            onChanged: (bool? newValue) {
+                              setState(() {
+                                isfreelancerChecked = newValue!;
+                                isClientChecked =
+                                    !newValue; // uncheck the other
+                              });
+                            },
                             activeColor: Colors.indigo,
                           ),
                           const Text('Freelancer'),
@@ -277,7 +371,9 @@ class _SignupPageState extends State<SignupPage> {
                     ),
                   ),
                   SizedBox(height: screenHeight * 0.01),
-                  const SizedBox( height: 1,),
+                  const SizedBox(
+                    height: 1,
+                  ),
 
                   //----------Button----------
 
@@ -289,13 +385,16 @@ class _SignupPageState extends State<SignupPage> {
                         borderRadius: BorderRadius.circular(16),
                       ),
                     ),
-                    onPressed:() {
-                      if (_formKey.currentState!.validate()){
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Processing Data...')),);
+                    onPressed: () {
+                      if (_formKey.currentState!.validate()) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Processing Data...')),
+                        );
                         signUpUser();
                       }
-                      },
-                    child: const AutoSizeText('Register', style: TextStyle(fontSize: 18, color: Colors.white)),
+                    },
+                    child: const AutoSizeText('Register',
+                        style: TextStyle(fontSize: 20, color: Colors.white)),
                   ),
 
                   //----------Text Button----------
@@ -305,14 +404,23 @@ class _SignupPageState extends State<SignupPage> {
                     children: [
                       const Text(
                         'Already, have an account?',
-                        style: TextStyle(fontWeight: FontWeight.w400, color: Colors.black),
+                        style: TextStyle(fontSize: 16, color: Colors.black),
                         textAlign: TextAlign.center,
                       ),
                       TextButton(
                         onPressed: () {
-                          Navigator.push(context, MaterialPageRoute(builder: (context) => LoginPage()));
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => LoginPage()));
                         },
-                        child: const Text('Sign in',style: TextStyle(color: Colors.indigo),),
+                        child: const Text(
+                          'Login',
+                          style: TextStyle(
+                              color: Colors.indigo,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500),
+                        ),
                       ),
                     ],
                   ),

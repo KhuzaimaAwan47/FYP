@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:my_fyp/utlis/snack_bars.dart';
 
 class BidForm extends StatefulWidget {
   final String projectName;
@@ -50,10 +51,10 @@ class _BidFormState extends State<BidForm> {
             userName = userDoc['username'];
           });
         } else {
-          _showErrorSnackBar('Username not found');
+          showErrorSnackbar(context, 'Username not found');
         }
       } catch (e) {
-        _showErrorSnackBar('Error loading username: $e');
+        showErrorSnackbar(context, 'Error loading username: $e');
       }
     }
   }
@@ -78,8 +79,7 @@ class _BidFormState extends State<BidForm> {
 
         if (querySnapshot.docs.isNotEmpty) {
           // Bid already exists
-          _showAlertSnackBar(
-              'You have already submitted a bid for this project.');
+          showWarningSnackbar(context, "You have already submitted a bid for this project");
           return;
         }
         // Add bid details to Firestore
@@ -110,45 +110,13 @@ class _BidFormState extends State<BidForm> {
           'status': "Pending",
           // Status to set by project owner if bid is accepted or rejected
         });
-        _showSuccessSnackBar('Bid submitted successfully!');
+        showSuccessSnackbar(context, 'Bid submitted successfully!');
         Navigator.pop(context);
       } catch (e) {
-        _showErrorSnackBar('Error submitting bid: $e');
+        showErrorSnackbar(context, 'Error submitting bid: $e');
+
       }
     }
-  }
-
-  /* --------------------------- SnackBars --------------------------- */
-
-  void _showSuccessSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.greenAccent,
-        behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.all(16),
-      ),
-    );
-  }
-
-  void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.redAccent,
-        behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.all(16),
-      ),
-    );
-  }
-
-  void _showAlertSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(message),
-      backgroundColor: Colors.orangeAccent,
-      behavior: SnackBarBehavior.floating,
-      margin: const EdgeInsets.all(16),
-    ));
   }
 
   /* --------------------------- Main Build Widget --------------------------- */

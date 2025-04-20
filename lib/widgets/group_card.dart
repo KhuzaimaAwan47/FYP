@@ -37,7 +37,7 @@ class GroupCard extends StatelessWidget {
         shadowColor: Colors.grey[400],
         shape:
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
-        elevation: 4.0,
+        elevation: 1,
         margin: const EdgeInsets.all(8.0),
         child: Container(
           width: 200,

@@ -8,6 +8,8 @@ import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shimmer/shimmer.dart';
 
+import 'edit_profile.dart';
+
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -17,35 +19,227 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
+
+  // Constants
 final double coverHeight = 150;
 final double profileHeight = 130;
+int totalReviews = 0;
+double averageRating = 0;
+
+// User data variables
+  String firstName = '';
+  String lastName = '';
+  String location = '';
+  double? hourlyRate ;
+  String description = '';
+  String headline = '';
+  String skills = '';
+  String? imageUrl;
+  String? profileUrl;
+  String? coverUrl;
+
+// Initialize Firebase Services
 final FirebaseAuth _auth = FirebaseAuth.instance;
 final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 final ImagePicker _imagePicker = ImagePicker();
 
-String? imageUrl;
-String? profileUrl;
-String? coverUrl;
+// Project data
+int totalProjectsByUser = 0;
+int totalProposals = 0;
+int totalGroupsByUser = 0;
+int totalOffersSent = 0;
+int totalOffersReceived = 0;
+Map<String, int> _projectStatusCounts = {};
 
-// User data variables
-String firstName = '';
-String lastName = '';
-String location = '';
-double? hourlyRate ;
-String description = '';
-String headline = '';
-String skills = '';
 
 @override
 void initState() {
   super.initState();
-  loadUserData();// Call to load data from Firestore when the form is initialized
+  loadUserData();
+  loadProjects();
+  loadGroups();
+  loadBids();
+  loadOffers();
 }
 
-//--------------------------------------------Function to Load data from firestore-------------------------------------
+/* --------------------------- Data Loading Methods --------------------------- */
+
+  Future<void> loadProjects() async {
+    // Get the current user
+    User? user = _auth.currentUser;
+    if (user == null) return;
+
+    try {
+      // Query the 'users' collection to find the user document
+      QuerySnapshot userQuerySnapshot = await _firestore
+          .collection('users')
+          .where('email', isEqualTo: user.email)
+          .get();
+
+      // Check if the user document exists
+      if (userQuerySnapshot.docs.isEmpty) {
+        print('User not found in Firestore.');
+        return;
+      }
+
+      // Extract the username from the user document
+      Map<String, dynamic>? userData =
+      userQuerySnapshot.docs.first.data() as Map<String, dynamic>?;
+      String? username = userData?['username'];
+      if (username == null) {
+        print('Username not found in Firestore.');
+        return;
+      }
+
+      // Query the 'projects' collection for projects assigned to the user
+      QuerySnapshot projectQuerySnapshot = await _firestore
+          .collection('projects')
+          .where('assigned_to', isEqualTo: username)
+          .get();
+      // Query the 'projects' collection for projects owned by the user
+      QuerySnapshot ownedProjectsSnapshot = await _firestore
+          .collection('projects')
+          .where('owner_name', isEqualTo: username)
+          .get();
+      // Initialize counts for project statuses
+      Map<String, int> counts = {
+        'Ongoing': 0,
+        'Pending': 0,
+        'Completed': 0,
+        'Cancelled': 0,
+      };
+
+      // Iterate through the project documents and count statuses
+      for (var doc in projectQuerySnapshot.docs) {
+        var data = doc.data() as Map<String, dynamic>?;
+        if (data != null) {
+          String? status = data['project_status'];
+          if (status != null && counts.containsKey(status)) {
+            counts[status] = counts[status]! + 1;
+          }
+        }
+      }
+
+      // Update the state
+      if (mounted) {
+        setState(() {
+          _projectStatusCounts = counts;
+          totalProjectsByUser = ownedProjectsSnapshot.docs.length;
+        });
+      }
+
+      print('Project Status Counts: $_projectStatusCounts');
+      print('Total Projects by User: $totalProjectsByUser');
+    } catch (e) {
+      // Handle errors gracefully
+      print('Error loading projects: $e');
+    }
+  }
 
 
+  Future<void> loadOffers() async {
+    // Get the current user
+    User? user = _auth.currentUser;
+    if (user == null) return;
 
+    try {
+      // Query the 'users' collection to find the user document
+      QuerySnapshot userQuerySnapshot = await _firestore
+          .collection('users')
+          .where('email', isEqualTo: user.email)
+          .get();
+
+      // Check if the user document exists
+      if (userQuerySnapshot.docs.isEmpty) {
+        print('User not found in Firestore.');
+        return;
+      }
+
+      // Extract the username from the user document
+      Map<String, dynamic>? userData =
+      userQuerySnapshot.docs.first.data() as Map<String, dynamic>?;
+      String? username = userData?['username'];
+      if (username == null) {
+        print('Username not found in Firestore.');
+        return;
+      }
+
+      // Query the 'projects' collection for projects assigned to the user
+      QuerySnapshot receivedOfferQuerySnapshot = await _firestore
+          .collection('offers')
+          .where('assigned_to', isEqualTo: username)
+          .get();
+      // Query the 'projects' collection for projects owned by the user
+      QuerySnapshot sentOfferSnapshot = await _firestore
+          .collection('offers')
+          .where('owner_name', isEqualTo: username)
+          .get();
+
+
+      // Update the state
+      if (mounted) {
+        setState(() {
+          totalOffersSent = sentOfferSnapshot.docs.length;
+          totalOffersReceived = receivedOfferQuerySnapshot.docs.length;
+        });
+      }
+      print('Total Offers Sent: $totalOffersSent');
+      print('Total Offers Received: $totalOffersReceived');
+    } catch (e) {
+      // Handle errors gracefully
+      print('Error loading offers: $e');
+    }
+  }
+
+
+  Future<void> loadBids() async{
+    User? user = _auth.currentUser;
+    if (user == null) return;
+    try {
+
+      QuerySnapshot userQuerySnapshot = await _firestore
+          .collection('users')
+          .where('email', isEqualTo: user.email)
+          .get();
+
+      Map<String, dynamic>? userData =
+      userQuerySnapshot.docs.first.data() as Map<String, dynamic>?;
+      String? username = userData?['username'];
+
+      QuerySnapshot bidderQuerySnapshot = await _firestore.collection('bids')
+          .where('bidder_name', isEqualTo: username)
+          .get();
+      setState(() {
+        totalProposals = bidderQuerySnapshot.docs.length;
+      });
+      print('Total Proposals: $totalProposals');
+
+    } catch (e) {
+      print('Error loading bids: $e');
+    }
+  }
+
+  Future<void> loadGroups() async {
+    User? user = _auth.currentUser;
+    if (user == null) return;
+
+    try {
+      QuerySnapshot groupQuerySnapshot = await _firestore
+          .collection('groups')
+          .where('created_by', isEqualTo: user.uid)
+          .get();
+
+      // Update state regardless of result
+      setState(() {
+        totalGroupsByUser = groupQuerySnapshot.docs.length;
+      });
+
+      print('Groups by user: $totalGroupsByUser');
+
+    } catch (e) {
+      print('Error loading groups: $e');
+    }
+  }
 
 Future<void> loadUserData() async {
   User? user = _auth.currentUser;
@@ -55,7 +249,6 @@ Future<void> loadUserData() async {
       QuerySnapshot querySnapshot = await _firestore.collection('users')
           .where('email', isEqualTo: user.email)
           .get();
-
       if (querySnapshot.docs.isNotEmpty) {
         DocumentSnapshot userDoc = querySnapshot.docs.first;
 
@@ -73,6 +266,8 @@ Future<void> loadUserData() async {
           skills = userDoc['skills'];
           profileUrl = userDoc['profileUrl'];
           coverUrl = userDoc['coverUrl'];
+          averageRating = userDoc['averageRating'] ;
+          totalReviews = userDoc['totalReviews'];
         });
       //  print('User data loaded: $firstName, $lastName, $location, $hourlyRate,$profileUrl,$coverUrl');
       } else {
@@ -80,22 +275,7 @@ Future<void> loadUserData() async {
           const SnackBar(content: Text('No data found for the current user!')),
         );
       }
-    } catch (e) {
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Alert'),
-          content: const Text('Please complete your profile. '), //$e
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('OK'),
-            ),
-          ],
-        ),
-      );
-      print('Error: $e');
-    }
+    } catch (e) {}
   } else {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('No user logged in!')),
@@ -103,7 +283,8 @@ Future<void> loadUserData() async {
   }
 }
 
-//--------------------------------------------Function to upload cover image to fire storage-------------------------------------
+/* ---------------------------Cover Image Upload Method --------------------------- */
+
 
   Future<void> pickImage() async {
     try {
@@ -209,8 +390,7 @@ Future<void> loadUserData() async {
     }
   }
 
-
-//--------------------------------------------Function to upload profile image to fire storage-------------------------------------
+/* --------------------------- Profile Image Upload Method --------------------------- */
 
   Future<void> pickProfileImage() async {
     try {
@@ -312,6 +492,7 @@ Future<void> loadUserData() async {
     }
   }
 
+/* --------------------------- Main Build Widget --------------------------- */
 
   @override
   Widget build(BuildContext context) {
@@ -322,9 +503,6 @@ Future<void> loadUserData() async {
       appBar:  AppBar(
         title: const Text('DashBoard'),
         automaticallyImplyLeading: false,
-        actions: [
-          IconButton(onPressed: (){}, icon: const Icon(Icons.dehaze))
-        ],
       ),
       body: SingleChildScrollView(
         child: Stack(
@@ -337,7 +515,7 @@ Future<void> loadUserData() async {
             ),
         
             //--------------------------------------------Display Info Section-----------------------------------------------------
-        
+
             Container(
               margin: const EdgeInsets.only(top: 215),
               width: screenWidth,
@@ -363,9 +541,12 @@ Future<void> loadUserData() async {
                               baseColor: Colors.grey[300]!,
                               highlightColor: Colors.grey[100]!,
                               child: Container(
-                                width: 100,
-                                height: 20,
-                                color: Colors.white,
+                                width: 120,
+                                height: 24,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[300],
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
                               ),
                             ),
                             const SizedBox(width: 5),
@@ -382,28 +563,39 @@ Future<void> loadUserData() async {
                               highlightColor: Colors.grey[100]!,
                               child: Container(
                                 width: 100,
-                                height: 20,
-                                color: Colors.white,
+                                height: 24,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[300],
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
                               ),
                             ),
                           ],
                         ),
                       ),
-                      SizedBox(height: 10,),
+                      const SizedBox(height: 10),
                       Padding(
-                          padding: EdgeInsets.only(left: 16,right: 16),
-                        child:headline.isNotEmpty
-                          ? Text(headline,textAlign: TextAlign.justify,style: TextStyle(fontSize: 18,),
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: headline.isNotEmpty
+                            ? Text(
+                          headline,
+                          textAlign: TextAlign.justify,
+                          style: const TextStyle(fontSize: 18),
                         )
                             : Shimmer.fromColors(
-                            baseColor: Colors.grey[300]!, highlightColor: Colors.grey[100]!,
-                            child: Container(
-                              width: 200,
-                              height: 18,
-                              color: Colors.white,
-                            ))
+                          baseColor: Colors.grey[300]!,
+                          highlightColor: Colors.grey[100]!,
+                          child: Container(
+                            width: double.infinity,
+                            height: 22,
+                            decoration: BoxDecoration(
+                              color: Colors.grey[300],
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                        ),
                       ),
-
+                      const SizedBox(height: 5),
                       Row(
                         children: [
                           Padding(
@@ -411,19 +603,37 @@ Future<void> loadUserData() async {
                             child: location.isNotEmpty
                                 ? Row(
                               children: [
-                                Icon(Icons.location_pin,size: 17,color: Colors.indigoAccent,),
-                                Text( location,
-                                  style: const TextStyle( fontSize: 17, color: Colors.black54,),
+                                const Icon(Icons.location_pin, size: 20, color: Colors.indigoAccent),
+                                const SizedBox(width: 4),
+                                Text(
+                                  location,
+                                  style: const TextStyle(fontSize: 17, color: Colors.black54),
                                 ),
                               ],
                             )
                                 : Shimmer.fromColors(
                               baseColor: Colors.grey[300]!,
                               highlightColor: Colors.grey[100]!,
-                              child: Container(
-                                width: 100,
-                                height: 17,
-                                color: Colors.white,
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 17,
+                                    height: 17,
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[300],
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Container(
+                                    width: 100,
+                                    height: 17,
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[300],
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ),
@@ -431,61 +641,195 @@ Future<void> loadUserData() async {
                           hourlyRate != null
                               ? Row(
                             children: [
-                              Icon(Icons.attach_money,size: 17,color: Colors.indigoAccent,),
-                              Text('\$$hourlyRate/hr',
-                                style: const TextStyle(fontSize: 17, color: Colors.black54,
-                                ),
+                              const Icon(Icons.attach_money, size: 20, color: Colors.indigoAccent),
+                              const SizedBox(width: 4),
+                              Text(
+                                '\$$hourlyRate/hr',
+                                style: const TextStyle(fontSize: 17, color: Colors.black54),
                               ),
                             ],
                           )
                               : Shimmer.fromColors(
                             baseColor: Colors.grey[300]!,
                             highlightColor: Colors.grey[100]!,
-                            child: Container(
-                              width: 100,
-                              height: 17,
-                              color: Colors.white,
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 17,
+                                  height: 17,
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[300],
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                Container(
+                                  width: 80,
+                                  height: 17,
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[300],
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
                       ),
                       Padding(
-                        padding: const EdgeInsets.only(left: 16.0),
+                        padding: const EdgeInsets.only(left: 16.0,top: 5),
                         child: skills.isNotEmpty
                             ? Row(
                           children: [
-                            Icon(Icons.stars,size: 17,color: Colors.indigoAccent,),
-                            Text(skills,style: TextStyle(fontSize: 17,color: Colors.black54),
+                            const Icon(Icons.stars, size: 20, color: Colors.indigoAccent),
+                            const SizedBox(width: 4),
+                            Text(
+                              skills,
+                              style: TextStyle(fontSize: 17, color: Colors.black54),
                             ),
                           ],
-                        )
-                            : Shimmer.fromColors(baseColor: Colors.grey[300]!, highlightColor: Colors.grey[100]!, child: Container(width: 100,height: 17,color: Colors.white,)),
-                      ),
-                      SizedBox(height: 10,),
-                      Padding(
-                        padding: const EdgeInsets.only(left: 16.0, right: 16),
-                        child: description.isNotEmpty
-                            ? Text(
-                          description,
-                          textAlign: TextAlign.justify,
-                          style: const TextStyle(fontSize: 16,color: Colors.black54),
                         )
                             : Shimmer.fromColors(
                           baseColor: Colors.grey[300]!,
                           highlightColor: Colors.grey[100]!,
-                          child: Container(
-                            width: 200,
-                            height: 18,
-                            color: Colors.white,
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 17,
+                                height: 17,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[300],
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Container(
+                                width: 120,
+                                height: 17,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[300],
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
+                      const SizedBox(height: 5),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 16.0, right: 16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            averageRating != 0
+                                ? Row(
+                              children: [
+                                Icon(Icons.star_rate, color: Colors.amber, size: 20),
+                                SizedBox(width: 4),
+                                Text(
+                                  'Average Rating: ${averageRating.toStringAsFixed(1)}',
+                                  style: TextStyle(fontSize: 16, color: Colors.black54),
+                                ),
+                              ],
+                            )
+                                : Shimmer.fromColors(
+                              baseColor: Colors.grey[300]!,
+                              highlightColor: Colors.grey[100]!,
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 17,
+                                    height: 17,
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[300],
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                  ),
+                                  SizedBox(width: 4),
+                                  Container(
+                                    width: 100,
+                                    height: 17,
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[300],
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 5),
+                            totalReviews != 0
+                                ? Row(
+                              children: [
+                                Icon(Icons.reviews, color: Colors.indigoAccent, size: 20),
+                                SizedBox(width: 4),
+                                Text(
+                                  'Total Reviews: $totalReviews',
+                                  style: TextStyle(fontSize: 16, color: Colors.black54),
+                                ),
+                              ],
+                            )
+                                : Shimmer.fromColors(
+                              baseColor: Colors.grey[300]!,
+                              highlightColor: Colors.grey[100]!,
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 17,
+                                    height: 17,
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[300],
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                  ),
+                                  SizedBox(width: 4),
+                                  Container(
+                                    width: 80,
+                                    height: 17,
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[300],
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: description.isNotEmpty
+                            ? Text(
+                          description,
+                          textAlign: TextAlign.justify,
+                          style: const TextStyle(fontSize: 16, color: Colors.black54),
+                        )
+                            : Column(
+                          children: List.generate(
+                            3,
+                                (index) => Padding(
+                              padding: const EdgeInsets.only(bottom: 6),
+                              child: Shimmer.fromColors(
+                                baseColor: Colors.grey[300]!,
+                                highlightColor: Colors.grey[100]!,
+                                child: Container(
+                                  width: double.infinity,
+                                  height: 16,
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[300],
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 10),
 
-
-                      SizedBox(height: 20), // Spacing
-
-                      //-------------------Card Widgets------------------
-
+                      //-------------------Cards Section------------------
                       Container(
                         color: Colors.white,
                         child: Padding(
@@ -496,18 +840,23 @@ Future<void> loadUserData() async {
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                 children: [
-                                  projectCard('Ongoing Projects', 12, Colors.blue.withOpacity(0.8)),
-                                  projectCard('Pending Projects', 5, Colors.orange.withOpacity(0.8)),
-                                  projectCard('Completed Projects', 20, Colors.green.withOpacity(0.8)),
+                                  Expanded(child: projectCard('Ongoing Projects', _projectStatusCounts['Ongoing'] ?? 0, Colors.blue)),
+                                  Expanded(child: projectCard('Pending Projects', _projectStatusCounts['Pending'] ?? 0, Colors.orange)),
                                 ],
                               ),
-                              SizedBox(height: 20),
+                              Row(
+                                children: [
+                                  Expanded(child: projectCard('Completed Projects',_projectStatusCounts['Completed'] ?? 0, Colors.green)),
+                                  Expanded(child: projectCard('Cancelled Projects',_projectStatusCounts['Cancelled'] ?? 0, Colors.red)),
+                                ],
+                              ),
+                              SizedBox(height: 10),
                               // Additional Info Cards
-                              infoCard('Offers Received', 30),
-                              infoCard('No of Bided Projects', 15),
-                              infoCard('No of Groups', 8),
-                              infoCard('No of Posted Projects', 25),
-                              infoCard('Offers Sent', 22),
+                              infoCard('Offers Received', totalOffersReceived ?? 0, Icons.local_offer),
+                              infoCard('No of Bided Projects',totalProposals ?? 0, Icons.gavel),
+                              infoCard('No of Groups', totalGroupsByUser ?? 0, Icons.group),
+                              infoCard('No of Posted Projects', totalProjectsByUser ?? 0, Icons.library_books),
+                              infoCard('Offers Sent', totalOffersSent ?? 0, Icons.send),
                             ],
                           ),
                         ),
@@ -515,7 +864,7 @@ Future<void> loadUserData() async {
 
                     ],
                   ),
-                  SizedBox(height: 20), // Spacing
+                 // SizedBox(height: 20), // Spacing
                   //Edit Button
                   Positioned(
                     top: 0,
@@ -556,13 +905,13 @@ Future<void> loadUserData() async {
     );
   }
 
+  /* --------------------------- Project Cards Widget --------------------------- */
+
   Widget projectCard(String title, int count, Color color) {
     return Card(
-      elevation: 4,
+      elevation: 2,
       color: Colors.grey[50],
-      //color: color.withOpacity(0.1),
       child: Container(
-        width: 100,
         height: 100,
         padding: EdgeInsets.all(8),
         child: Column(
@@ -572,7 +921,7 @@ Future<void> loadUserData() async {
               title,
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 16,
+                fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: color,
               ),
@@ -592,14 +941,15 @@ Future<void> loadUserData() async {
     );
   }
 
-  // Function to create additional info cards
-  Widget infoCard(String title, int count) {
+  /* --------------------------- Info Cards Widget --------------------------- */
+
+  Widget infoCard(String title, int count, IconData icon) {
     return Card(
       color: Colors.grey[50],
-      elevation: 4,
-      margin: EdgeInsets.symmetric(vertical: 8),
+      elevation: 2,
+      margin: EdgeInsets.symmetric(vertical: 5),
       child: ListTile(
-        leading: Icon(Icons.info, color: Colors.blueAccent),
+        leading: Icon(icon, color: Colors.indigoAccent),
         title: Text(title),
         trailing: Text(
           count.toString(),
@@ -609,9 +959,7 @@ Future<void> loadUserData() async {
     );
   }
 
-
-//--------------------------------------------Cover Image-----------------------------------------------------
-
+  /* --------------------------- Cover Image Widget --------------------------- */
 
   Widget buildCoverImage(String? coverUrl) {
     return Container(
@@ -663,8 +1011,7 @@ Future<void> loadUserData() async {
     );
   }
 
-
-  //--------------------------------------------Profile Image-----------------------------------------------------
+  /* --------------------------- Profile Image Widget --------------------------- */
 
   Widget buildProfileImage(String? profileUrl) => Stack(
     children:[
@@ -703,409 +1050,4 @@ Future<void> loadUserData() async {
       ),
     ],
   );
-}
-
-
-
-class FullScreenForm extends StatefulWidget {
-  const FullScreenForm({super.key});
-
-
-  @override
-  State<FullScreenForm> createState() => _FullScreenFormState();
-}
-
-class _FullScreenFormState extends State<FullScreenForm> {
-  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  final TextEditingController firstnameController = TextEditingController();
-  final TextEditingController lastnameController = TextEditingController();
-  final TextEditingController descriptionController = TextEditingController();
-  final TextEditingController locationController = TextEditingController();
-  final TextEditingController rateController = TextEditingController();
-  final TextEditingController skillsController = TextEditingController();
-  final TextEditingController headlineController = TextEditingController();
-
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-
-
-
-  @override
-  void dispose() {
-    firstnameController.dispose();
-    lastnameController.dispose();
-    descriptionController.dispose();
-    locationController.dispose();
-    rateController.dispose();
-    headlineController.dispose();
-    super.dispose();
-  }
-
-
-  //--------------------------------------------Function to save data to firestore-------------------------------------
-
-  Future<void> saveData() async {
-    FocusScope.of(context).unfocus(); //keyboard closes when button is pressed.
-    // Validate the form before proceeding
-    if (!_formKey.currentState!.validate()) {
-      // If the form is not valid, show an error message and return
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please fill out all required fields correctly.'),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-          margin: EdgeInsets.only(bottom: 80.0, left: 16.0, right: 16.0),
-        ),
-      );
-      return; // Don't proceed with saving if the form is invalid
-    }
-
-    User? user = _auth.currentUser;
-
-    if (user != null) {
-      try {
-        // Query to find the document where email or username matches
-        QuerySnapshot querySnapshot = await _firestore.collection('users')
-            .where('email', isEqualTo: user.email) // or 'username', isEqualTo: 'someUsername'
-            .get();
-
-        if (querySnapshot.docs.isNotEmpty) {
-          DocumentReference userDoc = querySnapshot.docs.first.reference;
-
-          await userDoc.update({
-            'first_name': firstnameController.text,
-            'last_name': lastnameController.text,
-            'location': locationController.text,
-            'hourly_rate': double.parse(rateController.text),
-            'description': descriptionController.text,
-            'skills': skillsController.text,
-            'headline' :headlineController.text,
-          });
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                backgroundColor: Colors.green,
-                behavior: SnackBarBehavior.floating, // Make it float
-                margin: EdgeInsets.only(bottom: 80.0, left: 16.0, right: 16.0),
-                duration: Duration(seconds: 3),
-                content: Text('Profile Info added Successfully!'),),
-          );
-          Navigator.pop(context);
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('No document found for the current user!')),
-          );
-        }
-      } catch (e) {
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Error'),
-            content: Text('Failed to update Data: $e'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('OK'),
-              ),
-            ],
-          ),
-        );
-      }
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No user logged in!')),
-      );
-    }
-  }
-
-
-
-
-  //--------------------------------------------Full Screen Form for editing user record-----------------------------------------------------
-
-
-  @override
-  void initState() {
-    super.initState();
-    loadUserData(); // Load user data when the page opens
-  }
-
-  Future<void> loadUserData() async {
-    User? user = _auth.currentUser;
-
-    if (user != null) {
-      try {
-        // Query to find the document where email matches
-        QuerySnapshot querySnapshot = await _firestore.collection('users')
-            .where('email', isEqualTo: user.email)
-            .get();
-
-        if (querySnapshot.docs.isNotEmpty) {
-          DocumentSnapshot userDoc = querySnapshot.docs.first;
-
-          setState(() {
-            // Populate the controllers if data exists in Firestore
-            firstnameController.text = userDoc['first_name'] ?? '';
-            lastnameController.text = userDoc['last_name'] ?? '';
-            locationController.text = userDoc['location'] ?? '';
-            rateController.text = userDoc['hourly_rate']?.toString() ?? '';
-            skillsController.text = userDoc['skills'] ?? '';
-            descriptionController.text = userDoc['description'] ?? '';
-            headlineController.text = userDoc['headline'] ?? '';
-          });
-
-          print('User data loaded: ${firstnameController.text}, ${lastnameController.text}, ${locationController.text}, ${rateController.text}, ${skillsController.text}, ${descriptionController.text}');
-        } else {
-          // If no data is found, leave fields empty (user will input them)
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Please complete you profile!')),
-          );
-        }
-      } catch (e) {
-        print('Error: $e');
-      }
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No user logged in!')),
-      );
-    }
-  }
-
-
-
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: const Text('Add Profile Info'),
-        leading: IconButton(
-          icon: const Icon(Icons.close),
-          onPressed: () {
-            Navigator.pop(context); // Closes the form and returns to the previous screen
-          },
-        ),
-      ),
-      body: SingleChildScrollView(
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(top: 16.0,left: 16.0,right: 16.0),
-                child: TextFormField(
-                  controller: firstnameController,
-                  decoration:  InputDecoration(
-                    hintText: 'First Name',
-                    hintStyle: const TextStyle(
-                      color: Colors.grey,
-                    ),
-                    prefixIcon: const Icon(Icons.account_circle_outlined,color: Colors.grey,),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                  autocorrect: true,
-                  keyboardType: TextInputType.text,
-                  textCapitalization: TextCapitalization.words,
-                  maxLines: 1,
-                  validator: (value){
-                    if(value == null ||  value.isEmpty){
-                      return 'This field is required.';
-                    }
-                  },
-                  inputFormatters: [
-                    LengthLimitingTextInputFormatter(20), // Limits input to 20 characters
-                    FilteringTextInputFormatter.allow(RegExp("[a-zA-Z ]")), // Only allows letters and spaces
-                    //FirstLetterCapitalFormatter(),
-                  ],
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.only(top: 16.0,left: 16.0,right: 16.0),
-                child: TextFormField(
-                  controller: lastnameController,
-                  decoration:  InputDecoration(
-                    hintText: 'Last Name',
-                    hintStyle: const TextStyle(
-                      color: Colors.grey,
-                    ),
-                    prefixIcon: const Icon(Icons.account_circle_outlined,color: Colors.grey,),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                  keyboardType: TextInputType.text,
-                  textCapitalization: TextCapitalization.words,
-                  maxLines: 1,
-                  validator: (value){
-                    if(value == null ||  value.isEmpty){
-                      return 'This field is required.';
-                    }
-                  },
-                  inputFormatters: [
-                    LengthLimitingTextInputFormatter(20), // Limits input to 20 characters
-                    FilteringTextInputFormatter.allow(RegExp("[a-zA-Z ]")), // Only allows letters and spaces
-                  ],// Allows for multi-line input
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.only(top: 16.0,left: 16.0,right: 16.0),
-                child: TextFormField(
-                  controller: locationController,
-                  decoration: InputDecoration(
-                    hintText: 'Your Location',
-                    hintStyle: const TextStyle(
-                      color: Colors.grey,
-                    ),
-                    prefixIcon: const Icon(Icons.location_on_outlined,color: Colors.grey,),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                  keyboardType: TextInputType.text,
-                  textCapitalization: TextCapitalization.words,
-                  maxLines: 1,
-                  validator: (value){
-                    if(value == null ||  value.isEmpty){
-                      return 'This field is required.';
-                    }
-                  },
-                  inputFormatters: [
-                    LengthLimitingTextInputFormatter(20), // Limits input to 20 characters
-                  ],
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.only(top: 16.0,left: 16.0,right: 16.0),
-                child: TextFormField(
-                  controller: rateController,
-                  decoration: InputDecoration(
-                    hintText: '\$ Hourly rate',
-                    hintStyle: const TextStyle(
-                      color: Colors.grey,
-                    ),
-                    prefixIcon: const Icon(Icons.attach_money_outlined,color: Colors.grey,),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                  keyboardType: TextInputType.number,
-                  maxLines: 1,
-                  validator: (value){
-                    if(value == null ||  value.isEmpty){
-                      return 'This field is required.';
-                    }
-                  },
-                ),
-              ),
-              Padding(padding: const EdgeInsets.only(top: 16.0,left: 16.0,right: 16.0),
-              child: TextFormField(
-                controller: skillsController,
-                decoration: InputDecoration(
-                  hintText: 'Your Skills',
-                  hintStyle: const TextStyle(
-                    color: Colors.grey,
-                  ),
-                  prefixIcon: const Icon(Icons.lightbulb_outline,color: Colors.grey,),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  )
-                ),
-                keyboardType: TextInputType.text,
-                textCapitalization: TextCapitalization.words,
-                validator: (value){
-                  if(value == null ||  value.isEmpty){
-                    return 'This field is required.';
-                  }
-                },
-              ),
-              ),
-
-              Padding(
-                padding: const EdgeInsets.only(top: 16.0,left: 16.0,right: 16.0),
-                child: TextFormField(
-                  controller: headlineController,
-                  decoration: InputDecoration(
-                    hintText: 'Headline',
-                    hintStyle: const TextStyle(
-                      color: Colors.grey,
-                    ),
-                    prefixIcon: const Icon(Icons.view_headline_outlined,color: Colors.grey,),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                  keyboardType: TextInputType.text,
-                  textCapitalization: TextCapitalization.words,
-                  validator: (value){
-                    if(value == null ||  value.isEmpty){
-                      return 'This field is required.';
-                    }
-                  },
-                  maxLines: 1, // Allows for multi-line input
-                  inputFormatters: [
-                    LengthLimitingTextInputFormatter(100), // Limits input to 100 characters or 20 words
-                    //FilteringTextInputFormatter.allow(RegExp("[a-zA-Z ]")),
-                  ],
-                ),
-              ),
-
-              Padding(
-                padding: const EdgeInsets.only(left: 16.0,right: 16.0,top: 16.0),
-                child: SizedBox(
-                  height: 200,
-                  child: TextFormField(
-                    controller: descriptionController,
-                    decoration: InputDecoration(
-                      label: Text('Description (max 100 words)'),
-                      hintText: 'Description (max 100 words)',
-                      hintStyle: const TextStyle(
-                        color: Colors.grey,
-                      ),
-                      //prefixIcon: const Icon(Icons.description_outlined,color: Colors.grey,),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                    ),
-                    keyboardType: TextInputType.text,
-                    textCapitalization: TextCapitalization.sentences,
-                    validator: (value){
-                      if(value == null ||  value.isEmpty){
-                        return 'This field is required.';
-                      }
-                    },
-                    maxLines: 10, // Allows for multi-line input
-                    inputFormatters: [
-                      LengthLimitingTextInputFormatter(600), // Limits input to 600 characters or 100 words
-                      FilteringTextInputFormatter.allow(RegExp("[a-zA-Z ]")),
-                    ],
-                  ),
-                ),
-              ),
-               Center(
-                 child: Padding(
-                  padding: const EdgeInsets.only(left: 16.0,right: 16.0,top: 32),
-                               child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      elevation: 3.0,
-                      backgroundColor: Colors.indigoAccent,
-                      minimumSize: Size(double.infinity, 56),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
-                    onPressed: (){
-                      saveData();
-                    },
-                    child: const Text('Save',style: TextStyle(fontSize: 18,color: Colors.white),)
-                               )
-                               ),
-               ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }

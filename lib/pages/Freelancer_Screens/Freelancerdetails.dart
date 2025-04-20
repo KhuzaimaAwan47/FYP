@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:my_fyp/utlis/snack_bars.dart';
 import 'package:shimmer/shimmer.dart';
+import '../Freelancer_Screens//Chat.dart';
 import 'OfferNow.dart';
 
 
@@ -233,7 +234,6 @@ class _FreelancerDetailsState extends State<FreelancerDetails> {
                           ],
                         ),
                         Row(
-                          //mainAxisAlignment: MainAxisAlignment.end,
                           children: [
                             RatingBar.builder(
                               initialRating: userRating,
@@ -256,6 +256,7 @@ class _FreelancerDetailsState extends State<FreelancerDetails> {
                       ],
                     ),
                   ),
+                  const SizedBox(height: 10),
                   Padding(
                     padding: EdgeInsets.only(left: 16.0, right: 16),
                     child: Text(headline,
@@ -264,13 +265,14 @@ class _FreelancerDetailsState extends State<FreelancerDetails> {
                           fontSize: 18,
                         )),
                   ),
+                  const SizedBox(height: 5),
                   Padding(
                     padding: EdgeInsets.only(left: 16.0),
                     child: Row(
                       children: [
                         Icon(
                           Icons.location_pin,
-                          size: 17,
+                          size: 20,
                           color: Colors.indigoAccent,
                         ),
                         Text(
@@ -280,7 +282,7 @@ class _FreelancerDetailsState extends State<FreelancerDetails> {
                         SizedBox(width: 10),
                         Icon(
                           Icons.attach_money,
-                          size: 17,
+                          size: 20,
                           color: Colors.indigoAccent,
                         ),
                         Text(
@@ -290,13 +292,14 @@ class _FreelancerDetailsState extends State<FreelancerDetails> {
                       ],
                     ),
                   ),
+                  const SizedBox(height: 5),
                   Padding(
                     padding: EdgeInsets.only(left: 16.0, right: 16.0),
                     child: Row(
                       children: [
                         Icon(
                           Icons.stars,
-                          size: 17,
+                          size: 20,
                           color: Colors.indigoAccent,
                         ),
                         Text(skills,
@@ -305,18 +308,32 @@ class _FreelancerDetailsState extends State<FreelancerDetails> {
                       ],
                     ),
                   ),
+                  const SizedBox(height: 5),
                   Padding(
                     padding: const EdgeInsets.only(left: 16.0, right: 16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'Average Rating: ${averageRating.toStringAsFixed(1)}',
-                          style: TextStyle(fontSize: 16, color: Colors.black54),
+                        Row(
+                          children: [
+                            Icon(Icons.star_rate, color: Colors.amber, size: 20),
+                            SizedBox(width: 4),
+                            Text(
+                              'Average Rating: ${averageRating.toStringAsFixed(1)}',
+                              style: TextStyle(fontSize: 16, color: Colors.black54),
+                            ),
+                          ],
                         ),
-                        Text(
-                          'Total Reviews: $totalReviews',
-                          style: TextStyle(fontSize: 16, color: Colors.black54),
+                        const SizedBox(height: 5),
+                        Row(
+                          children: [
+                            Icon(Icons.reviews, color: Colors.indigoAccent, size: 20),
+                            SizedBox(width: 4),
+                            Text(
+                              'Total Reviews: $totalReviews',
+                              style: TextStyle(fontSize: 16, color: Colors.black54),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -392,7 +409,19 @@ class _FreelancerDetailsState extends State<FreelancerDetails> {
                                     MediaQuery.of(context).size.height * 0.01,
                               ),
                             ),
-                            onPressed: () {},
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => MessagePage(
+                                    freelancerUid: widget.freelancer['uid'],
+                                    freelancerUsername: widget.freelancer['username'],
+                                    profileImageUrl: widget.freelancer['profileUrl'] ??
+                                        'https://t4.ftcdn.net/jpg/05/49/98/39/360_F_549983970_bRCkYfk0P6PP5fKbMhZMIb07mCJ6esXL.jpg',
+                                  ),
+                                ),
+                              );
+                            },
                             child: const Text(
                               'Contact Me',
                               style:
