@@ -1,7 +1,10 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:my_fyp/utlis/snack_bars.dart';
+
+import 'GroupChatPage.dart';
 
 class GroupDetails extends StatefulWidget {
   final String groupId;
@@ -28,6 +31,7 @@ class _GroupDetailsState extends State<GroupDetails> {
         // Loading state
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
+            backgroundColor: Colors.white,
               body: Center(child: CircularProgressIndicator()));
         }
         // Error or group not found
@@ -158,28 +162,66 @@ class _GroupDetailsState extends State<GroupDetails> {
                               fontWeight: FontWeight.w500,
                             ),
                           ),
-
-                          // Members Button
-                          ElevatedButton.icon(
-                            onPressed: () =>
-                                _showMembersDialog(context, members, admins),
-                            icon: const Icon(
-                              Icons.people,
-                              size: 18,
-                              color: Colors.white,
-                            ),
-                            label: Text('Members (${members.length})'),
-                            style: ElevatedButton.styleFrom(
-                              foregroundColor: Colors.white,
-                              backgroundColor: Colors.indigoAccent,
-                              textStyle: const TextStyle(
-                                  fontSize: 14, fontWeight: FontWeight.bold),
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 8),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
+                          Row(
+                            children: [
+                              // Members Button
+                              ElevatedButton.icon(
+                                onPressed: () =>
+                                    _showMembersDialog(context, members, admins),
+                                icon: const Icon(
+                                  Icons.people,
+                                  size: 18,
+                                  color: Colors.white,
+                                ),
+                                label: Text('Members (${members.length})'),
+                                style: ElevatedButton.styleFrom(
+                                  foregroundColor: Colors.white,
+                                  backgroundColor: Colors.indigoAccent,
+                                  textStyle: const TextStyle(
+                                      fontSize: 14, fontWeight: FontWeight.bold),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 8),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                ),
                               ),
-                            ),
+
+                              SizedBox(width: 5,),
+
+                              if (isMember)
+                              // Chat Button
+                              ElevatedButton.icon(
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => GroupChatScreen(
+                                        groupId: widget.groupId,
+                                        groupName: groupName,
+                                      ),
+                                    ),
+                                  );
+                                },
+                                icon: const Icon(
+                                  Icons.chat_bubble,
+                                  size: 18,
+                                  color: Colors.white,
+                                ),
+                                label: Text('Group Chat'),
+                                style: ElevatedButton.styleFrom(
+                                  foregroundColor: Colors.white,
+                                  backgroundColor: Colors.indigoAccent,
+                                  textStyle: const TextStyle(
+                                      fontSize: 14, fontWeight: FontWeight.bold),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 8),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
@@ -435,9 +477,30 @@ class _GroupDetailsState extends State<GroupDetails> {
                             updatedAdmins.contains(member['email']);
 
                         return CheckboxListTile(
-                          title: Text(
-                            member['username'],
-                            style: const TextStyle(fontSize: 16),
+                          title: Column(
+                            children: [
+                              ListTile(
+                                leading: CircleAvatar(
+                                  radius: 24,
+                                  child: CachedNetworkImage(imageUrl: member['profileUrl'] ?? 'https://via.placeholder.com/150',
+                                    imageBuilder: (context, imageProvider)=> Container(
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        image: DecorationImage(
+                                          image: imageProvider,
+                                          fit: BoxFit.cover,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                title: Text(member['username']),
+                              ),
+                              // Text(
+                              //   member['username'],
+                              //   style: const TextStyle(fontSize: 16),
+                              // ),
+                            ],
                           ),
                           value: isSelected,
                           activeColor: Colors.indigoAccent,
@@ -460,7 +523,7 @@ class _GroupDetailsState extends State<GroupDetails> {
                 TextButton(
                   onPressed: () => Navigator.pop(context),
                   child:
-                      const Text('Cancel', style: TextStyle(color: Colors.red)),
+                      const Text('Cancel'),
                 ),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
