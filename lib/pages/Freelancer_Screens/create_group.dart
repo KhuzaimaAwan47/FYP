@@ -6,7 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 class CreateGroup extends StatefulWidget {
-  const CreateGroup({super.key});
+
+  const CreateGroup({super.key,});
 
   @override
   State<StatefulWidget> createState() => _CreateGroupState();
@@ -20,6 +21,7 @@ class _CreateGroupState extends State<CreateGroup> {
   final TextEditingController groupMembersController = TextEditingController();
   File? _profileImage;
   String? imageUrl;
+
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -139,7 +141,8 @@ class _CreateGroupState extends State<CreateGroup> {
             _profileImage!); // Replace this with actual URL after upload
       }
 
-      await _firestore.collection('groups').add({
+      await _firestore.collection('groups')
+          .add({
         'group_name': groupName,
         'description': groupDescription,
         'rules': groupRules,
