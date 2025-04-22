@@ -15,6 +15,9 @@ class ChatsScreen extends StatefulWidget {
 }
 
 class _ChatsScreenState extends State<ChatsScreen> {
+  late List<bool> isHoverList = [false, false, false, false, false];
+  int _currentIndex =
+  0; // 0: All, 1: Chat, 2: Group Chat
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -44,7 +47,9 @@ class _ChatsScreenState extends State<ChatsScreen> {
               var user1 = chatDoc['user1'] as Map<String, dynamic>? ?? {};
               var user2 = chatDoc['user2'] as Map<String, dynamic>? ?? {};
               var otherUser = user1['uid'] == otherUserId ? user1 : user2;
-              var timestamp = (chatDoc['timestamp'] as Timestamp).toDate();
+              var timestamp = chatDoc['timestamp'] != null
+                  ? (chatDoc['timestamp'] as Timestamp).toDate()
+                  : DateTime.now(); // Fallback to current time if null
               var unreadCount = chatDoc['unreadCounts'][FirebaseAuth.instance.currentUser!.uid] ?? 0;
 
               return Card(
@@ -54,8 +59,18 @@ class _ChatsScreenState extends State<ChatsScreen> {
                 child: ListTile(
                   leading: CircleAvatar(
                     radius: 30,
-                    backgroundImage: NetworkImage(
-                      otherUser['profileUrl'] ?? 'https://via.placeholder.com/150',
+                    child: CachedNetworkImage(imageUrl:otherUser['profileUrl'] ?? 'https://via.placeholder.com/150',
+                    imageBuilder: (context, imageProvider)=> Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        image: DecorationImage(
+                          image: imageProvider,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ),
+                      placeholder: (context,url)=> const CircularProgressIndicator(),
+                      errorWidget: (context,url,error)=> const Icon(Icons.error),
                     ),
                   ),
                   title: Row(
