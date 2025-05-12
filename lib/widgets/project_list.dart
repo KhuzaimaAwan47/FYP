@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'project_card.dart'; // Import ProjectCard
+import 'project_card.dart';
 
 class ProjectList extends StatelessWidget {
   const ProjectList({super.key});
@@ -18,25 +18,20 @@ class ProjectList extends StatelessWidget {
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
             return const Center(child: Text('No projects available'));
           }
-
           final projectDocs = snapshot.data!.docs;
           return ListView.builder(
             scrollDirection: Axis.horizontal,
             itemCount: projectDocs.length,
             itemBuilder: (context, index) {
-              var projectData =
-                  projectDocs[index].data() as Map<String, dynamic>;
+              var projectData = projectDocs[index].data() as Map<String, dynamic>;
               String projectId = projectDocs[index].id;
-              String projectName =
-                  projectData['project_name'] ?? 'Unnamed Project';
-              String description =
-                  projectData['description'] ?? 'No Description';
+              String projectName = projectData['project_name'] ?? 'Unnamed Project';
+              String description = projectData['description'] ?? 'No Description';
               String ownerName = projectData['owner_name'] ?? 'Unknown';
               double budget = (projectData['budget'] is int)
                   ? (projectData['budget'] as int).toDouble()
                   : projectData['budget'] ?? 0.0;
               String postedById = projectData['posted_by'] ?? 'Unknown User';
-
               return ProjectCard(
                 projectName: projectName,
                 budget: budget,

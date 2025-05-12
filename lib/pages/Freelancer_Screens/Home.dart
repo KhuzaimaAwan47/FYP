@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:my_fyp/utlis/snack_bars.dart';
 import 'create_group.dart';
 import 'create_project.dart';
 import 'notifications.dart';
@@ -20,18 +19,45 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
   String? userName = '';
   String? profileUrl;
+
+  // Freelancers fetched once
+  List<Map<String, dynamic>> _freelancers = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    loadCurrentUser();
+    _loadData();
   }
 
-  /* --------------------------- load current user Method --------------------------- */
+  Future<void> _loadData() async {
+    setState(() => _isLoading = true);
 
-  //Function to load current user
+    try {
+      // Fetch current user details
+      await loadCurrentUser();
+
+      // Fetch freelancers once
+      final freelancersFuture = _fetchFreelancers();
+
+      // Wait for freelancers to load
+      final freelancers = await freelancersFuture;
+
+      setState(() {
+        _freelancers = freelancers;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error loading data: $e')),
+      );
+    }
+  }
+
   Future<void> loadCurrentUser() async {
     User? user = _auth.currentUser;
     if (user != null) {
@@ -40,22 +66,41 @@ class _HomeScreenState extends State<HomeScreen> {
             .collection('users')
             .where('email', isEqualTo: user.email)
             .get();
+
         if (querySnapshot.docs.isNotEmpty) {
           DocumentSnapshot userDoc = querySnapshot.docs.first;
           setState(() {
             userName = userDoc['username'];
+            profileUrl = userDoc['profileUrl'];
           });
-          //print('user: $userName');
         } else {
-          showErrorSnackbar(context, 'user name not found!');
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('User name not found!')),
+          );
         }
       } catch (e) {
-        showErrorSnackbar(context, 'Error loading current user: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
       }
     }
   }
 
-/* --------------------------- Main Build Widget --------------------------- */
+  Future<List<Map<String, dynamic>>> _fetchFreelancers() async {
+    User? loggedInUser = _auth.currentUser;
+    QuerySnapshot snapshot = await _firestore
+        .collection('users')
+        .where('userType', isEqualTo: 'freelancer')
+        .get();
+
+    return snapshot.docs
+        .where((doc) => doc['email'] != loggedInUser?.email)
+        .map((doc) {
+      var data = doc.data() as Map<String, dynamic>;
+      data['id'] = doc.id;
+      return data;
+    }).toList();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -75,13 +120,14 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           actions: [
             IconButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => Notifications()),
-                  );
-                },
-                icon: const Icon(Icons.notifications_none)),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => Notifications()),
+                );
+              },
+              icon: const Icon(Icons.notifications_none),
+            ),
             PopupMenuButton<String>(
               color: Colors.white,
               onSelected: (value) {
@@ -96,37 +142,35 @@ class _HomeScreenState extends State<HomeScreen> {
                     MaterialPageRoute(builder: (context) => CreateGroup()),
                   );
                 } else if (value == 'item3') {
-                  Navigator.pop(
-                    context,
-                  );
+                  Navigator.pop(context);
                 }
               },
               itemBuilder: (BuildContext context) {
                 return [
-                  PopupMenuItem<String>(
+                  const PopupMenuItem<String>(
                     value: 'item1',
                     child: Text('New Project'),
                   ),
-                  PopupMenuItem<String>(
+                  const PopupMenuItem<String>(
                     value: 'item2',
                     child: Text('New Group'),
                   ),
-                  PopupMenuItem<String>(
+                  const PopupMenuItem<String>(
                     value: 'item3',
                     child: Text('Sign out'),
                   ),
                 ];
               },
-              offset: Offset(0,
-                  kToolbarHeight), // This places the dropdown slightly below the app bar.
+              offset: const Offset(0, kToolbarHeight),
             )
           ],
         ),
-        body: Column(
+        body: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : Column(
           children: [
-            //Divider(color: Colors.grey[200],thickness: 2,height: 1,),
-            const Padding(
-              padding: EdgeInsets.only(bottom: 8.0, left: 8.0, right: 8.0),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8.0, left: 8.0, right: 8.0),
             ),
             Expanded(
               child: ListView(
@@ -135,12 +179,13 @@ class _HomeScreenState extends State<HomeScreen> {
                     padding: const EdgeInsets.only(left: 16.0),
                     child: Row(
                       children: [
-                        Text(
+                        const Text(
                           'Welcome, ',
                           style: TextStyle(
-                              color: Colors.black87,
-                              fontSize: 25,
-                              fontWeight: FontWeight.w600),
+                            color: Colors.black87,
+                            fontSize: 25,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                         Text(
                           '$userName',
@@ -150,33 +195,25 @@ class _HomeScreenState extends State<HomeScreen> {
                             foreground: Paint()
                               ..shader = LinearGradient(
                                 colors: [
-                                  Color(0xFF007FFF),
-                                  // Start with a bright blue
-                                  Color(0xFF00FFFF),
-                                  // Transition to cyan for smoothness
-                                  Color(0xFFFF00FF),
-                                  // Add magenta for vibrancy
-                                  Colors.indigoAccent,
-                                  // End with indigoAccent
+                                  const Color(0xFF007FFF),
+                                  const Color(0xFF00FFFF),
+                                  const Color(0xFFFF00FF),
+                                  const Color(0xFFFF0000),
                                 ],
-                                stops: [0.0, 0.3, 0.7, 1.0],
-                                // Control the spread of colors
+                                stops: const [0.0, 0.3, 0.7, 1.0],
                                 begin: Alignment.centerLeft,
-                                // Gradient starts from the left
-                                end: Alignment
-                                    .centerRight, // Gradient ends at the right
+                                end: Alignment.centerRight,
                               ).createShader(
-                                Rect.fromLTWH(0, 0, 200,
-                                    50), // Dynamically adjust width and height
+                                Rect.fromLTWH(0, 0, 200, 50),
                               ),
                           ),
-                        )
+                        ),
                       ],
                     ),
                   ),
                   Padding(
                     padding: const EdgeInsets.only(left: 16.0, bottom: 10),
-                    child: Text(
+                    child: const Text(
                       'Explore and Discover',
                       style: TextStyle(
                         color: Colors.black87,
@@ -186,61 +223,63 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   Padding(
-                    padding: EdgeInsets.only(left: 16.0, right: 16),
+                    padding: const EdgeInsets.only(left: 16.0, right: 16),
                     child: TextFormField(
                       decoration: InputDecoration(
                         prefixIcon: IconButton(
                           onPressed: () {},
-                          icon: Icon(
+                          icon: const Icon(
                             Icons.search,
                             color: Colors.black45,
                             size: 30,
                           ),
                         ),
                         suffixIcon: IconButton(
-                            onPressed: () {
-                              showModalBottomSheet(
-                                context: context,
-                                builder: (context) =>
-                                    const AdvancedSearchFilters(),
-                              );
-                            },
-                            icon: Icon(
-                              Icons.filter_list,
-                              color: Colors.black45,
-                            )),
+                          onPressed: () {
+                            showModalBottomSheet(
+                              context: context,
+                              builder: (context) =>
+                              const AdvancedSearchFilters(),
+                            );
+                          },
+                          icon: const Icon(
+                            Icons.filter_list,
+                            color: Colors.black45,
+                          ),
+                        ),
                         hintText: 'Search freelancers, groups, & projects',
-                        hintStyle: TextStyle(color: Colors.black38),
+                        hintStyle: const TextStyle(color: Colors.black38),
                         border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            borderSide: BorderSide.none),
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide.none,
+                        ),
                         fillColor: Colors.grey.shade200,
                         filled: true,
                       ),
                     ),
                   ),
                   Padding(
-                    padding: EdgeInsets.only(left: 10.0),
+                    padding: const EdgeInsets.only(left: 10.0),
                     child: SectionHeader(title: 'Freelancers'),
                   ),
                   Padding(
-                    padding: EdgeInsets.only(left: 10.0, right: 10),
-                    child: FreelancerList(),
+                    padding: const EdgeInsets.only(left: 10.0, right: 10),
+                    child: FreelancerList(freelancers: _freelancers),
                   ),
                   Padding(
-                    padding: EdgeInsets.only(left: 10.0),
+                    padding: const EdgeInsets.only(left: 10.0),
                     child: SectionHeader(title: 'Projects'),
                   ),
                   Padding(
-                    padding: EdgeInsets.only(left: 10.0, right: 10),
+                    padding: const EdgeInsets.only(left: 10.0, right: 10),
                     child: ProjectList(),
                   ),
                   Padding(
-                    padding: EdgeInsets.only(left: 10.0),
+                    padding: const EdgeInsets.only(left: 10.0),
                     child: SectionHeader(title: 'Groups'),
                   ),
                   Padding(
-                    padding: EdgeInsets.only(left: 10.0, right: 10),
+                    padding: const EdgeInsets.only(left: 10.0, right: 10),
                     child: GroupList(),
                   ),
                 ],

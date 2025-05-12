@@ -18,13 +18,13 @@ class GroupList extends StatelessWidget {
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
             return const Center(child: Text('No groups available'));
           }
-
           final groupDocs = snapshot.data!.docs;
           return ListView.builder(
             scrollDirection: Axis.horizontal,
             itemCount: groupDocs.length,
             itemBuilder: (context, index) {
               var groupData = groupDocs[index].data() as Map<String, dynamic>;
+              String groupId = groupDocs[index].id;
               String groupName = groupData['group_name'] ?? 'Unnamed Group';
               String description = groupData['description'] ?? 'No Description';
               String ownerName = groupData['creator_name'] ?? 'Unknown';
@@ -33,9 +33,8 @@ class GroupList extends StatelessWidget {
               String members =
                   (groupData['members'] as List<dynamic>?)?.length.toString() ??
                       '0';
-
               return GroupCard(
-                groupId: groupDocs[index].id,
+                groupId: groupId,
                 groupName: groupName,
                 description: description,
                 postedById: postedById,
