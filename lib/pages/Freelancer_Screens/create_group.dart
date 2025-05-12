@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:my_fyp/utlis/snack_bars.dart';
 
 class CreateGroup extends StatefulWidget {
 
@@ -54,14 +55,10 @@ class _CreateGroupState extends State<CreateGroup> {
             userEmail = userDoc['email'];
           });
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('User name not found!')),
-          );
+          return;
         }
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
+        return;
       }
     }
   }
@@ -94,9 +91,7 @@ class _CreateGroupState extends State<CreateGroup> {
         freelancersList = freelancers;
       });
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error fetching freelancers: $e')),
-      );
+      return;
     }
   }
 
@@ -107,39 +102,21 @@ class _CreateGroupState extends State<CreateGroup> {
       String groupRules = groupRulesController.text;
 
       if (groupName.isEmpty || groupDescription.isEmpty || groupRules.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            backgroundColor: Colors.redAccent,
-            behavior: SnackBarBehavior.floating,
-            margin: EdgeInsets.only(bottom: 16.0, left: 16.0, right: 16.0),
-            duration: Duration(seconds: 3),
-            content: Text('Please fill all fields!'),
-          ),
-        );
+        showErrorSnackbar(context, 'Please fill all fields!');
+        return;
+      }
+      if (_profileImage == null) {
+        showErrorSnackbar(context, 'Please Select a Group Profile Image!');
         return;
       }
 
       User? user = _auth.currentUser;
       if (user == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No user is logged in!')),
-        );
         return;
       }
 
-      Set<String> allMembers = Set.from(
-          selectedFreelancerEmails.where((email) => userEmail.isNotEmpty));
-      if (userEmail.isNotEmpty) {
-        allMembers.add(userEmail);
-      }
-      groupMembers = allMembers.toList();
-
-      if (_profileImage != null) {
-        // Upload image to Firebase Storage and get the URL
-        // Add Firebase Storage implementation here if needed
-        imageUrl = await uploadGroupImage(
-            _profileImage!); // Replace this with actual URL after upload
-      }
+      List<String> groupMembers = [userEmail];
+      imageUrl = await uploadGroupImage(_profileImage!);
 
       await _firestore.collection('groups')
           .add({
@@ -153,16 +130,7 @@ class _CreateGroupState extends State<CreateGroup> {
         'profile_image': imageUrl,
         'created_at': FieldValue.serverTimestamp(),
       });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          backgroundColor: Colors.green,
-          behavior: SnackBarBehavior.floating,
-          margin: EdgeInsets.only(bottom: 16.0, left: 16.0, right: 16.0),
-          content: Text('Group created successfully!'),
-        ),
-      );
-
+      showSuccessSnackbar(context, 'Group created successfully!');
       Navigator.pop(context);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -218,12 +186,6 @@ class _CreateGroupState extends State<CreateGroup> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Create a Group'),
-        leading: IconButton(
-          onPressed: () {
-            Navigator.pop(context);
-          },
-          icon: const Icon(Icons.close),
-        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -238,7 +200,7 @@ class _CreateGroupState extends State<CreateGroup> {
                     _profileImage != null ? FileImage(_profileImage!) : null,
                 child: _profileImage == null
                     ? const Icon(
-                        Icons.camera_alt,
+                        Icons.add_a_photo,
                         size: 40,
                         color: Colors.grey,
                       )
@@ -292,59 +254,59 @@ class _CreateGroupState extends State<CreateGroup> {
                 ),
               ),
             ),
-            const SizedBox(height: 8.0),
-            const Text('Select Members:', style: TextStyle(fontSize: 16)),
-            SingleChildScrollView(
-              child: Container(
-                decoration: BoxDecoration(
-                  border: Border.all(width: 1.0, color: Colors.grey),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  physics: NeverScrollableScrollPhysics(),
-                  itemCount: freelancersList.length,
-                  itemBuilder: (context, index) => CheckboxListTile(
-                    title: Text(freelancersList[index]['email']),
-                    value: selectedFreelancerEmails
-                        .contains(freelancersList[index]['email']),
-                    onChanged: (value) => setState(() {
-                      if (value!) {
-                        selectedFreelancerEmails
-                            .add(freelancersList[index]['email']);
-                      } else {
-                        selectedFreelancerEmails
-                            .remove(freelancersList[index]['email']);
-                      }
-                    }),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 8.0),
-            Column(
-              children: [
-                if (userEmail.isNotEmpty ||
-                    selectedFreelancerEmails
-                        .isNotEmpty) // Conditionally render Wrap
-                  Wrap(
-                    spacing: 8.0,
-                    runSpacing: 4.0,
-                    children: [
-                      if (userEmail.isNotEmpty) // Display current user's email
-                        Chip(label: Text(userEmail)),
-                      ...selectedFreelancerEmails
-                          .map((email) => Chip(
-                                label: Text(email),
-                                onDeleted: () => setState(() =>
-                                    selectedFreelancerEmails.remove(email)),
-                              ))
-                          .toList(),
-                    ],
-                  ),
-              ],
-            ),
-            ElevatedButton(
+            const SizedBox(height: 16.0),
+            // const Text('Select Members:', style: TextStyle(fontSize: 16)),
+            // SingleChildScrollView(
+            //   child: Container(
+            //     decoration: BoxDecoration(
+            //       border: Border.all(width: 1.0, color: Colors.grey),
+            //       borderRadius: BorderRadius.circular(16),
+            //     ),
+            //     child: ListView.builder(
+            //       shrinkWrap: true,
+            //       physics: NeverScrollableScrollPhysics(),
+            //       itemCount: freelancersList.length,
+            //       itemBuilder: (context, index) => CheckboxListTile(
+            //         title: Text(freelancersList[index]['email']),
+            //         value: selectedFreelancerEmails
+            //             .contains(freelancersList[index]['email']),
+            //         onChanged: (value) => setState(() {
+            //           if (value!) {
+            //             selectedFreelancerEmails
+            //                 .add(freelancersList[index]['email']);
+            //           } else {
+            //             selectedFreelancerEmails
+            //                 .remove(freelancersList[index]['email']);
+            //           }
+            //         }),
+            //       ),
+            //     ),
+            //   ),
+            // ),
+            // const SizedBox(height: 8.0),
+            // Column(
+            //   children: [
+            //     if (userEmail.isNotEmpty ||
+            //         selectedFreelancerEmails
+            //             .isNotEmpty) // Conditionally render Wrap
+            //       Wrap(
+            //         spacing: 8.0,
+            //         runSpacing: 4.0,
+            //         children: [
+            //           if (userEmail.isNotEmpty) // Display current user's email
+            //             Chip(label: Text(userEmail)),
+            //           ...selectedFreelancerEmails
+            //               .map((email) => Chip(
+            //                     label: Text(email),
+            //                     onDeleted: () => setState(() =>
+            //                         selectedFreelancerEmails.remove(email)),
+            //                   ))
+            //               ,
+            //         ],
+            //       ),
+            //   ],
+            // ),
+            ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.indigoAccent,
                 minimumSize: Size(double.infinity, 56),
@@ -353,10 +315,15 @@ class _CreateGroupState extends State<CreateGroup> {
                 ),
               ),
               onPressed: createGroup,
-              child: const Text(
+              label: const Text(
                 'Create',
                 style: TextStyle(fontSize: 18, color: Colors.white),
               ),
+              icon: const Icon(
+                Icons.group_add,
+                color: Colors.white,
+              ),
+
             ),
           ],
         ),
