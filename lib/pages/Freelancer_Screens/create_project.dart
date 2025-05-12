@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:my_fyp/utlis/snack_bars.dart';
 
 class PostProject extends StatefulWidget {
   const PostProject({super.key});
@@ -41,18 +42,11 @@ class _PostProjectState extends State<PostProject> {
           setState(() {
             userName = userDoc['username'];
           });
-          //print('user: $userName');
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('user name not found!')),
-          );
+          return;
         }
       } catch (e) {
-        // Handle any errors that occur during the process
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Error: $e'),
-        ));
-        //print('Error loading current user: $e');
+        return;
       }
     }
   }
@@ -74,8 +68,8 @@ class _PostProjectState extends State<PostProject> {
               backgroundColor: Colors.redAccent,
               behavior: SnackBarBehavior.floating,
               // Make it float
-              margin: EdgeInsets.only(bottom: 80.0, left: 16.0, right: 16.0),
-              duration: Duration(seconds: 3),
+              margin: EdgeInsets.only(bottom: 16.0, left: 16.0, right: 16.0),
+              duration: Duration(seconds: 2),
               content: Text('Please fill all fields')),
         );
         return;
@@ -94,27 +88,13 @@ class _PostProjectState extends State<PostProject> {
         'description': description,
         'budget': budget,
         'project_created_at': FieldValue.serverTimestamp(),
-        // Timestamp for project creation
         'posted_by': user.uid,
         'project_status': 'Not Started',
       });
-      print('owner name: $userName');
-      // Show success message and clear the form
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating,
-            // Make it float
-            margin: EdgeInsets.only(bottom: 80.0, left: 16.0, right: 16.0),
-            duration: Duration(seconds: 3),
-            content: Text('Project published successfully!')),
-      );
+      showSuccessSnackbar(context, 'Project published successfully!');
       Navigator.pop(context);
     } catch (e) {
-      // Handle errors
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(backgroundColor: Colors.red, content: Text('Error: $e')),
-      );
+      return;
     }
   }
 
@@ -123,12 +103,7 @@ class _PostProjectState extends State<PostProject> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Publish a Project'),
-        leading: IconButton(
-            onPressed: () {
-              Navigator.pop(context);
-            },
-            icon: const Icon(Icons.close)),
+        title: const Text('Create a Project'),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -209,7 +184,7 @@ class _PostProjectState extends State<PostProject> {
             const SizedBox(
               height: 30,
             ),
-            ElevatedButton(
+            ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.indigoAccent,
                   elevation: 2.0,
@@ -221,7 +196,11 @@ class _PostProjectState extends State<PostProject> {
                 onPressed: () {
                   publishProject();
                 },
-                child: const Text(
+                icon: const Icon(
+                  Icons.publish,
+                  color: Colors.white,
+                ),
+                label: const Text(
                   'Publish',
                   style: TextStyle(fontSize: 18, color: Colors.white),
                 ))
