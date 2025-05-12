@@ -31,8 +31,8 @@ class _ProjectDetailsState extends State<ProjectDetails> {
 
   // User state
   String? currentUserId;
-  bool isOwner =
-      false; // Flag to check if the current user is the owner of the project
+  bool isOwner = false;
+  bool _isLoading = true;
 
   // Controllers
   final TextEditingController nameController = TextEditingController();
@@ -47,12 +47,27 @@ class _ProjectDetailsState extends State<ProjectDetails> {
   @override
   void initState() {
     super.initState();
-    loadUserData();
-    loadProjectDetails();
-    loadProposals();
+    _loadData();
   }
 
   /* --------------------------- Data Loading Methods --------------------------- */
+
+  // load data
+  Future<void> _loadData() async {
+    try {
+      await Future.wait([
+        loadUserData(),
+        loadProjectDetails(),
+        loadProposals(),
+      ]);
+    } catch (e) {
+      return;
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
   // Fetch the current user data
   Future<void> loadUserData() async {
@@ -70,7 +85,7 @@ class _ProjectDetailsState extends State<ProjectDetails> {
         });
       }
     } else {
-      showErrorSnackbar(context, 'User not found!');
+      return;
     }
   }
 
@@ -99,7 +114,7 @@ class _ProjectDetailsState extends State<ProjectDetails> {
         });
       }
     } catch (e) {
-      showErrorSnackbar(context, 'Error loading project details: $e');
+      return;
     }
   }
 
@@ -132,7 +147,7 @@ class _ProjectDetailsState extends State<ProjectDetails> {
         });
       }
     } catch (e) {
-      showErrorSnackbar(context, 'Error loading proposals: $e');
+      return;
     }
   }
 
@@ -178,7 +193,7 @@ class _ProjectDetailsState extends State<ProjectDetails> {
         Navigator.pop(context); // Go back to the previous screen
         showSuccessSnackbar(context, 'Project deleted successfully!');
       } catch (e) {
-        showErrorSnackbar(context, 'Error deleting project: $e');
+        return;
       }
     }
   }
@@ -278,7 +293,9 @@ class _ProjectDetailsState extends State<ProjectDetails> {
       appBar: AppBar(
         title: Text('Project Details'),
       ),
-      body: SingleChildScrollView(
+      body: _isLoading
+        ? Center(child: CircularProgressIndicator())
+        : SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
@@ -313,20 +330,55 @@ class _ProjectDetailsState extends State<ProjectDetails> {
                 color: Colors.grey[300],
                 thickness: 1,
               ),
-              Text(
-                'Posted By: $ownerName',
-                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+              Card(
+                elevation: 0,
+                color: Colors.grey[50],
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: BorderSide(color: Colors.grey.shade200, width: 1),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.assignment,color: Colors.indigo,),
+                          SizedBox(width: 4),
+                          Text(
+                            'Posted By: $ownerName',
+                            style: TextStyle(fontSize: 14, color: Colors.blueGrey[900]),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 5),
+                      Row(
+                        children: [
+                          Icon(Icons.library_books,color: Colors.indigo,),
+                          SizedBox(width: 4),
+                          Text(
+                            'Total Projects Posted: $totalProjectsByUser',
+                            style: TextStyle(fontSize: 14, color: Colors.blueGrey[900]),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 5),
+                      Row(
+                        children: [
+                          Icon(Icons.gavel,color: Colors.indigo,),
+                          SizedBox(width: 4),
+                          Text(
+                            'Total Proposals(Bids) Received: $totalProposals',
+                            style: TextStyle(fontSize: 14, color: Colors.blueGrey[900]),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
               ),
-              const SizedBox(height: 5),
-              Text(
-                'Total Projects Posted: $totalProjectsByUser',
-                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-              ),
-              const SizedBox(height: 5),
-              Text(
-                'Total Proposals(Bids) Received: $totalProposals',
-                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-              ),
+
               const SizedBox(height: 16),
               // Show Edit/Delete button for owner, Bid for others
               isOwner
@@ -334,7 +386,7 @@ class _ProjectDetailsState extends State<ProjectDetails> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Expanded(
-                          child: ElevatedButton(
+                          child: ElevatedButton.icon(
                             style: ElevatedButton.styleFrom(
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(16),
@@ -345,7 +397,8 @@ class _ProjectDetailsState extends State<ProjectDetails> {
                             onPressed: () {
                               _editProject();
                             },
-                            child: const Text(
+                            icon: const Icon(Icons.edit, color: Colors.white),
+                            label: const Text(
                               'Edit',
                               style: TextStyle(color: Colors.white,fontSize: 18),
                             ),
@@ -353,7 +406,7 @@ class _ProjectDetailsState extends State<ProjectDetails> {
                         ),
                         const SizedBox(width: 10),
                         Expanded(
-                          child: ElevatedButton(
+                          child: ElevatedButton.icon(
                             onPressed: _deleteProject,
                             style: ElevatedButton.styleFrom(
                                 shape: RoundedRectangleBorder(
@@ -362,7 +415,8 @@ class _ProjectDetailsState extends State<ProjectDetails> {
                                 backgroundColor: Colors.red,
                                minimumSize: Size.fromHeight(56),
                             ),
-                            child: const Text(
+                            icon: const Icon(Icons.delete, color: Colors.white),
+                            label: const Text(
                               'Delete',
                               style: TextStyle(color: Colors.white,fontSize: 18),
                             ),
@@ -371,7 +425,7 @@ class _ProjectDetailsState extends State<ProjectDetails> {
                       ],
                     )
                   : Center(
-                      child: ElevatedButton(
+                      child: ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(
                           elevation: 3.0,
                           backgroundColor: Colors.indigoAccent,
@@ -392,11 +446,12 @@ class _ProjectDetailsState extends State<ProjectDetails> {
                             ),
                           );
                         },
-                        child: const Text(
+                        icon: const Icon(Icons.gavel, color: Colors.white),
+                        label: const Text(
                           'Bid Now',
                           style: TextStyle(fontSize: 18, color: Colors.white),
                         ),
-                      ),
+                      )
                     ),
             ],
           ),
