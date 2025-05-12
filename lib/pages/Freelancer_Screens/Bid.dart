@@ -131,93 +131,96 @@ class _BidFormState extends State<BidForm> {
       body: Form(
         key: _formKey,
         child: Padding(
-          padding: const EdgeInsets.all(8.0),
+          padding: const EdgeInsets.all(16.0),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: TextFormField(
-                  controller: amountController,
-                  decoration: InputDecoration(
-                    hintText: 'Bid Amount (\$)',
-                    prefixIcon: Icon(
-                      Icons.account_balance_outlined,
-                      color: Colors.grey,
+              Icon(Icons.gavel,size: 150,color: Colors.indigoAccent,shadows: [
+                BoxShadow(
+                  color: Colors.grey,
+                  spreadRadius: 2,
+                  blurRadius: 5,
+                  offset: Offset(0, 3),
+                )
+              ],),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: amountController,
+                decoration: InputDecoration(
+                  hintText: 'Bid Amount (\$)',
+                  prefixIcon: Icon(
+                    Icons.account_balance_outlined,
+                    color: Colors.grey,
+                  ),
+                  hintStyle: TextStyle(
+                      color: Colors.grey, fontWeight: FontWeight.normal),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14.0),
+                  ),
+                ),
+                keyboardType: TextInputType.number,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return '*This field is required';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: timeController,
+                decoration: InputDecoration(
+                  hintText: 'Estimated Time',
+                  prefixIcon: Icon(
+                    Icons.timelapse_outlined,
+                    color: Colors.grey,
+                  ),
+                  hintStyle: TextStyle(
+                      color: Colors.grey, fontWeight: FontWeight.normal),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14.0),
+                  ),
+                ),
+                keyboardType: TextInputType.text,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return '*This field is required';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: messageController,
+                decoration: InputDecoration(
+                    label: Text(
+                      'Message(Optional)',
+                      style: TextStyle(color: Colors.grey),
                     ),
-                    hintStyle: TextStyle(
-                        color: Colors.grey, fontWeight: FontWeight.normal),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14.0),
-                    ),
-                  ),
-                  keyboardType: TextInputType.number,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return '*This field is required';
-                    }
-                    return null;
-                  },
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: TextFormField(
-                  controller: timeController,
-                  decoration: InputDecoration(
-                    hintText: 'Estimated Time',
-                    prefixIcon: Icon(
-                      Icons.timelapse_outlined,
-                      color: Colors.grey,
-                    ),
-                    hintStyle: TextStyle(
-                        color: Colors.grey, fontWeight: FontWeight.normal),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14.0),
-                    ),
-                  ),
-                  keyboardType: TextInputType.text,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return '*This field is required';
-                    }
-                    return null;
-                  },
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: TextFormField(
-                  controller: messageController,
-                  decoration: InputDecoration(
-                      label: Text(
-                        'Message(Optional)',
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14.0),
-                      )),
-                  maxLines: 3,
-                ),
+                    )),
+                maxLines: 3,
               ),
               const SizedBox(height: 16),
               Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.indigoAccent,
-                      elevation: 2.0,
-                      minimumSize: Size(double.infinity, 56),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.indigoAccent,
+                    elevation: 2.0,
+                    minimumSize: Size(double.infinity, 56),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
                     ),
-                    onPressed: _submitBid,
-                    child: const Text(
-                      'Submit ',
-                      style: TextStyle(color: Colors.white, fontSize: 18),
-                    ),
+                  ),
+                  onPressed: _submitBid,
+                  icon: const Icon(
+                    Icons.send,
+                    color: Colors.white,
+                  ),
+                  label: const Text(
+                    'Submit ',
+                    style: TextStyle(color: Colors.white, fontSize: 18),
                   ),
                 ),
               ),
