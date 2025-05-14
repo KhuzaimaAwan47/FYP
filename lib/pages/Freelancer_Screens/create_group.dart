@@ -129,6 +129,8 @@ class _CreateGroupState extends State<CreateGroup> {
         'group_admin': [userEmail],
         'profile_image': imageUrl,
         'created_at': FieldValue.serverTimestamp(),
+        'lastMessage': '',
+        'lastMessageTimestamp': null,
       });
       showSuccessSnackbar(context, 'Group created successfully!');
       Navigator.pop(context);
