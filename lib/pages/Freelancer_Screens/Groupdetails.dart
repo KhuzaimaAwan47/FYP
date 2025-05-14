@@ -1,13 +1,18 @@
+import 'dart:io';
+
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:my_fyp/utlis/snack_bars.dart';
 
 import 'GroupChatPage.dart';
 
 class GroupDetails extends StatefulWidget {
   final String groupId;
+
 
 
   const GroupDetails({super.key, required this.groupId});
@@ -20,6 +25,7 @@ class _GroupDetailsState extends State<GroupDetails> {
   // Initialize Firebase Services
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  File? _profileImage;
 
   /* --------------------------- Main Build Widget --------------------------- */
 
@@ -78,15 +84,33 @@ class _GroupDetailsState extends State<GroupDetails> {
                     return [
                       PopupMenuItem<String>(
                         value: 'edit',
-                        child: const Text('Edit Group'),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.edit, color: Colors.indigo),
+                            const SizedBox(width: 4),
+                            const Text('Edit Group'),
+                          ],
+                        ),
                       ),
                       PopupMenuItem<String>(
                         value: 'delete',
-                        child: const Text('Delete Group'),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.delete, color: Colors.indigo),
+                            const SizedBox(width: 4),
+                            const Text('Delete Group'),
+                          ],
+                        ),
                       ),
                       PopupMenuItem<String>(
                         value: 'addAdmin',
-                        child: const Text('Add Admin'),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.group_add, color: Colors.indigo),
+                            const SizedBox(width: 4),
+                            const Text('Add Admin'),
+                          ],
+                        ),
                       ),
                     ];
                   },
@@ -107,32 +131,37 @@ class _GroupDetailsState extends State<GroupDetails> {
                     Container(
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black26,
-                            blurRadius: 8,
-                            offset: Offset(0, 4),
-                          ),
-                        ],
+                        boxShadow: [BoxShadow(
+                          color: Colors.black26,
+                          blurRadius: 8,
+                          offset: const Offset(0, 4),
+                        )]
                       ),
-                      child: ClipOval(
-                        child: Image.network(
-                          profileImage,
-                          width: 100,
-                          height: 100,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
+                      child: GestureDetector(
+                        onTap: () {
+                          if (isAdmin) {
+                            _editGroupProfileImage(context);
+                          }
+                        },
+                        child: ClipOval(
+                          child: CachedNetworkImage(
+                            imageUrl: profileImage,
+                            width: 100,
+                            height: 100,
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) => const Center(
+                              child: CircularProgressIndicator(),
+                            ),
+                            errorWidget: (context, url, error) => Container(
                               width: 100,
                               height: 100,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 color: Colors.grey[300],
                               ),
-                              child: const Icon(Icons.group,
-                                  color: Colors.white, size: 40),
-                            );
-                          },
+                              child: const Icon(Icons.group, color: Colors.white, size: 40),
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -354,6 +383,121 @@ class _GroupDetailsState extends State<GroupDetails> {
     );
   }
 
+
+
+  Future<void> pickProfileImage() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? pickedFile =
+    await picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _profileImage = File(pickedFile.path);
+      });
+    }
+  }
+
+  Future<String?> uploadGroupImage(File image, BuildContext context) async {
+    try {
+      User? currentUser = _auth.currentUser;
+      if (currentUser != null) {
+        String userId = currentUser.uid;
+        Reference reference = FirebaseStorage.instance
+            .ref()
+            .child("group_profileImages/$userId/Group_Profile.png");
+        await reference.putFile(image);
+        return await reference.getDownloadURL();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            backgroundColor: Colors.red,
+            content: Text('No user is logged in!'),
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red,
+          content: Text('Failed to upload image: $e'),
+        ),
+      );
+    }
+    return null;
+  }
+
+
+
+  void _editGroupProfileImage(BuildContext context) async {
+    File? selectedImage;
+    String? newImageUrl;
+
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, dialogSetState) {
+            return AlertDialog(
+              title: const Text('Change Group Profile Image'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextButton.icon(
+                    onPressed: () async {
+                      final picker = ImagePicker();
+                      final XFile? pickedFile = await picker.pickImage(
+                        source: ImageSource.gallery,
+                      );
+                      if (pickedFile != null) {
+                        selectedImage = File(pickedFile.path);
+                        dialogSetState(() {});
+                      }
+                    },
+                    icon: const Icon(Icons.image),
+                    label: Text(selectedImage != null ? 'Change Image' : 'Select Image'),
+                  ),
+                  if (selectedImage != null)
+                    Image.file(
+                      selectedImage!,
+                      height: 100,
+                      width: 100,
+                      fit: BoxFit.cover,
+                    ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: Navigator.of(context).pop,
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.indigoAccent,
+                  ),
+                  onPressed: selectedImage == null
+                      ? null
+                      : () async {
+                    newImageUrl = await uploadGroupImage(selectedImage!, context);
+                    if (newImageUrl != null) {
+                      await _firestore
+                          .collection('groups')
+                          .doc(widget.groupId)
+                          .update({'profile_image': newImageUrl});
+                      Navigator.pop(context);
+                      showSuccessSnackbar(context, 'Profile image updated successfully!');
+                    }
+                  },
+                  child: const Text('Save',style: TextStyle(color: Colors.white),),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+
+
   /* --------------------------- Dialogs --------------------------- */
 
   // Edit Group Dialog
@@ -410,7 +554,7 @@ class _GroupDetailsState extends State<GroupDetails> {
             onPressed: () {
               Navigator.pop(context);
             },
-            child: const Text('Cancel', style: TextStyle(color: Colors.red)),
+            child: const Text('Cancel'),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -692,11 +836,42 @@ class _GroupDetailsState extends State<GroupDetails> {
       );
       return;
     }
+
+    // Show confirmation dialog
+    bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
+        title: const Text('Leave Group'),
+        content: const Text('Are you sure you want to leave this group?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Leave', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    // If user cancels or dismisses the dialog, exit the function
+    if (confirm != true) return;
+
     try {
       DocumentSnapshot groupSnapshot =
-          await _firestore.collection('groups').doc(groupId).get();
+      await _firestore.collection('groups').doc(groupId).get();
       List<dynamic> members = groupSnapshot['members'] ?? [];
       List<dynamic> admins = groupSnapshot['group_admin'] ?? [];
+
       if (members.contains(userEmail)) {
         members.remove(userEmail);
         if (admins.contains(userEmail)) {
