@@ -7,6 +7,8 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'dart:io';
 
+import 'GroupChatPage.dart';
+
 class ChatsScreen extends StatefulWidget {
   const ChatsScreen({super.key});
 
@@ -15,9 +17,10 @@ class ChatsScreen extends StatefulWidget {
 }
 
 class _ChatsScreenState extends State<ChatsScreen> {
-  late List<bool> isHoverList = [false, false, false, false, false];
-  int _currentIndex =
-  0; // 0: All, 1: Chat, 2: Group Chat
+  int _currentIndex = 0;
+  final List<bool> isHoverList = List.generate(5, (_) => false);
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -26,41 +29,110 @@ class _ChatsScreenState extends State<ChatsScreen> {
         automaticallyImplyLeading: false,
         title: const Text('Messages'),
       ),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('chats')
-            .where('users', arrayContains: FirebaseAuth.instance.currentUser!.uid)
-            .orderBy('timestamp', descending: true)
-            .snapshots(),
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          return ListView.builder(
-            itemCount: snapshot.data!.docs.length,
-            itemBuilder: (context, index) {
-              var chatDoc = snapshot.data!.docs[index];
-              var users = List<String>.from(chatDoc['users']);
-              var otherUserId = users.firstWhere(
-                    (uid) => uid != FirebaseAuth.instance.currentUser!.uid,
-              );
-              var user1 = chatDoc['user1'] as Map<String, dynamic>? ?? {};
-              var user2 = chatDoc['user2'] as Map<String, dynamic>? ?? {};
-              var otherUser = user1['uid'] == otherUserId ? user1 : user2;
-              var timestamp = chatDoc['timestamp'] != null
-                  ? (chatDoc['timestamp'] as Timestamp).toDate()
-                  : DateTime.now(); // Fallback to current time if null
-              var unreadCount = chatDoc['unreadCounts'][FirebaseAuth.instance.currentUser!.uid] ?? 0;
+      body: Padding(
+        padding: const EdgeInsets.all(2.0),
+        child: Column(
+          children: [
+            // Tab Bar
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(2, (index) {
+                  return InkWell(
+                    onTap: () => setState(() => _currentIndex = index),
+                    onHover: (value) =>
+                        setState(() => isHoverList[index] = value),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 400),
+                      curve: Curves.easeIn,
+                      height: 40,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      alignment: Alignment.center,
+                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: _currentIndex == index
+                              ? Colors.indigoAccent
+                              : Colors.grey,
+                        ),
+                        color: _currentIndex == index
+                            ? Colors.indigoAccent
+                            : isHoverList[index]
+                            ? Colors.indigoAccent.withOpacity(0.1)
+                            : null,
+                      ),
+                      child: Text(
+                        [
+                          'Chats',
+                          'Groups' // Replaced "Sent Offers" with "Groups"
+                        ][index],
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: _currentIndex == index
+                              ? Colors.white
+                              : Colors.black87,
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+              ),
+            ),
+            // Content Area
+            Expanded(
+              child: IndexedStack(
+                index: _currentIndex,
+                children: [
+                  _buildAllChats(), // Index 0: Chats
+                  _buildGroupChats(), // Index 1: Groups
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-              return Card(
-                elevation: 0,
-                color: Colors.grey.shade200,
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                child: ListTile(
-                  leading: CircleAvatar(
-                    radius: 30,
-                    child: CachedNetworkImage(imageUrl:otherUser['profileUrl'] ?? 'https://via.placeholder.com/150',
-                    imageBuilder: (context, imageProvider)=> Container(
+  // Builds individual chat list
+  Widget _buildAllChats() {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('chats')
+          .where('users', arrayContains: FirebaseAuth.instance.currentUser!.uid)
+          .orderBy('timestamp', descending: true)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        return ListView.builder(
+          itemCount: snapshot.data!.docs.length,
+          itemBuilder: (context, index) {
+            var chatDoc = snapshot.data!.docs[index];
+            var users = List<String>.from(chatDoc['users']);
+            var otherUserId = users.firstWhere(
+                  (uid) => uid != FirebaseAuth.instance.currentUser!.uid,
+            );
+            var user1 = chatDoc['user1'] as Map<String, dynamic>? ?? {};
+            var user2 = chatDoc['user2'] as Map<String, dynamic>? ?? {};
+            var otherUser = user1['uid'] == otherUserId ? user1 : user2;
+            var timestamp = chatDoc['timestamp'] != null
+                ? (chatDoc['timestamp'] as Timestamp).toDate()
+                : DateTime.now();
+            var unreadCount = chatDoc['unreadCounts'][FirebaseAuth.instance.currentUser!.uid] ?? 0;
+            return Card(
+              elevation: 0,
+              color: Colors.grey.shade200,
+              margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              child: ListTile(
+                leading: CircleAvatar(
+                  radius: 30,
+                  child: CachedNetworkImage(
+                    imageUrl: otherUser['profileUrl'] ?? 'https://via.placeholder.com/150 ',
+                    imageBuilder: (context, imageProvider) => Container(
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         image: DecorationImage(
@@ -69,60 +141,189 @@ class _ChatsScreenState extends State<ChatsScreen> {
                         ),
                       ),
                     ),
-                      placeholder: (context,url)=> const CircularProgressIndicator(),
-                      errorWidget: (context,url,error)=> const Icon(Icons.error),
-                    ),
+                    placeholder: (context, url) => const CircularProgressIndicator(),
+                    errorWidget: (context, url, error) => const Icon(Icons.error),
                   ),
-                  title: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(otherUser['name'] ?? 'User'),
-                      Text(
-                        DateFormat('h:mm a').format(timestamp),
-                        style: const TextStyle(color: Colors.grey, fontSize: 13),
-                      ),
-                    ],
-                  ),
-                  subtitle: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          chatDoc['lastMessage'] ?? '',
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(color: Colors.grey),
-                        ),
-                      ),
-                      if (unreadCount > 0)
-                        Badge(
-                          backgroundColor: Colors.indigoAccent,
-                          label: Text(
-                            unreadCount.toString(),
-                            style: const TextStyle(color: Colors.white),
-                          ),
-                        ),
-                    ],
-                  ),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => MessagePage(
-                          freelancerUid: otherUserId,
-                          freelancerUsername: otherUser['name'] ?? 'User',
-                          profileImageUrl: otherUser['profileUrl'] ?? 'https://via.placeholder.com/150',
-                        ),
-                      ),
-                    );
-                  },
                 ),
-              );
-            },
-          );
-        },
-      ),
+                title: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(otherUser['name'] ?? 'User'),
+                    Text(
+                      DateFormat('h:mm a').format(timestamp),
+                      style: const TextStyle(color: Colors.grey, fontSize: 13),
+                    ),
+                  ],
+                ),
+                subtitle: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        chatDoc['lastMessage'] ?? '',
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(color: Colors.grey),
+                      ),
+                    ),
+                    if (unreadCount > 0)
+                      Badge(
+                        backgroundColor: Colors.indigoAccent,
+                        label: Text(
+                          unreadCount.toString(),
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                      ),
+                  ],
+                ),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => MessagePage(
+                        freelancerUid: otherUserId,
+                        freelancerUsername: otherUser['name'] ?? 'User',
+                        profileImageUrl: otherUser['profileUrl'] ?? 'https://via.placeholder.com/150 ',
+                      ),
+                    ),
+                  );
+                },
+              ),
+            );
+          },
+        );
+      },
     );
   }
+
+  // Builds group chat list
+  Widget _buildGroupChats() {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('groups')
+          .where('members', arrayContains: FirebaseAuth.instance.currentUser?.email)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        return ListView.builder(
+          itemCount: snapshot.data!.docs.length,
+          itemBuilder: (context, index) {
+            var groupDoc = snapshot.data!.docs[index];
+            var data = groupDoc.data() as Map<String, dynamic>;
+
+            var groupName = data['group_name'] ?? 'Unnamed Group';
+            var lastMessage = data['lastMessage'] ?? 'No message yet';
+
+            // Safely handle lastMessageTimestamp
+            var lastMessageTimestamp = DateTime.now(); // fallback
+            if (data['lastMessageTimestamp'] != null) {
+              try {
+                lastMessageTimestamp = (data['lastMessageTimestamp'] as Timestamp).toDate();
+              } catch (e) {
+                // Fallback if timestamp is not a valid Timestamp
+                lastMessageTimestamp = DateTime.now();
+              }
+            }
+
+            var profileImageUrl = data['profile_image'] ??
+                'https://via.placeholder.com/150 ';
+
+            int unreadCount = 0;
+
+            // Safely access unreadCounts map
+            if (data.containsKey('unreadCounts') &&
+                data['unreadCounts'] is Map<String, dynamic>) {
+              Map<String, dynamic> counts = data['unreadCounts'];
+              String? currentUserUid = _auth.currentUser?.uid;
+
+              if (currentUserUid != null && counts.containsKey(currentUserUid)) {
+                unreadCount = counts[currentUserUid] is int
+                    ? counts[currentUserUid]
+                    : 0;
+              }
+            }
+
+            return Card(
+              elevation: 0,
+              color: Colors.grey.shade200,
+              margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              child: ListTile(
+                leading: CircleAvatar(
+                  radius: 30,
+                  backgroundColor: Colors.indigoAccent,
+                  child: CachedNetworkImage(
+                    imageUrl: profileImageUrl,
+                    imageBuilder: (context, imageProvider) => Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        image: DecorationImage(
+                          image: imageProvider,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ),
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                title: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        groupName,
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                    ),
+                    Text(
+                      DateFormat('h:mm a').format(lastMessageTimestamp),
+                      style: const TextStyle(color: Colors.grey, fontSize: 13),
+                    ),
+                  ],
+                ),
+                subtitle: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        lastMessage,
+                        style: const TextStyle(color: Colors.grey),
+                      ),
+                    ),
+                    if (unreadCount > 0)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.indigoAccent,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          unreadCount.toString(),
+                          style: const TextStyle(color: Colors.white, fontSize: 12),
+                        ),
+                      ),
+                  ],
+                ),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => GroupChatScreen(
+                        groupId: groupDoc.id,
+                        groupName: groupName,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
 }
 
 class MessagePage extends StatefulWidget {
@@ -269,9 +470,7 @@ class _MessagePageState extends State<MessagePage> {
         curve: Curves.easeOut,
       );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to send image')),
-      );
+      return;
     } finally {
       if (mounted) Navigator.pop(context);
     }
