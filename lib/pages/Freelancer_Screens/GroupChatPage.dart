@@ -16,7 +16,6 @@ class GroupChatScreen extends StatefulWidget {
   @override
   State<GroupChatScreen> createState() => _GroupChatScreenState();
 }
-
 class _GroupChatScreenState extends State<GroupChatScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -24,6 +23,13 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   final TextEditingController _textController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final ImagePicker _picker = ImagePicker();
+
+  @override
+  void initState() {
+    super.initState();
+    _markAsRead();
+  }
+
 
   Future<Map<String, dynamic>> getCurrentUserDetails() async {
     User? currentUser = _auth.currentUser;
@@ -49,33 +55,83 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   }
 
   Future<void> _sendMessage(String content, String type) async {
+    final currentUser = _auth.currentUser!;
     final currentUserData = await getCurrentUserDetails();
 
-    // Update group metadata
-    await _firestore.collection('groups').doc(widget.groupId).set({
-      'lastMessage': type == 'image' ? 'Sent an image' : content,
-      'lastMessageTimestamp': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
+    try {
+      // Send the message to the group
+      final groupDocRef = _firestore.collection('groups').doc(widget.groupId);
+      final messageRef = await groupDocRef
+          .collection('messages')
+          .add({
+        'senderId': currentUser.uid,
+        'senderName': currentUserData['username'] ?? 'User',
+        'senderProfile': currentUserData['profileUrl'] ?? '',
+        'content': content,
+        'type': type,
+        'timestamp': FieldValue.serverTimestamp(),
+      });
 
-    // Add message to messages collection
+      //  Update the group document with last message and timestamp
+      await groupDocRef.set({
+        'lastMessage': type == 'image' ? 'Sent an image' : content,
+        'lastMessageTimestamp': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+
+      // Step 2: Get the group document to retrieve member emails
+      final groupSnapshot = await groupDocRef.get();
+      final List<dynamic>? memberEmails = groupSnapshot.get('members');
+
+      if (memberEmails == null || memberEmails.isEmpty) {
+        print("No members found in the group.");
+        return;
+      }
+
+      // Fetch UIDs from the users collection based on emails
+      final List<String> userEmails = memberEmails.cast<String>();
+      final QuerySnapshot usersSnapshot = await _firestore
+          .collection('users')
+          .where('email', whereIn: userEmails)
+          .get();
+
+      final List<String> memberUids = usersSnapshot.docs
+          .map((doc) => doc.get('uid') as String)
+          .toList();
+
+      if (memberUids.isEmpty) {
+        return;
+      }
+
+      // Unread count updates
+      final Map<String, dynamic> unreadCountsUpdate = {};
+
+      for (final String memberId in memberUids) {
+        if (memberId != currentUser.uid) {
+          unreadCountsUpdate['unreadCounts.$memberId'] = FieldValue.increment(1);
+        }
+      }
+
+      // Update the group document with unread counts
+      if (unreadCountsUpdate.isNotEmpty) {
+        await groupDocRef.update(unreadCountsUpdate);
+      }
+
+      // Scroll to the top
+      _scrollController.animateTo(
+        0,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    } catch (e) {}
+  }
+
+  void _markAsRead() async {
     await _firestore
         .collection('groups')
         .doc(widget.groupId)
-        .collection('messages')
-        .add({
-      'senderId': _auth.currentUser!.uid,
-      'senderName': currentUserData['username'] ?? 'User',
-      'senderProfile': currentUserData['profileUrl'] ?? '',
-      'content': content,
-      'type': type,
-      'timestamp': FieldValue.serverTimestamp(),
+        .update({
+      'unreadCounts.${_auth.currentUser!.uid}': 0,
     });
-
-    _scrollController.animateTo(
-      0,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeOut,
-    );
   }
 
   Future<void> _pickImage(ImageSource source) async {
@@ -176,6 +232,8 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                     bool isMe = message['senderId'] == _auth.currentUser!.uid;
                     Timestamp? ts = message['timestamp'];
                     DateTime messageTime = ts?.toDate() ?? DateTime.now();
+
+
 
                     return GroupMessageBubble(
                       message: message['content'],
