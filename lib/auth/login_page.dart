@@ -21,6 +21,13 @@ class _LoginPageState extends State<LoginPage> {
   bool? isSignIn = false;
 
   @override
+  void initState() {
+    super.initState();
+    // Hide status bar and other system overlays for an immersive experience.
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+  }
+
+  @override
   void dispose() {
     emailController.dispose();
     passwordController.dispose();
