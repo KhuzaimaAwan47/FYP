@@ -1,9 +1,11 @@
 import 'dart:io';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:my_fyp/utlis/snack_bars.dart';
 import 'package:video_player/video_player.dart';
 
 class CreatePost extends StatefulWidget {
@@ -14,12 +16,13 @@ class CreatePost extends StatefulWidget {
 }
 
 class _CreatePostState extends State<CreatePost> {
-  File? postMedia;
-  String mediaType = 'text'; // can be 'image' , 'video' , 'text'
+
   final TextEditingController _textController = TextEditingController();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-
+  bool isLoading = false;
+  File? postMedia;
+  String mediaType = 'text'; // can be 'image' , 'video' , 'text'
   String? userName = '';
   String? profileUrl = '';
 
@@ -46,9 +49,7 @@ class _CreatePostState extends State<CreatePost> {
           });
         }
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load user: $e')),
-        );
+       return;
       }
     }
   }
@@ -96,40 +97,41 @@ class _CreatePostState extends State<CreatePost> {
       await reference.putFile(media);
       return await reference.getDownloadURL();
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Upload failed: $e')),
-      );
+      showErrorSnackbar(context, 'Upload failed: $e');
       return null;
     }
   }
 
   Future<void> createPost() async {
-    User? currentUser = _auth.currentUser;
-    if (currentUser == null) return;
+    if (_textController.text.isEmpty && postMedia == null) {
+      showErrorSnackbar(context, 'Cannot post empty content.');
+      return;
+    }
+
+    setState(() => isLoading = true);
 
     try {
+      User? currentUser = _auth.currentUser;
+      if (currentUser == null) return;
+
       QuerySnapshot querySnapshot = await _firestore
           .collection('users')
           .where('email', isEqualTo: currentUser.email)
           .get();
 
-      if (querySnapshot.docs.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('User not found!')),
-        );
-        return;
-      }
+      if (querySnapshot.docs.isEmpty) return;
 
       DocumentSnapshot userDoc = querySnapshot.docs.first;
       String? mediaUrl = '';
-      String finalMediaType = mediaType; // Use current mediaType
 
-      // Only upload if we have valid media
       if (postMedia != null && mediaType != 'text') {
         mediaUrl = await uploadMedia(postMedia!);
-      } else {
-        // If no media or text, reset to text
-        mediaType = 'text';
+      }
+
+      // Final check: prevent post if both text and media upload failed
+      if (_textController.text.isEmpty && (mediaUrl == null || mediaUrl.isEmpty)) {
+        showErrorSnackbar(context, 'Failed to upload media and text is empty.');
+        return;
       }
 
       await _firestore.collection('posts').add({
@@ -137,18 +139,19 @@ class _CreatePostState extends State<CreatePost> {
         'username': userDoc['username'],
         'profileUrl': userDoc['profileUrl'],
         'textContent': _textController.text,
-        'mediaUrl': mediaUrl,
-        'mediaType': mediaType, // Use actual media type
+        'mediaUrl': mediaUrl ?? '',
+        'mediaType': mediaUrl != null && mediaUrl.isNotEmpty ? mediaType : 'text',
         'timestamp': FieldValue.serverTimestamp(),
         'likes': 0,
+        'likesCount': 0,
         'comments': 0,
       });
 
       Navigator.pop(context);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to create post: $e')),
-      );
+      showErrorSnackbar(context, 'Failed to create post: $e');
+    } finally {
+      setState(() => isLoading = false);
     }
   }
 
@@ -160,115 +163,128 @@ class _CreatePostState extends State<CreatePost> {
         title: const Text('Create Post'),
         actions: [
           IconButton(
-            onPressed: createPost,
+            onPressed: isLoading ? null : createPost,
             icon: const Icon(Icons.post_add_outlined),
+            color: isLoading ? Colors.grey : null,
           )
         ],
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  CircleAvatar(
-                    radius: 20,
-                    backgroundColor: Colors.grey[300],
-                    backgroundImage: profileUrl != null && profileUrl!.isNotEmpty
-                        ? NetworkImage(profileUrl!)
-                        : const NetworkImage(
-                        'https://t4.ftcdn.net/jpg/05/49/98/39/360_F_549983970_bRCkYfk0P6PP5fKbMhZMIb07mCJ6esXL.jpg'),
-                  ),
-                  const SizedBox(width: 8.0),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  Row(
                     children: [
-                      Text(userName ?? 'Loading...', style: const TextStyle(fontWeight: FontWeight.w500)),
-                      Row(
+                      CircleAvatar(
+                        radius: 20,
+                        backgroundColor: Colors.grey[300],
+                        backgroundImage: profileUrl != null && profileUrl!.isNotEmpty
+                            ? CachedNetworkImageProvider(profileUrl!)
+                            : CachedNetworkImageProvider(
+                          'https://t4.ftcdn.net/jpg/05/49/98/39/360_F_549983970_bRCkYfk0P6PP5fKbMhZMIb07mCJ6esXL.jpg',
+                        ),
+                      ),
+                      const SizedBox(width: 8.0),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Icon(Icons.public, size: 12, color: Colors.grey),
-                          const SizedBox(width: 4.0),
-                          const Text('Public', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w500)),
+                          Text(userName ?? 'Loading...', style: const TextStyle(fontWeight: FontWeight.w500)),
+                          Row(
+                            children: [
+                              const Icon(Icons.public, size: 12, color: Colors.grey),
+                              const SizedBox(width: 4.0),
+                              const Text('Public', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w500)),
+                            ],
+                          )
                         ],
                       )
                     ],
-                  )
+                  ),
+                  const SizedBox(height: 8.0),
+                  TextField(
+                    controller: _textController,
+                    maxLines: 5,
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: Colors.grey[200],
+                      hintText: 'What\'s on your mind?',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16.0),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  GestureDetector(
+                    onTap: pickMedia,
+                    child: Container(
+                      height: 400,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(16.0),
+                      ),
+                      child: Stack(
+                        children: [
+                          // Media preview
+                          if (postMedia != null && mediaType == 'image')
+                            Image.file(postMedia!, fit: BoxFit.cover)
+                          else if (postMedia != null && mediaType == 'video')
+                            VideoPlayerItem(postMedia!.path, videoUrl: '',)
+                          else
+                            const Center(
+                              child: Icon(Icons.add_a_photo, size: 40, color: Colors.grey),
+                            ),
+
+                          // Close button for media
+                          if (postMedia != null)
+                            Positioned(
+                              top: 8,
+                              right: 8,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.black54,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: IconButton(
+                                  icon: const Icon(Icons.close, color: Colors.white),
+                                  onPressed: () {
+                                    setState(() {
+                                      postMedia = null;
+                                      mediaType = 'text';
+                                    });
+                                  },
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ],
               ),
-              const SizedBox(height: 8.0),
-              TextField(
-                controller: _textController,
-                maxLines: 5,
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: Colors.grey[200],
-                  hintText: 'What\'s on your mind?',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16.0),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              GestureDetector(
-                onTap: pickMedia,
-                child: Container(
-                  height: 400,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[200],
-                    borderRadius: BorderRadius.circular(16.0),
-                  ),
-                  child: Stack(
-                    children: [
-                      // Media preview
-                      if (postMedia != null && mediaType == 'image')
-                        Image.file(postMedia!, fit: BoxFit.cover)
-                      else if (postMedia != null && mediaType == 'video')
-                        VideoPlayerItem(postMedia!.path, videoUrl: '',)
-                      else
-                        const Center(
-                          child: Icon(Icons.add_a_photo, size: 40, color: Colors.grey),
-                        ),
-
-                      // Close button for media
-                      if (postMedia != null)
-                        Positioned(
-                          top: 8,
-                          right: 8,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: Colors.black54,
-                              shape: BoxShape.circle,
-                            ),
-                            child: IconButton(
-                              icon: const Icon(Icons.close, color: Colors.white),
-                              onPressed: () {
-                                setState(() {
-                                  postMedia = null;
-                                  mediaType = 'text';
-                                });
-                              },
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
+        if (isLoading)
+          Container(
+            color: Colors.black54,
+            child: const Center(
+              child: CircularProgressIndicator(color: Colors.white),
+            ),
+          )
+        ],
       ),
       bottomNavigationBar: Container(
         padding: const EdgeInsets.all(16),
         width: double.infinity,
         child: ElevatedButton(
-          onPressed: createPost,
+          onPressed: isLoading ? null : createPost,
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.indigoAccent,
+            backgroundColor: isLoading ? Colors.grey : Colors.indigoAccent,
             elevation: 2.0,
             minimumSize: const Size(double.infinity, 56),
             shape: RoundedRectangleBorder(
