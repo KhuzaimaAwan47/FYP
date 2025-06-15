@@ -29,6 +29,118 @@ class _FeedScreenState extends State<FeedScreen> {
     loadCurrentUser();
   }
 
+
+
+  // void _toggleLike(String postId) async {
+  //   final user = _auth.currentUser;
+  //   if (user == null) return;
+  //
+  //   final DocumentReference postRef = _firestore.collection('posts').doc(postId);
+  //
+  //   FirebaseFirestore.instance.runTransaction((transaction) async {
+  //     final DocumentSnapshot snapshot = await transaction.get(postRef);
+  //     final data = snapshot.data() as Map<String, dynamic>;
+  //
+  //     final likesMap = data['likes'] is Map
+  //         ? Map<String, dynamic>.from(data['likes'])
+  //         : <String, dynamic>{};
+  //
+  //     int incrementValue = 0;
+  //
+  //     if (likesMap.containsKey(user.uid)) {
+  //       likesMap.remove(user.uid);
+  //       incrementValue = -1; // Like removed
+  //     } else {
+  //       incrementValue = 1; // Like added
+  //     }
+  //
+  //     // Update both the likes map and the likesCount field
+  //     transaction.update(postRef, {
+  //       'likes': FieldValue.increment(incrementValue),
+  //     });
+  //   });
+  // }
+
+  void _toggleLike(String postId) async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    final DocumentReference postRef = _firestore.collection('posts').doc(postId);
+
+    FirebaseFirestore.instance.runTransaction((transaction) async {
+      final DocumentSnapshot snapshot = await transaction.get(postRef);
+      final data = snapshot.data() as Map<String, dynamic>;
+      final likesMap = data['likes'] is Map ? Map<String, dynamic>.from(data['likes']) : {};
+
+      if (likesMap.containsKey(user.uid)) {
+        likesMap.remove(user.uid);
+      } else {
+        likesMap[user.uid] = true;
+      }
+
+      transaction.update(postRef, {'likes': likesMap});
+      transaction.update(postRef, {'likesCount': likesMap.length});
+    });
+
+  }
+
+  void _addComment(BuildContext context, String postId) async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    String? commentText = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        String comment = '';
+        return AlertDialog(
+          title: const Text('Add Comment'),
+          content: TextField(
+            onChanged: (value) => comment = value,
+            decoration: const InputDecoration(hintText: 'Write a comment...'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: Navigator.of(context).pop,
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(comment),
+              child: const Text('Post'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (commentText != null && commentText.isNotEmpty) {
+      final DocumentReference postRef = _firestore.collection('posts').doc(postId);
+      final CollectionReference commentsRef = postRef.collection('comments');
+
+      final userSnapshot = await _firestore
+          .collection('users')
+          .where('email', isEqualTo: user.email)
+          .get();
+
+      if (userSnapshot.docs.isNotEmpty) {
+        final userDoc = userSnapshot.docs.first;
+        final username = userDoc['username'];
+        final profileUrl = userDoc['profileUrl'];
+
+        await commentsRef.add({
+          'userId': user.uid,
+          'username': username,
+          'profileUrl': profileUrl,
+          'text': commentText,
+          'timestamp': FieldValue.serverTimestamp(),
+        });
+
+        await postRef.update({
+          'comments': FieldValue.increment(1),
+        });
+      }
+    }
+  }
+
   Future<void> loadCurrentUser() async {
     User? user = _auth.currentUser;
     if (user != null) {
@@ -43,7 +155,7 @@ class _FeedScreenState extends State<FeedScreen> {
           setState(() {
             userName = userDoc['username'];
             profileUrl = userDoc['profileUrl'];
-            currentUserId = userDoc.id;
+            currentUserId = userDoc['uid'];
           });
         }
       } catch (e) {
@@ -157,6 +269,10 @@ class _FeedScreenState extends State<FeedScreen> {
     final String profileUrl = post['profileUrl'] ?? '';
     final Timestamp? timestamp = post['timestamp'];
 
+    final likesMap = post['likes'] is Map ? Map<String, dynamic>.from(post['likes']) : {};
+    final isLiked = currentUserId != null && likesMap.containsKey(currentUserId);
+
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 16.0),
       child: Card(
@@ -203,7 +319,7 @@ class _FeedScreenState extends State<FeedScreen> {
                 padding: const EdgeInsets.only(left: 16.0, right: 16.0, top: 8.0, bottom: 8.0),
                 child: SizedBox(
                   width: 400,
-                  height: 400,
+                  height: 500,
                   child: CachedNetworkImage(
                     imageUrl: mediaUrl,
                     fit: BoxFit.cover,
@@ -224,7 +340,7 @@ class _FeedScreenState extends State<FeedScreen> {
                 padding: const EdgeInsets.only(left: 16.0,right: 16.0,top:8.0,bottom: 8.0),
                 child: SizedBox(
                     width: 400,
-                    height: 400,
+                    height: 500,
                     child: VideoPlayerItem(videoUrl:  mediaUrl)),
               ),
 
@@ -244,14 +360,19 @@ class _FeedScreenState extends State<FeedScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
-                      IconButton(onPressed: (){}, icon: Icon(Icons.mode_comment_rounded,)),
+                      IconButton(onPressed: (){
+                        _addComment(context, post.id);
+                      }, icon: Icon(Icons.mode_comment_rounded,color: Colors.grey)),
                       Text('${post['comments']} comments',),
                     ],
                   ),
                   Row(
                     children: [
-                      Text('${post['likes']} likes'),
-                      IconButton(onPressed: (){}, icon: Icon(Icons.favorite, color: Colors.red,))
+                      Text('${post['likesCount']} likes'),
+                      IconButton(onPressed: (){
+                        _toggleLike(post.id);
+                      }, icon: Icon(Icons.favorite, color: isLiked ? Colors.red : Colors.grey,size: 30,),
+                      )
 
                     ],
                   ),
@@ -295,9 +416,9 @@ class _VideoPlayerItemState extends State<VideoPlayerItem> {
       await _controller.initialize();
       setState(() {
         _isInitialized = true;
-        _isPlaying = true;
+        _isPlaying = false;
       });
-      _controller.play();
+      //_controller.play();
     } catch (e) {
       setState(() => _hasError = true);
     }
@@ -307,13 +428,24 @@ class _VideoPlayerItemState extends State<VideoPlayerItem> {
     if (_controller.value.hasError) {
       setState(() => _hasError = true);
     }
-    if (mounted) setState(() {});
+
+    if (_controller.value.position == _controller.value.duration) {
+      setState(() {
+        _isPlaying = false;
+      });
+    }
+
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   void _togglePlay() {
     setState(() => _isPlaying = !_isPlaying);
     _isPlaying ? _controller.play() : _controller.pause();
   }
+
+
 
   @override
   void dispose() {
@@ -364,12 +496,41 @@ class _VideoPlayerItemState extends State<VideoPlayerItem> {
   }
 
   Widget _buildVideoPlayer() {
-    return GestureDetector(
-      onTap: _togglePlay,
-      child: AspectRatio(
-        aspectRatio: _controller.value.aspectRatio,
-        child: VideoPlayer(_controller),
-      ),
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        GestureDetector(
+          onTap: _togglePlay,
+          child: AspectRatio(
+            aspectRatio: _controller.value.aspectRatio,
+            child: VideoPlayer(_controller),
+          ),
+        ),
+        if (_isInitialized && !_hasError)
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: _buildProgressBar(),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildProgressBar() {
+    final Duration duration = _controller.value.duration;
+    final Duration position = _controller.value.position;
+
+    return Slider(
+      min: 0.0,
+      max: duration.inMilliseconds.toDouble(),
+      value: position.inMilliseconds.toDouble(),
+      onChanged: (double value) {
+        // Optional: Allow seeking
+        _controller.seekTo(Duration(milliseconds: value.toInt()));
+      },
+      activeColor: Colors.red,
+      inactiveColor: Colors.white.withOpacity(0.5),
     );
   }
 
