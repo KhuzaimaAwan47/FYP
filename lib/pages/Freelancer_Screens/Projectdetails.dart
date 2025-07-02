@@ -31,6 +31,7 @@ class _ProjectDetailsState extends State<ProjectDetails> {
 
   // User state
   String? currentUserId;
+  String? userType;
   bool isOwner = false;
   bool _isLoading = true;
 
@@ -70,24 +71,59 @@ class _ProjectDetailsState extends State<ProjectDetails> {
   }
 
   // Fetch the current user data
+  // Future<void> loadUserData() async {
+  //   User? user = _auth.currentUser;
+  //
+  //   if (user != null) {
+  //     setState(() {
+  //       currentUserId = user.uid; // Get the current user's UID
+  //     });
+  //
+  //     // Compare if the current user is the project owner
+  //     if (currentUserId == widget.postedById) {
+  //       setState(() {
+  //         isOwner = true; // Set the flag if the current user is the owner
+  //       });
+  //     }
+  //   } else {
+  //     return;
+  //   }
+  // }
+
   Future<void> loadUserData() async {
     User? user = _auth.currentUser;
-
     if (user != null) {
       setState(() {
-        currentUserId = user.uid; // Get the current user's UID
+        currentUserId = user.uid;
       });
 
       // Compare if the current user is the project owner
       if (currentUserId == widget.postedById) {
         setState(() {
-          isOwner = true; // Set the flag if the current user is the owner
+          isOwner = true;
         });
       }
-    } else {
-      return;
+
+      // Fetch userType
+      try {
+        QuerySnapshot querySnapshot = await _firestore
+            .collection('users')
+            .where('email', isEqualTo: user.email)
+            .get();
+
+        if (querySnapshot.docs.isNotEmpty) {
+          DocumentSnapshot userDoc = querySnapshot.docs.first;
+          setState(() {
+            userType = userDoc['userType'];
+          });
+        }
+      } catch (e) {
+        // Handle error if needed
+      }
     }
   }
+
+
 
   // Fetch project details from Firestore
   Future<void> loadProjectDetails() async {
@@ -325,11 +361,11 @@ class _ProjectDetailsState extends State<ProjectDetails> {
                 style: TextStyle(
                     fontSize: 16, height: 1.5, color: Colors.grey[800]),
               ),
-              const SizedBox(height: 16),
               Divider(
                 color: Colors.grey[300],
                 thickness: 1,
               ),
+              SizedBox(height: 16),
               Card(
                 elevation: 0,
                 color: Colors.grey[50],
@@ -378,84 +414,81 @@ class _ProjectDetailsState extends State<ProjectDetails> {
                   ),
                 ),
               ),
-
-              const SizedBox(height: 16),
-              // Show Edit/Delete button for owner, Bid for others
-              isOwner
-                  ? Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            style: ElevatedButton.styleFrom(
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                backgroundColor: Colors.indigoAccent,
-                                minimumSize: Size.fromHeight(56),
-                            ),
-                            onPressed: () {
-                              _editProject();
-                            },
-                            icon: const Icon(Icons.edit, color: Colors.white),
-                            label: const Text(
-                              'Edit',
-                              style: TextStyle(color: Colors.white,fontSize: 18),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: _deleteProject,
-                            style: ElevatedButton.styleFrom(
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                backgroundColor: Colors.red,
-                               minimumSize: Size.fromHeight(56),
-                            ),
-                            icon: const Icon(Icons.delete, color: Colors.white),
-                            label: const Text(
-                              'Delete',
-                              style: TextStyle(color: Colors.white,fontSize: 18),
-                            ),
-                          ),
-                        ),
-                      ],
-                    )
-                  : Center(
-                      child: ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          elevation: 3.0,
-                          backgroundColor: Colors.indigoAccent,
-                          minimumSize: Size(double.infinity, 56),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                        ),
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => BidForm(
-                                projectName: projectName,
-                                ownerName: ownerName,
-                                projectId: widget.projectId,
-                              ),
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.gavel, color: Colors.white),
-                        label: const Text(
-                          'Bid Now',
-                          style: TextStyle(fontSize: 18, color: Colors.white),
-                        ),
-                      )
-                    ),
             ],
           ),
         ),
+      ),
+      // Show Edit/Delete button for owner, Bid for others
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
+        child: isOwner
+            ? Row(
+          children: [
+            Expanded(
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.indigoAccent,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  minimumSize: const Size(double.infinity, 56),
+                ),
+                onPressed: _editProject,
+                icon: const Icon(Icons.edit, color: Colors.white),
+                label: const Text(
+                  'Edit',
+                  style: TextStyle(color: Colors.white, fontSize: 18),
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  minimumSize: const Size(double.infinity, 56),
+                ),
+                onPressed: _deleteProject,
+                icon: const Icon(Icons.delete, color: Colors.white),
+                label: const Text(
+                  'Delete',
+                  style: TextStyle(color: Colors.white, fontSize: 18),
+                ),
+              ),
+            ),
+          ],
+        )
+            : (userType == 'freelancer'
+            ? ElevatedButton.icon(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.indigoAccent,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            padding: const EdgeInsets.symmetric(vertical: 14),
+          ),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => BidForm(
+                  projectName: projectName,
+                  ownerName: ownerName,
+                  projectId: widget.projectId,
+                ),
+              ),
+            );
+          },
+          icon: const Icon(Icons.gavel, color: Colors.white),
+          label: const Text(
+            'Bid Now',
+            style: TextStyle(fontSize: 18, color: Colors.white),
+          ),
+        )
+            : const SizedBox.shrink()), // Hide Bid Now for clients who are not owners
       ),
     );
   }

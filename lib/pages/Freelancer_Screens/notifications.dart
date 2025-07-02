@@ -18,8 +18,11 @@ class _NotificationsState extends State<Notifications> {
   // State management
   late List<bool> isHoverList = [false, false, false, false, false];
   int _currentIndex =
-  0; // 0: All, 1: Received, 2: Sent, 3: Received Offers, 4: Sent Offers
+      0; // 0: All, 1: Received, 2: Sent, 3: Received Offers, 4: Sent Offers
   String? userName;
+  String? userType;
+  bool? _isClient;
+  Map<int, bool> isHoverMap = {};
   bool isLoadingUser = true;
   bool isLoadingNotifications = false;
 
@@ -51,6 +54,9 @@ class _NotificationsState extends State<Notifications> {
           if (mounted) {
             setState(() {
               userName = querySnapshot.docs.first['username'];
+              userType = querySnapshot.docs.first['userType'];
+              _isClient = userType == 'client';
+              _currentIndex = _isClient! ? 0 : 0;
               isLoadingUser = false;
             });
             await Future.wait([_loadAllBids(), _loadAllOffers()]);
@@ -70,72 +76,84 @@ class _NotificationsState extends State<Notifications> {
 
   @override
   Widget build(BuildContext context) {
+    List<int> allowedIndices = _isClient ?? false ? [0, 1, 4] : [0, 1, 2, 3, 4];
+
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: const Text('Notifications'),
-      ),
+      appBar: AppBar(title: const Text('Notifications')),
       body: Padding(
         padding: const EdgeInsets.all(8.0),
         child: Column(
           children: [
-            // Tab Bar
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: List.generate(
-                  5,
-                      (index) {
-                    return InkWell(
-                      onTap: () => setState(() => _currentIndex = index),
-                      onHover: (value) =>
-                          setState(() => isHoverList[index] = value),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 400),
-                        curve: Curves.easeIn,
-                        height: 40,
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        alignment: Alignment.center,
-                        margin: const EdgeInsets.symmetric(horizontal: 4),
-                        // spacing between tabs
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: _currentIndex == index
+            if (isLoadingUser)
+              const SizedBox(
+                height: 40,
+                child: Center(
+                  child: SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.indigoAccent,
+                    ),
+                  ),
+                ),
+              )
+            else
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: List.generate(
+                    allowedIndices.length,
+                    (index) {
+                      int originalIndex = allowedIndices[index];
+                      return InkWell(
+                        onTap: () =>
+                            setState(() => _currentIndex = originalIndex),
+                        onHover: (value) =>
+                            setState(() => isHoverMap[originalIndex] = value),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 400),
+                          curve: Curves.easeIn,
+                          height: 40,
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          alignment: Alignment.center,
+                          margin: const EdgeInsets.symmetric(horizontal: 4),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: _currentIndex == originalIndex
+                                  ? Colors.indigoAccent
+                                  : Colors.grey,
+                            ),
+                            color: _currentIndex == originalIndex
                                 ? Colors.indigoAccent
-                                : Colors.grey,
+                                : (isHoverMap[originalIndex] ?? false)
+                                    ? Colors.indigoAccent
+                                    : null,
                           ),
-                          color: _currentIndex == index
-                              ? Colors.indigoAccent // Selected fill
-                              : isHoverList[index]
-                              ? Colors.indigoAccent
-                              .withOpacity(0.1) // Hover fill
-                              : null, // Transparent otherwise
-                        ),
-                        child: Text(
-                          [
-                            'All',
-                            'Received Bids',
-                            'Sent Bids',
-                            'Received Offers',
-                            'Sent Offers'
-                          ][index],
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: _currentIndex == index
-                                ? Colors.white
-                                : Colors.black87,
+                          child: Text(
+                            [
+                              'All',
+                              'Received Bids',
+                              'Sent Bids',
+                              'Received Offers',
+                              'Sent Offers'
+                            ][originalIndex],
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: _currentIndex == originalIndex
+                                  ? Colors.white
+                                  : Colors.black87,
+                            ),
                           ),
                         ),
-                      ),
-                    );
-                  },
+                      );
+                    },
+                  ),
                 ),
               ),
-            ),
-
-            // Content Area
             Expanded(
               child: _buildContent(),
             ),
@@ -326,226 +344,442 @@ class _NotificationsState extends State<Notifications> {
   void _showOfferPopup(BuildContext context, QueryDocumentSnapshot offer) {
     showDialog(
       context: context,
-      builder: (context) =>
-          Dialog(
-            shape: RoundedRectangleBorder(
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: SingleChildScrollView(
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(20),
             ),
-            child: SingleChildScrollView(
-              child: Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Dialog Title
+                Center(
+                  child: Text(
+                    'Received Offer Details',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 22,
+                      color: Colors.indigoAccent,
+                    ),
+                  ),
                 ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Dialog Title
-                    Center(
-                      child: Text(
-                        'Received Offer Details',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 22,
-                          color: Colors.indigoAccent,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    // Offer Details
-                    RichText(
-                      textAlign: TextAlign.justify,
-                      text: TextSpan(
+                const SizedBox(height: 20),
+                // Offer Details
+                RichText(
+                  textAlign: TextAlign.justify,
+                  text: TextSpan(
+                    style: const TextStyle(color: Colors.black87, fontSize: 14),
+                    children: [
+                      TextSpan(
+                        text: '${offer['project_name'] ?? 'Unknown Project'}\n',
                         style: const TextStyle(
-                            color: Colors.black87, fontSize: 14),
-                        children: [
-                          TextSpan(
-                            text: '${offer['project_name'] ??
-                                'Unknown Project'}\n',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.indigoAccent,
-                              fontSize: 16,
-                            ),
+                          fontWeight: FontWeight.bold,
+                          color: Colors.indigoAccent,
+                          fontSize: 16,
+                        ),
+                      ),
+                      const TextSpan(
+                          text: '\nOffered by: ',
+                          style: TextStyle(color: Colors.black87)),
+                      TextSpan(
+                        text: '${offer['owner_name']}\n',
+                        style: const TextStyle(
+                          color: Colors.indigo,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const TextSpan(
+                          text: '\nBudget: ',
+                          style: TextStyle(color: Colors.black87)),
+                      TextSpan(
+                        text: '\$${offer['budget']}\n',
+                        style: const TextStyle(
+                          color: Colors.indigo,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const TextSpan(
+                          text: '\nEstimated Time: ',
+                          style: TextStyle(color: Colors.black87)),
+                      TextSpan(
+                        text: '${offer['estimated_time']}\n',
+                        style: const TextStyle(
+                          color: Colors.indigo,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const TextSpan(
+                          text: '\nDescription: ',
+                          style: TextStyle(color: Colors.black87)),
+                      TextSpan(
+                        text: '\n${offer['description']}\n',
+                        style: TextStyle(color: Colors.grey[600]),
+                      ),
+                      const TextSpan(
+                          text: '\nCurrent Project Status: ',
+                          style: TextStyle(color: Colors.black87)),
+                      TextSpan(
+                        text: '${offer['project_status']}\n',
+                        style: TextStyle(
+                          color: _getStatusColor(offer['project_status']),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      TextSpan(
+                        text: '\nInform the client about your project status.',
+                        style: TextStyle(
+                            color: Colors.redAccent,
+                            fontWeight: FontWeight.w500),
+                      )
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                // Status Buttons using Wrap to avoid overflow issues
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          _updateOfferStatus('Ongoing');
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blueAccent,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
                           ),
-                          const TextSpan(
-                              text: '\nOffered by: ',
-                              style: TextStyle(color: Colors.black87)),
-                          TextSpan(
-                            text: '${offer['owner_name']}\n',
-                            style: const TextStyle(
-                              color: Colors.indigo,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const TextSpan(
-                              text: '\nBudget: ',
-                              style: TextStyle(color: Colors.black87)),
-                          TextSpan(
-                            text: '\$${offer['budget']}\n',
-                            style: const TextStyle(
-                              color: Colors.indigo,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const TextSpan(
-                              text: '\nEstimated Time: ',
-                              style: TextStyle(color: Colors.black87)),
-                          TextSpan(
-                            text: '${offer['estimated_time']}\n',
-                            style: const TextStyle(
-                              color: Colors.indigo,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const TextSpan(
-                              text: '\nDescription: ',
-                              style: TextStyle(color: Colors.black87)),
-                          TextSpan(
-                            text: '\n${offer['description']}\n',
-                            style: TextStyle(color: Colors.grey[600]),
-                          ),
-                          const TextSpan(
-                              text: '\nCurrent Project Status: ',
-                              style: TextStyle(color: Colors.black87)),
-                          TextSpan(
-                            text: '${offer['project_status']}\n',
-                            style: TextStyle(
-                              color: _getStatusColor(offer['project_status']),
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          TextSpan(
-                            text: '\nInform the client about your project status.',
-                            style: TextStyle(
-                                color: Colors.redAccent,
-                                fontWeight: FontWeight.w500),
-                          )
-                        ],
+                        ),
+                        child: const Text(
+                          'Ongoing',
+                          style: TextStyle(fontSize: 14, color: Colors.white),
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 20),
-                    // Status Buttons using Wrap to avoid overflow issues
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: () {
-                              _updateOfferStatus('Ongoing');
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blueAccent,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                            child: const Text(
-                              'Ongoing',
-                              style: TextStyle(
-                                  fontSize: 14, color: Colors.white),
-                            ),
-                          ),
-                        ),
-                        SizedBox(
-                          width: 8.0,
-                        ),
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: () {
-                              _updateOfferStatus('Pending');
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.orangeAccent,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                            child: const Text(
-                              'Pending',
-                              style: TextStyle(
-                                  fontSize: 14, color: Colors.white),
-                            ),
-                          ),
-                        ),
-                      ],
+                    SizedBox(
+                      width: 8.0,
                     ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: () {
-                              _updateOfferStatus('Cancelled');
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.redAccent,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                            child: const Text(
-                              'Cancelled',
-                              style: TextStyle(
-                                  fontSize: 14, color: Colors.white),
-                            ),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          _updateOfferStatus('Pending');
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.orangeAccent,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
                           ),
                         ),
-                        SizedBox(
-                          width: 8.0,
+                        child: const Text(
+                          'Pending',
+                          style: TextStyle(fontSize: 14, color: Colors.white),
                         ),
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: () {
-                              _updateOfferStatus('Completed');
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                            child: const Text(
-                              'Completed',
-                              style: TextStyle(
-                                  fontSize: 14, color: Colors.white),
-                            ),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                   ],
                 ),
-              ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          _updateOfferStatus('Cancelled');
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.redAccent,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        child: const Text(
+                          'Cancelled',
+                          style: TextStyle(fontSize: 14, color: Colors.white),
+                        ),
+                      ),
+                    ),
+                    SizedBox(
+                      width: 8.0,
+                    ),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          _updateOfferStatus('Completed');
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        child: const Text(
+                          'Completed',
+                          style: TextStyle(fontSize: 14, color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
+        ),
+      ),
     );
   }
-
 
   // Show sent offer details
   void _showSentOfferPopup(BuildContext context, QueryDocumentSnapshot offer) {
     showDialog(
       context: context,
-      builder: (context) =>
-          Dialog(
-            shape: RoundedRectangleBorder(
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Title
+              Center(
+                child: Text(
+                  'Sent Offer Details',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 22,
+                    color: Colors.indigoAccent,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              // Offer details
+              RichText(
+                text: TextSpan(
+                  style: const TextStyle(color: Colors.black87, fontSize: 14),
+                  children: [
+                    TextSpan(
+                      text: '${offer['project_name'] ?? 'Unknown Project'}\n',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.indigo,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const TextSpan(
+                      text: '\nProject offered to: ',
+                      style: TextStyle(color: Colors.black87),
+                    ),
+                    TextSpan(
+                      text: '${offer['assigned_to']}\n',
+                      style: const TextStyle(
+                        color: Colors.indigoAccent,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const TextSpan(
+                      text: '\nProject Budget: ',
+                      style: TextStyle(color: Colors.black87),
+                    ),
+                    TextSpan(
+                      text: '${offer['budget']}\n',
+                      style: const TextStyle(
+                        color: Colors.indigoAccent,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const TextSpan(
+                      text: '\nEstimated time: ',
+                      style: TextStyle(color: Colors.black87),
+                    ),
+                    TextSpan(
+                      text: '${offer['estimated_time']}\n',
+                      style: const TextStyle(
+                        color: Colors.indigoAccent,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const TextSpan(
+                      text: '\nProject Status: ',
+                      style: TextStyle(color: Colors.black87),
+                    ),
+                    TextSpan(
+                      text: '${offer['project_status']}\n',
+                      style: TextStyle(
+                        color: _getStatusColor(offer['project_status']),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+              // Close button
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    backgroundColor: Colors.indigoAccent,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 10),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  child: const Text(
+                    'Close',
+                    style: TextStyle(fontSize: 16),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // show Received Bids details
+  void _showNotificationPopup(
+      BuildContext context, QueryDocumentSnapshot notification) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: SingleChildScrollView(
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(20),
             ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Center(
+                  child: Text(
+                    'Received Bid Details',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 22,
+                      color: Colors.indigoAccent,
+                    ),
+                  ),
+                ),
+                SizedBox(
+                  height: 20,
+                ),
+                Text(
+                  'You received a bid from ${notification['bidder_name']}.',
+                  style: TextStyle(color: Colors.black87, fontSize: 15),
+                ),
+                SizedBox(
+                  height: 10,
+                ),
+                Text(
+                  'Project Name: ${notification['project_name']}',
+                  style: TextStyle(
+                      color: Colors.black54,
+                      fontWeight: FontWeight.w500,
+                      fontSize: 14),
+                ),
+                SizedBox(
+                  height: 10,
+                ),
+                Text(
+                  'Bid Amount: \$${notification['bid_amount']}',
+                  style: TextStyle(
+                      color: Colors.black54,
+                      fontWeight: FontWeight.w500,
+                      fontSize: 14),
+                ),
+                SizedBox(
+                  height: 10,
+                ),
+                Text(
+                  'Estimated Time: ${notification['estimated_time']}',
+                  style: TextStyle(
+                      color: Colors.black54,
+                      fontWeight: FontWeight.w500,
+                      fontSize: 14),
+                ),
+                SizedBox(
+                  height: 10,
+                ),
+                if (notification['message'] != null)
+                  Text(
+                    '${notification['message']}'
+                  ),
+                SizedBox(
+                  height: 20,
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => _updateNotificationStatus(
+                          notification.id, 'Rejected'),
+                      child: const Text('Reject',
+                          style: TextStyle(color: Colors.redAccent)),
+                    ),
+                    TextButton(
+                      onPressed: () => _updateNotificationStatus(
+                          notification.id, 'Accepted'),
+                      child: const Text('Accept',
+                          style: TextStyle(color: Colors.green)),
+                    ),
+                  ],
+                )
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+// Show status update popup for Accepted Sent Bids
+  void _showStatusUpdatePopup(
+      BuildContext context, QueryDocumentSnapshot notification) async {
+    try {
+      final projectId = notification['project_id'];
+      final projectSnapshot =
+          await _firestore.collection('projects').doc(projectId).get();
+      final currentStatus = projectSnapshot['project_status'] ?? 'Not Started';
+
+      showDialog(
+        context: context,
+        builder: (context) => Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: SingleChildScrollView(
             child: Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Column(
-                mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Title
                   Center(
                     child: Text(
-                      'Sent Offer Details',
+                      'Sent Bid Details',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 22,
@@ -553,405 +787,173 @@ class _NotificationsState extends State<Notifications> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 20),
-                  // Offer details
+                  SizedBox(
+                    height: 20,
+                  ),
+                  Text(
+                    'Congrats🎉 your bid is accepted by ${notification['owner_name']}.',
+                    style: TextStyle(color: Colors.black87, fontSize: 15),
+                  ),
+                  SizedBox(
+                    height: 10,
+                  ),
+                  Text(
+                    'Project Name: ${notification['project_name']}',
+                    style: TextStyle(
+                        color: Colors.black45,
+                        fontWeight: FontWeight.w500,
+                        fontSize: 14),
+                  ),
+                  SizedBox(
+                    height: 10,
+                  ),
+                  Text(
+                    'Bid Amount: \$${notification['bid_amount']}',
+                    style: TextStyle(
+                        color: Colors.black45,
+                        fontWeight: FontWeight.w500,
+                        fontSize: 14),
+                  ),
+                  SizedBox(
+                    height: 10,
+                  ),
+                  Text(
+                    'Estimated Time: ${notification['estimated_time']}',
+                    style: TextStyle(
+                        color: Colors.black45,
+                        fontWeight: FontWeight.w500,
+                        fontSize: 14),
+                  ),
+                  SizedBox(
+                    height: 10,
+                  ),
                   RichText(
                     text: TextSpan(
-                      style: const TextStyle(
-                          color: Colors.black87, fontSize: 14),
+                      text: 'Current Status: ',
+                      style: TextStyle(
+                        color: Colors.black45,
+                        fontWeight: FontWeight.w500,
+                        fontSize: 14,
+                      ),
                       children: [
                         TextSpan(
-                          text: '${offer['project_name'] ??
-                              'Unknown Project'}\n',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.indigo,
-                            fontSize: 16,
-                          ),
-                        ),
-                        const TextSpan(
-                          text: '\nProject offered to: ',
-                          style: TextStyle(color: Colors.black87),
-                        ),
-                        TextSpan(
-                          text: '${offer['assigned_to']}\n',
-                          style: const TextStyle(
-                            color: Colors.indigoAccent,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const TextSpan(
-                          text: '\nProject Budget: ',
-                          style: TextStyle(color: Colors.black87),
-                        ),
-                        TextSpan(
-                          text: '${offer['budget']}\n',
-                          style: const TextStyle(
-                            color: Colors.indigoAccent,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const TextSpan(
-                          text: '\nEstimated time: ',
-                          style: TextStyle(color: Colors.black87),
-                        ),
-                        TextSpan(
-                          text: '${offer['estimated_time']}\n',
-                          style: const TextStyle(
-                            color: Colors.indigoAccent,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const TextSpan(
-                          text: '\nProject Status: ',
-                          style: TextStyle(color: Colors.black87),
-                        ),
-                        TextSpan(
-                          text: '${offer['project_status']}\n',
+                          text: currentStatus,
                           style: TextStyle(
-                            color: _getStatusColor(offer['project_status']),
+                            color: _getStatusColor(currentStatus),
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 20),
-                  // Close button
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      style: TextButton.styleFrom(
-                        foregroundColor: Colors.white,
-                        backgroundColor: Colors.indigoAccent,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 20, vertical: 10),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                  SizedBox(
+                    height: 10,
+                  ),
+                  Text(
+                    'Inform the client about project status.',
+                    style: TextStyle(
+                        color: Colors.redAccent,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500),
+                  ),
+                  SizedBox(
+                    height: 20,
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () =>
+                              _updateProjectStatus(notification, 'Pending'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.orangeAccent,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          child: const Text('Pending',
+                              style:
+                                  TextStyle(color: Colors.white, fontSize: 16)),
                         ),
                       ),
-                      child: const Text(
-                        'Close',
-                        style: TextStyle(fontSize: 16),
+                      SizedBox(
+                        width: 8.0,
                       ),
-                    ),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () =>
+                              _updateProjectStatus(notification, 'Ongoing'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blueAccent,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          child: const Text('Ongoing',
+                              style:
+                                  TextStyle(color: Colors.white, fontSize: 16)),
+                        ),
+                      ),
+                    ],
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () =>
+                              _updateProjectStatus(notification, 'Cancelled'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.redAccent,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          child: const Text('Cancelled',
+                              style:
+                                  TextStyle(color: Colors.white, fontSize: 16)),
+                        ),
+                      ),
+                      SizedBox(
+                        width: 8.0,
+                      ),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () =>
+                              _updateProjectStatus(notification, 'Completed'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          child: const Text('Completed',
+                              style:
+                                  TextStyle(color: Colors.white, fontSize: 16)),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
           ),
-    );
-  }
-
-
-  // show Received Bids details
-  void _showNotificationPopup(BuildContext context,
-      QueryDocumentSnapshot notification) {
-    showDialog(
-      context: context,
-      builder: (context) =>
-          Dialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: SingleChildScrollView(
-              child: Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Center(
-                      child: Text(
-                        'Received Bid Details',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 22,
-                          color: Colors.indigoAccent,
-                        ),
-                      ),
-                    ),
-                    SizedBox(
-                      height: 20,
-                    ),
-                    Text(
-                      'You received a bid from ${notification['bidder_name']}.',
-                      style: TextStyle(color: Colors.black87, fontSize: 15),
-                    ),
-                    SizedBox(
-                      height: 10,
-                    ),
-                    Text(
-                      'Project Name: ${notification['project_name']}',
-                      style: TextStyle(
-                          color: Colors.black54,
-                          fontWeight: FontWeight.w500,
-                          fontSize: 14),
-                    ),
-                    SizedBox(
-                      height: 10,
-                    ),
-                    Text(
-                      'Bid Amount: \$${notification['bid_amount']}',
-                      style: TextStyle(
-                          color: Colors.black54,
-                          fontWeight: FontWeight.w500,
-                          fontSize: 14),
-                    ),
-                    SizedBox(
-                      height: 10,
-                    ),
-                    Text(
-                      'Estimated Time: ${notification['estimated_time']}',
-                      style: TextStyle(
-                          color: Colors.black54,
-                          fontWeight: FontWeight.w500,
-                          fontSize: 14),
-                    ),
-                    SizedBox(
-                      height: 20,
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        TextButton(
-                          onPressed: () {},
-                          child: const Text('Message',
-                              style: TextStyle(color: Colors.indigoAccent)),
-                        ),
-                        TextButton(
-                          onPressed: () =>
-                              _updateNotificationStatus(
-                                  notification.id,'Rejected'),
-                          child: const Text('Reject',
-                              style: TextStyle(color: Colors.redAccent)),
-                        ),
-                        TextButton(
-                          onPressed: () =>
-                              _updateNotificationStatus(
-                                  notification.id,'Accepted'),
-                          child: const Text('Accept',
-                              style: TextStyle(color: Colors.green)),
-                        ),
-                      ],
-                    )
-                  ],
-                ),
-              ),
-            ),
-          ),
-    );
-  }
-
-
-// Show status update popup for Accepted Sent Bids
-  void _showStatusUpdatePopup(BuildContext context,
-      QueryDocumentSnapshot notification) async {
-    try {
-      final projectId = notification['project_id'];
-      final projectSnapshot =
-      await _firestore.collection('projects').doc(projectId).get();
-      final currentStatus = projectSnapshot['project_status'] ?? 'Not Started';
-
-      showDialog(
-        context: context,
-        builder: (context) =>
-            Dialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: SingleChildScrollView(
-                child: Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Center(
-                        child: Text(
-                          'Sent Bid Details',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 22,
-                            color: Colors.indigoAccent,
-                          ),
-                        ),
-                      ),
-                      SizedBox(
-                        height: 20,
-                      ),
-                      Text(
-                        'Congrats🎉 your bid is accepted by ${notification['owner_name']}.',
-                        style: TextStyle(color: Colors.black87, fontSize: 15),
-                      ),
-                      SizedBox(
-                        height: 10,
-                      ),
-                      Text(
-                        'Project Name: ${notification['project_name']}',
-                        style: TextStyle(
-                            color: Colors.black45,
-                            fontWeight: FontWeight.w500,
-                            fontSize: 14),
-                      ),
-                      SizedBox(
-                        height: 10,
-                      ),
-                      Text(
-                        'Bid Amount: \$${notification['bid_amount']}',
-                        style: TextStyle(
-                            color: Colors.black45,
-                            fontWeight: FontWeight.w500,
-                            fontSize: 14),
-                      ),
-                      SizedBox(
-                        height: 10,
-                      ),
-                      Text(
-                        'Estimated Time: ${notification['estimated_time']}',
-                        style: TextStyle(
-                            color: Colors.black45,
-                            fontWeight: FontWeight.w500,
-                            fontSize: 14),
-                      ),
-                      SizedBox(
-                        height: 10,
-                      ),
-                      RichText(
-                        text: TextSpan(
-                          text: 'Current Status: ',
-                          style: TextStyle(
-                            color: Colors.black45,
-                            fontWeight: FontWeight.w500,
-                            fontSize: 14,
-                          ),
-                          children: [
-                            TextSpan(
-                              text: currentStatus,
-                              style: TextStyle(
-                                color: _getStatusColor(currentStatus),
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      SizedBox(
-                        height: 10,
-                      ),
-                      Text(
-                        'Inform the client about project status.',
-                        style: TextStyle(
-                            color: Colors.redAccent,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w500),
-                      ),
-                      SizedBox(
-                        height: 20,
-                      ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          Expanded(
-                            child: ElevatedButton(
-                              onPressed: () =>
-                                  _updateProjectStatus(notification, 'Pending'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.orangeAccent,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                              ),
-                              child: const Text('Pending',
-                                  style:
-                                  TextStyle(color: Colors.white, fontSize: 16)),
-                            ),
-                          ),
-                          SizedBox(
-                            width: 8.0,
-                          ),
-                          Expanded(
-                            child: ElevatedButton(
-                              onPressed: () =>
-                                  _updateProjectStatus(notification, 'Ongoing'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.blueAccent,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                              ),
-                              child: const Text('Ongoing',
-                                  style:
-                                  TextStyle(color: Colors.white, fontSize: 16)),
-                            ),
-                          ),
-                        ],
-                      ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          Expanded(
-                            child: ElevatedButton(
-                              onPressed: () =>
-                                  _updateProjectStatus(
-                                      notification, 'Cancelled'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.redAccent,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                              ),
-                              child: const Text('Cancelled',
-                                  style:
-                                  TextStyle(color: Colors.white, fontSize: 16)),
-                            ),
-                          ),
-                          SizedBox(
-                            width: 8.0,
-                          ),
-                          Expanded(
-                            child: ElevatedButton(
-                              onPressed: () =>
-                                  _updateProjectStatus(
-                                      notification, 'Completed'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.green,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                              ),
-                              child: const Text('Completed',
-                                  style:
-                                  TextStyle(color: Colors.white, fontSize: 16)),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
+        ),
       );
     } catch (e) {
       showErrorSnackbar(context, 'Error fetching project status: $e');
     }
   }
 
-
   /* --------------------------- Offers List Widget --------------------------- */
 
   // Build offer list item
   Widget _buildOfferItem(QueryDocumentSnapshot offer, bool isReceived) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8,),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 8,
+      ),
       child: Card(
         color: Colors.grey[100],
         elevation: 0,
@@ -992,10 +994,12 @@ class _NotificationsState extends State<Notifications> {
 /* --------------------------- Bids List Widget --------------------------- */
 
   // Build notification list i.e received bids
-  Widget _buildNotificationItem(QueryDocumentSnapshot notification,
-      bool isReceived) {
+  Widget _buildNotificationItem(
+      QueryDocumentSnapshot notification, bool isReceived) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8,),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 8,
+      ),
       child: Card(
         color: Colors.grey[100],
         elevation: 0,
@@ -1028,20 +1032,18 @@ class _NotificationsState extends State<Notifications> {
           onTap: isReceived
               ? () => _showNotificationPopup(context, notification)
               : notification['status'] == 'Accepted'
-              ? () => _showStatusUpdatePopup(context, notification)
-              : null,
+                  ? () => _showStatusUpdatePopup(context, notification)
+                  : null,
         ),
       ),
     );
   }
 
-
   /* --------------------------- Methods for updating status of bids,projects & offers --------------------------- */
 
-
   //update accepted bid status
-  Future<void> _updateNotificationStatus(String notificationId,
-      String status) async {
+  Future<void> _updateNotificationStatus(
+      String notificationId, String status) async {
     try {
       // Update the notification status
       await _firestore.collection('notifications').doc(notificationId).update({
@@ -1086,8 +1088,8 @@ class _NotificationsState extends State<Notifications> {
   }
 
   // update Project Status
-  Future<void> _updateProjectStatus(QueryDocumentSnapshot notification,
-      String newStatus) async {
+  Future<void> _updateProjectStatus(
+      QueryDocumentSnapshot notification, String newStatus) async {
     try {
       final projectId = notification['project_id'];
       await _firestore.collection('projects').doc(projectId).update({
@@ -1101,7 +1103,7 @@ class _NotificationsState extends State<Notifications> {
         await _loadAllBids(); // Refresh the list after updating the status
       }
     } catch (e) {
-        showErrorSnackbar(context, 'Error updating status: $e');
+      showErrorSnackbar(context, 'Error updating status: $e');
     }
   }
 
@@ -1112,7 +1114,7 @@ class _NotificationsState extends State<Notifications> {
       final querySnapshot = await _firestore
           .collection('offers')
           .where('assigned_to',
-          isEqualTo: userName) // Replace with your user name variable
+              isEqualTo: userName) // Replace with your user name variable
           .get();
 
       if (querySnapshot.docs.isEmpty) {

@@ -22,6 +22,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   String? userName = '';
   String? profileUrl;
+  String? userType;
 
   // Freelancers fetched once
   List<Map<String, dynamic>> _freelancers = [];
@@ -72,16 +73,11 @@ class _HomeScreenState extends State<HomeScreen> {
           setState(() {
             userName = userDoc['username'];
             profileUrl = userDoc['profileUrl'];
+            userType = userDoc['userType'];
           });
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('User name not found!')),
-          );
-        }
+        } else {}
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
+        return;
       }
     }
   }
@@ -145,21 +141,32 @@ class _HomeScreenState extends State<HomeScreen> {
                   Navigator.pop(context);
                 }
               },
-              itemBuilder: (BuildContext context) {
-                return [
+              itemBuilder: (context) {
+                List<PopupMenuEntry<String>> items = [
                   const PopupMenuItem<String>(
                     value: 'item1',
                     child: Text('New Project'),
                   ),
-                  const PopupMenuItem<String>(
-                    value: 'item2',
-                    child: Text('New Group'),
-                  ),
+                ];
+
+                // Only show "New Group" if user is a freelancer
+                if (userType == 'freelancer') {
+                  items.add(
+                    const PopupMenuItem<String>(
+                      value: 'item2',
+                      child: Text('New Group'),
+                    ),
+                  );
+                }
+
+                items.add(
                   const PopupMenuItem<String>(
                     value: 'item3',
                     child: Text('Sign out'),
                   ),
-                ];
+                );
+
+                return items;
               },
               offset: const Offset(0, kToolbarHeight),
             )
@@ -274,6 +281,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     padding: const EdgeInsets.only(left: 10.0, right: 10),
                     child: ProjectList(),
                   ),
+                  if (userType == 'freelancer') ...[
+
+                  ],
                   Padding(
                     padding: const EdgeInsets.only(left: 10.0),
                     child: SectionHeader(title: 'Groups'),
@@ -282,6 +292,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     padding: const EdgeInsets.only(left: 10.0, right: 10),
                     child: GroupList(),
                   ),
+
+
                 ],
               ),
             ),

@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import '../pages/Freelancer_Screens/Groupdetails.dart';
 
@@ -48,23 +49,42 @@ class GroupCard extends StatelessWidget {
               Row(
                 children: [
                   ClipOval(
-                    child: Image.network(
-                      profileImage,
+                    child: CachedNetworkImage(
+                      imageUrl: profileImage,
                       width: 50,
                       height: 50,
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          width: 50,
-                          height: 50,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.grey[300],
+                      imageBuilder: (context, imageProvider) => Container(
+                        width: 50,
+                        height: 50,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          image: DecorationImage(
+                            image: imageProvider,
+                            fit: BoxFit.cover,
                           ),
-                          child: const Icon(Icons.person, color: Colors.white),
-                        );
-                      },
-                    ),
+                        ),
+                      ),
+                      placeholder: (context, url) => Container(
+                        width: 50,
+                        height: 50,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.grey[300],
+                        ),
+                        child: Center(child: const CircularProgressIndicator(strokeWidth: 2)),
+                      ),
+                      errorWidget: (context, url, error) => Container(
+                        width: 50,
+                        height: 50,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.grey[300],
+                        ),
+                        child: const Icon(Icons.person, color: Colors.white),
+                      ),
+                    )
                   ),
                   const SizedBox(width: 10),
                   Expanded(
@@ -79,30 +99,33 @@ class GroupCard extends StatelessWidget {
                         ),
                         Row(
                           children: [
+                            const Icon(Icons.person_2_rounded,
+                                size: 15, color: Colors.indigoAccent),
+                            const SizedBox(width: 5),
+                            Text(' $ownerName',
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(color: Colors.grey[600])),
+                          ],
+                        ),
+                        Row(
+                          children: [
                             const Icon(Icons.group,
-                                size: 15, color: Colors.grey),
+                                size: 18, color: Colors.indigoAccent),
+                            const SizedBox(width: 5),
                             Text('Members: $members',
                                 style: TextStyle(color: Colors.grey[600])),
                           ],
                         ),
+
                       ],
                     ),
                   ),
                 ],
               ),
               Divider(color: Colors.grey[300], thickness: 1, height: 1),
-              const SizedBox(height: 5),
-              Row(
-                children: [
-                  const Icon(Icons.person_2_rounded,
-                      size: 15, color: Colors.grey),
-                  Text('Created By: $ownerName',
-                      style: TextStyle(color: Colors.grey[600])),
-                ],
-              ),
               Text(
                 description,
-                maxLines: 2,
+                maxLines: 3,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(color: Colors.grey[600]),
               ),

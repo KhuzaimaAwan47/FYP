@@ -5,23 +5,33 @@ import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:time_ago_provider/time_ago_provider.dart' as TimeAgo;
 import 'package:video_player/video_player.dart';
-
+import 'CommentsScreen.dart';
+import 'LikesScreen.dart';
 import 'create_post.dart';
 
 class FeedScreen extends StatefulWidget {
   const FeedScreen({super.key});
+
   @override
   State<FeedScreen> createState() => _FeedScreenState();
 }
 
 class _FeedScreenState extends State<FeedScreen> {
   bool isLiked = false;
+
+  // Initialize Firebase Services
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
+  // User data variables
   String? userName = '';
   String? profileUrl = '';
   String? currentUserId = '';
+
+  String formatTimestamp(Timestamp? timestamp) {
+    if (timestamp == null) return 'Just now';
+    return TimeAgo.format(timestamp.toDate());
+  }
 
   @override
   void initState() {
@@ -29,117 +39,47 @@ class _FeedScreenState extends State<FeedScreen> {
     loadCurrentUser();
   }
 
-
-
-  // void _toggleLike(String postId) async {
-  //   final user = _auth.currentUser;
-  //   if (user == null) return;
-  //
-  //   final DocumentReference postRef = _firestore.collection('posts').doc(postId);
-  //
-  //   FirebaseFirestore.instance.runTransaction((transaction) async {
-  //     final DocumentSnapshot snapshot = await transaction.get(postRef);
-  //     final data = snapshot.data() as Map<String, dynamic>;
-  //
-  //     final likesMap = data['likes'] is Map
-  //         ? Map<String, dynamic>.from(data['likes'])
-  //         : <String, dynamic>{};
-  //
-  //     int incrementValue = 0;
-  //
-  //     if (likesMap.containsKey(user.uid)) {
-  //       likesMap.remove(user.uid);
-  //       incrementValue = -1; // Like removed
-  //     } else {
-  //       incrementValue = 1; // Like added
-  //     }
-  //
-  //     // Update both the likes map and the likesCount field
-  //     transaction.update(postRef, {
-  //       'likes': FieldValue.increment(incrementValue),
-  //     });
-  //   });
-  // }
+/* --------------------------- Like Method --------------------------- */
 
   void _toggleLike(String postId) async {
     final user = _auth.currentUser;
     if (user == null) return;
 
-    final DocumentReference postRef = _firestore.collection('posts').doc(postId);
+    final DocumentReference postRef =
+        _firestore.collection('posts').doc(postId);
+    final CollectionReference likesRef = postRef.collection('likesList');
 
-    FirebaseFirestore.instance.runTransaction((transaction) async {
+    await FirebaseFirestore.instance.runTransaction((transaction) async {
       final DocumentSnapshot snapshot = await transaction.get(postRef);
       final data = snapshot.data() as Map<String, dynamic>;
-      final likesMap = data['likes'] is Map ? Map<String, dynamic>.from(data['likes']) : {};
+      final likesMap =
+          data['likes'] is Map ? Map<String, dynamic>.from(data['likes']) : {};
 
       if (likesMap.containsKey(user.uid)) {
         likesMap.remove(user.uid);
+        transaction.delete(likesRef.doc(user.uid));
       } else {
         likesMap[user.uid] = true;
-      }
 
-      transaction.update(postRef, {'likes': likesMap});
-      transaction.update(postRef, {'likesCount': likesMap.length});
-    });
-
-  }
-
-  void _addComment(BuildContext context, String postId) async {
-    final user = _auth.currentUser;
-    if (user == null) return;
-
-    String? commentText = await showDialog<String>(
-      context: context,
-      builder: (context) {
-        String comment = '';
-        return AlertDialog(
-          title: const Text('Add Comment'),
-          content: TextField(
-            onChanged: (value) => comment = value,
-            decoration: const InputDecoration(hintText: 'Write a comment...'),
-          ),
-          actions: [
-            TextButton(
-              onPressed: Navigator.of(context).pop,
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(comment),
-              child: const Text('Post'),
-            ),
-          ],
+        transaction.set(
+          likesRef.doc(user.uid),
+          {
+            'userId': user.uid,
+            'username': userName,
+            'profileUrl': profileUrl,
+            'timestamp': FieldValue.serverTimestamp(),
+          },
         );
-      },
-    );
-
-    if (commentText != null && commentText.isNotEmpty) {
-      final DocumentReference postRef = _firestore.collection('posts').doc(postId);
-      final CollectionReference commentsRef = postRef.collection('comments');
-
-      final userSnapshot = await _firestore
-          .collection('users')
-          .where('email', isEqualTo: user.email)
-          .get();
-
-      if (userSnapshot.docs.isNotEmpty) {
-        final userDoc = userSnapshot.docs.first;
-        final username = userDoc['username'];
-        final profileUrl = userDoc['profileUrl'];
-
-        await commentsRef.add({
-          'userId': user.uid,
-          'username': username,
-          'profileUrl': profileUrl,
-          'text': commentText,
-          'timestamp': FieldValue.serverTimestamp(),
-        });
-
-        await postRef.update({
-          'comments': FieldValue.increment(1),
-        });
       }
-    }
+
+      transaction.update(postRef, {
+        'likes': likesMap,
+        'likesCount': likesMap.length,
+      });
+    });
   }
+
+/* --------------------------- User Data Loading Method --------------------------- */
 
   Future<void> loadCurrentUser() async {
     User? user = _auth.currentUser;
@@ -164,10 +104,7 @@ class _FeedScreenState extends State<FeedScreen> {
     }
   }
 
-  String formatTimestamp(Timestamp? timestamp) {
-    if (timestamp == null) return 'Just now';
-    return TimeAgo.format(timestamp.toDate());
-  }
+/* --------------------------- Main Build Widget --------------------------- */
 
   @override
   Widget build(BuildContext context) {
@@ -189,11 +126,12 @@ class _FeedScreenState extends State<FeedScreen> {
                   CircleAvatar(
                     radius: 25,
                     backgroundColor: Colors.grey[300],
-                    backgroundImage: profileUrl != null && profileUrl!.isNotEmpty
-                        ? CachedNetworkImageProvider(profileUrl!)
-                        : CachedNetworkImageProvider(
-                      'https://t4.ftcdn.net/jpg/05/49/98/39/360_F_549983970_bRCkYfk0P6PP5fKbMhZMIb07mCJ6esXL.jpg',
-                    ),
+                    backgroundImage:
+                        profileUrl != null && profileUrl!.isNotEmpty
+                            ? CachedNetworkImageProvider(profileUrl!)
+                            : CachedNetworkImageProvider(
+                                'https://t4.ftcdn.net/jpg/05/49/98/39/360_F_549983970_bRCkYfk0P6PP5fKbMhZMIb07mCJ6esXL.jpg',
+                              ),
                   ),
                   const SizedBox(width: 8.0),
                   Expanded(
@@ -262,6 +200,8 @@ class _FeedScreenState extends State<FeedScreen> {
     );
   }
 
+  /* --------------------------- Post Card Widget --------------------------- */
+
   Widget buildPostCard(DocumentSnapshot post) {
     final String mediaType = post['mediaType'] ?? 'text';
     final String mediaUrl = post['mediaUrl'] ?? '';
@@ -269,9 +209,10 @@ class _FeedScreenState extends State<FeedScreen> {
     final String profileUrl = post['profileUrl'] ?? '';
     final Timestamp? timestamp = post['timestamp'];
 
-    final likesMap = post['likes'] is Map ? Map<String, dynamic>.from(post['likes']) : {};
-    final isLiked = currentUserId != null && likesMap.containsKey(currentUserId);
-
+    final likesMap =
+        post['likes'] is Map ? Map<String, dynamic>.from(post['likes']) : {};
+    final isLiked =
+        currentUserId != null && likesMap.containsKey(currentUserId);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 16.0),
@@ -284,7 +225,8 @@ class _FeedScreenState extends State<FeedScreen> {
           children: [
             // User Info Header
             Padding(
-              padding: const EdgeInsets.only(left: 16.0,right: 16.0,top:8.0,bottom: 8.0),
+              padding: const EdgeInsets.only(
+                  left: 16.0, right: 16.0, top: 8.0, bottom: 8.0),
               child: Row(
                 children: [
                   CircleAvatar(
@@ -292,14 +234,15 @@ class _FeedScreenState extends State<FeedScreen> {
                     backgroundImage: profileUrl.isNotEmpty
                         ? CachedNetworkImageProvider(profileUrl)
                         : CachedNetworkImageProvider(
-                      'https://t4.ftcdn.net/jpg/05/49/98/39/360_F_549983970_bRCkYfk0P6PP5fKbMhZMIb07mCJ6esXL',
-                    ),
+                            'https://t4.ftcdn.net/jpg/05/49/98/39/360_F_549983970_bRCkYfk0P6PP5fKbMhZMIb07mCJ6esXL',
+                          ),
                   ),
                   const SizedBox(width: 8),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(username, style: TextStyle(fontWeight: FontWeight.w500)),
+                      Text(username,
+                          style: TextStyle(fontWeight: FontWeight.w500)),
                       Row(
                         children: [
                           Text('${formatTimestamp(timestamp)} • ',
@@ -316,7 +259,8 @@ class _FeedScreenState extends State<FeedScreen> {
             // Media Display
             if (mediaType == 'image' && mediaUrl.isNotEmpty)
               Padding(
-                padding: const EdgeInsets.only(left: 16.0, right: 16.0, top: 8.0, bottom: 8.0),
+                padding: const EdgeInsets.only(
+                    left: 16.0, right: 16.0, top: 8.0, bottom: 8.0),
                 child: SizedBox(
                   width: 400,
                   height: 500,
@@ -331,24 +275,30 @@ class _FeedScreenState extends State<FeedScreen> {
                         color: Colors.grey[300],
                       ),
                     ),
-                    errorWidget: (context, url, error) => const Icon(Icons.error_outline),
+                    errorWidget: (context, url, error) =>
+                        const Icon(Icons.error_outline),
                   ),
                 ),
               )
             else if (mediaType == 'video' && mediaUrl.isNotEmpty)
               Padding(
-                padding: const EdgeInsets.only(left: 16.0,right: 16.0,top:8.0,bottom: 8.0),
+                padding: const EdgeInsets.only(
+                    left: 16.0, right: 16.0, top: 8.0, bottom: 8.0),
                 child: SizedBox(
                     width: 400,
                     height: 500,
-                    child: VideoPlayerItem(videoUrl:  mediaUrl)),
+                    child: VideoPlayerItem(videoUrl: mediaUrl)),
               ),
 
             // Text Content
             if (post['textContent'].isNotEmpty)
               Padding(
-                padding: const EdgeInsets.only(left: 16.0,right: 16.0,top:8.0,bottom: 8.0),
-                child: Text(post['textContent'], style: TextStyle(fontWeight: FontWeight.w500),),
+                padding: const EdgeInsets.only(
+                    left: 16.0, right: 16.0, top: 8.0, bottom: 8.0),
+                child: Text(
+                  post['textContent'],
+                  style: TextStyle(fontWeight: FontWeight.w500),
+                ),
               ),
 
             // Likes/Comments
@@ -357,23 +307,42 @@ class _FeedScreenState extends State<FeedScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      IconButton(onPressed: (){
-                        _addComment(context, post.id);
-                      }, icon: Icon(Icons.mode_comment_rounded,color: Colors.grey)),
-                      Text('${post['comments']} comments',),
-                    ],
+                  GestureDetector(
+                    onTap: () {
+                      showCommentsBottomSheet(context, post.id, currentUserId,
+                          userName, profileUrl);
+                    },
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        Icon(
+                          Icons.mode_comment_rounded,
+                          color: Colors.grey,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '${post['comments']} comments',
+                        ),
+                      ],
+                    ),
                   ),
                   Row(
                     children: [
-                      Text('${post['likesCount']} likes'),
-                      IconButton(onPressed: (){
-                        _toggleLike(post.id);
-                      }, icon: Icon(Icons.favorite, color: isLiked ? Colors.red : Colors.grey,size: 30,),
+                      GestureDetector(
+                          onTap: () {
+                            showLikesBottomSheet(context, post.id);
+                          },
+                          child: Text('${post['likesCount']} likes')),
+                      IconButton(
+                        onPressed: () {
+                          _toggleLike(post.id);
+                        },
+                        icon: Icon(
+                          Icons.favorite,
+                          color: isLiked ? Colors.red : Colors.grey,
+                          size: 30,
+                        ),
                       )
-
                     ],
                   ),
                 ],
@@ -386,10 +355,11 @@ class _FeedScreenState extends State<FeedScreen> {
   }
 }
 
-// Video Player Component
-// Video Player Component with enhanced controls
+/* --------------------------- Video Player Component with controls --------------------------- */
+
 class VideoPlayerItem extends StatefulWidget {
   final String videoUrl;
+
   const VideoPlayerItem({required this.videoUrl, super.key});
 
   @override
@@ -445,8 +415,6 @@ class _VideoPlayerItemState extends State<VideoPlayerItem> {
     _isPlaying ? _controller.play() : _controller.pause();
   }
 
-
-
   @override
   void dispose() {
     _controller.removeListener(_videoListener);
@@ -495,6 +463,8 @@ class _VideoPlayerItemState extends State<VideoPlayerItem> {
     );
   }
 
+  /* --------------------------- VideoPlayer Widget --------------------------- */
+
   Widget _buildVideoPlayer() {
     return Stack(
       fit: StackFit.expand,
@@ -517,6 +487,8 @@ class _VideoPlayerItemState extends State<VideoPlayerItem> {
     );
   }
 
+  /* --------------------------- Progress bar in video Widget --------------------------- */
+
   Widget _buildProgressBar() {
     final Duration duration = _controller.value.duration;
     final Duration position = _controller.value.position;
@@ -530,9 +502,11 @@ class _VideoPlayerItemState extends State<VideoPlayerItem> {
         _controller.seekTo(Duration(milliseconds: value.toInt()));
       },
       activeColor: Colors.red,
-      inactiveColor: Colors.white.withOpacity(0.5),
+      inactiveColor: Colors.white,
     );
   }
+
+  /* ---------------------------Loading State Widget --------------------------- */
 
   Widget _buildLoadingState() {
     return const SizedBox(
@@ -543,6 +517,8 @@ class _VideoPlayerItemState extends State<VideoPlayerItem> {
     );
   }
 
+  /* --------------------------- Error Widget --------------------------- */
+
   Widget _buildErrorState() {
     return SizedBox(
       height: 200,
@@ -551,7 +527,8 @@ class _VideoPlayerItemState extends State<VideoPlayerItem> {
         children: [
           const Icon(Icons.error_outline, color: Colors.white, size: 40),
           const SizedBox(height: 10),
-          const Text('Failed to load video', style: TextStyle(color: Colors.white)),
+          const Text('Failed to load video',
+              style: TextStyle(color: Colors.white)),
           const SizedBox(height: 10),
           ElevatedButton(
             onPressed: () {

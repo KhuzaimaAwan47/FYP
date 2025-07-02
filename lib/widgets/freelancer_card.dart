@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../pages/Freelancer_Screens/Freelancerdetails.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 
 class FreelancerCard extends StatelessWidget {
@@ -53,23 +54,42 @@ class FreelancerCard extends StatelessWidget {
               Row(
                 children: [
                   ClipOval(
-                    child: Image.network(
-                      imageUrl,
+                    child: CachedNetworkImage(
+                      imageUrl: imageUrl,
                       width: 50,
                       height: 50,
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          width: 50,
-                          height: 50,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.grey[300],
+                      imageBuilder: (context, imageProvider) => Container(
+                        width: 50,
+                        height: 50,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          image: DecorationImage(
+                            image: imageProvider,
+                            fit: BoxFit.cover,
                           ),
-                          child: const Icon(Icons.person, color: Colors.white),
-                        );
-                      },
-                    ),
+                        ),
+                      ),
+                      placeholder: (context, url) => Container(
+                        width: 50,
+                        height: 50,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.grey[300],
+                        ),
+                        child: const CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                      errorWidget: (context, url, error) => Container(
+                        width: 50,
+                        height: 50,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.grey[300],
+                        ),
+                        child: const Icon(Icons.person, color: Colors.white),
+                      ),
+                    )
                   ),
                   const SizedBox(width: 5),
                   Expanded(

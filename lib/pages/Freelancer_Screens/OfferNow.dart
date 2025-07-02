@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-
 import '../../utlis/snack_bars.dart';
 
 class OfferNow extends StatefulWidget {
@@ -43,14 +42,10 @@ class _OfferNowState extends State<OfferNow> {
             userName = userDoc['username'];
           });
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Username not found!')),
-          );
+          return;
         }
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading user: $e')),
-        );
+        return;
       }
     }
   }
@@ -195,28 +190,30 @@ class _OfferNowState extends State<OfferNow> {
                   ),
                 ),
               ),
-              SizedBox(height: 15),
-              ElevatedButton(
-                onPressed: () {
-                  publishOffer();
-                  FocusScope.of(context).unfocus();
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.indigoAccent,
-                  elevation: 2.0,
-                  minimumSize: Size(double.infinity, 56),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-                child: Text(
-                  'Continue',
-                  style: TextStyle(fontSize: 18, color: Colors.white),
-                ),
-              )
             ],
           ),
         ),
+      ),
+      bottomNavigationBar: Padding(padding: EdgeInsets.all(16),
+      child: ElevatedButton.icon(
+        onPressed: () {
+          publishOffer();
+          FocusScope.of(context).unfocus();
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.indigoAccent,
+          elevation: 2.0,
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        label: Text(
+          'Offer Now',
+          style: TextStyle(fontSize: 18, color: Colors.white),
+        ),
+          icon: Icon(Icons.local_offer, color: Colors.white)
+      )
       ),
     );
   }

@@ -1,8 +1,8 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
-import 'package:my_fyp/utlis/snack_bars.dart';
 import 'package:shimmer/shimmer.dart';
 import '../Freelancer_Screens//Chat.dart';
 import 'OfferNow.dart';
@@ -77,9 +77,8 @@ class _FreelancerDetailsState extends State<FreelancerDetails> {
       setState(() {
         _projectStatusCounts = counts;
       });
-      print('Project Status Counts: $_projectStatusCounts');
     } catch (e) {
-      print('Error: $e');
+      return;
     }
   }
 
@@ -114,7 +113,6 @@ class _FreelancerDetailsState extends State<FreelancerDetails> {
         this.totalReviews = totalReviews;
         userRating = previousRating;
       });
-      print('User Rating Loaded: $userRating');
     }
   }
 
@@ -165,7 +163,7 @@ class _FreelancerDetailsState extends State<FreelancerDetails> {
         });
       }
     } catch (e) {
-      showErrorSnackbar(context, 'Error updating rating: $e');
+      return;
     }
   }
 
@@ -393,79 +391,78 @@ class _FreelancerDetailsState extends State<FreelancerDetails> {
                       ],
                     ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              elevation: 2.0,
-                              backgroundColor: Colors.indigoAccent,
-                              padding: EdgeInsets.symmetric(
-                                horizontal:
-                                    MediaQuery.of(context).size.width * 0.13,
-                                vertical:
-                                    MediaQuery.of(context).size.height * 0.01,
-                              ),
-                            ),
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => MessagePage(
-                                    freelancerUid: widget.freelancer['uid'],
-                                    freelancerUsername: widget.freelancer['username'],
-                                    profileImageUrl: widget.freelancer['profileUrl'] ??
-                                        'https://t4.ftcdn.net/jpg/05/49/98/39/360_F_549983970_bRCkYfk0P6PP5fKbMhZMIb07mCJ6esXL.jpg',
-                                  ),
-                                ),
-                              );
-                            },
-                            child: const Text(
-                              'Contact Me',
-                              style:
-                                  TextStyle(color: Colors.white, fontSize: 16),
-                            ),
-                          ),
-                        ),
-                        SizedBox(
-                          width: 5,
-                        ),
-                        Expanded(
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                                elevation: 2.0,
-                                backgroundColor: Colors.indigoAccent,
-                                padding: EdgeInsets.symmetric(
-                                  horizontal:
-                                      MediaQuery.of(context).size.width * 0.13,
-                                  vertical:
-                                      MediaQuery.of(context).size.height * 0.01,
-                                )),
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => OfferNow(
-                                      freelancerUsername:
-                                          widget.freelancer['username']),
-                                ),
-                              );
-                            },
-                            child: const Text(
-                              'Offer Now',
-                              style:
-                                  TextStyle(color: Colors.white, fontSize: 16),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
                 ],
               ),
             )
+          ],
+        ),
+      ),
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Row(
+          children: [
+            Expanded(
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  elevation: 2.0,
+                  backgroundColor: Colors.indigoAccent,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => MessagePage(
+                        freelancerUid: widget.freelancer['uid'],
+                        freelancerUsername: widget.freelancer['username'],
+                        profileImageUrl: widget.freelancer['profileUrl'] ??
+                            'https://t4.ftcdn.net/jpg/05/49/98/39/360_F_549983970_bRCkYfk0P6PP5fKbMhZMIb07mCJ6esXL.jpg',
+                      ),
+                    ),
+                  );
+                },
+                label: const Text(
+                  'Contact Me',
+                  style:
+                  TextStyle(color: Colors.white, fontSize: 16),
+                ),
+                icon: Icon(Icons.message, color: Colors.white),
+              ),
+            ),
+            SizedBox(
+              width: 5,
+            ),
+            Expanded(
+              child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    elevation: 2.0,
+                    backgroundColor: Colors.indigoAccent,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => OfferNow(
+                            freelancerUsername:
+                            widget.freelancer['username']),
+                      ),
+                    );
+                  },
+                  label: const Text(
+                    'Offer Now',
+                    style:
+                    TextStyle(color: Colors.white, fontSize: 16),
+                  ),
+                  icon: Icon(Icons.local_offer, color: Colors.white)
+              ),
+            ),
           ],
         ),
       ),
@@ -476,7 +473,11 @@ class _FreelancerDetailsState extends State<FreelancerDetails> {
 
   Widget projectCard(String title, int count, Color color) {
     return Card(
-      elevation: 2,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.grey.shade200, width: 1),
+      ),
       color: Colors.grey[50],
       child: Container(
         height: 100,
@@ -544,6 +545,11 @@ class _FreelancerDetailsState extends State<FreelancerDetails> {
                   image: NetworkImage(coverUrl),
                   fit: BoxFit.cover,
                 ),
+                  boxShadow: [BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  )]
               ),
             ),
           );
@@ -568,7 +574,26 @@ class _FreelancerDetailsState extends State<FreelancerDetails> {
           },
           child: CircleAvatar(
             radius: profileHeight / 2,
-            backgroundImage: NetworkImage(profileUrl),
+           // backgroundImage: NetworkImage(profileUrl),
+            child: CachedNetworkImage(
+                imageUrl: profileUrl,
+              imageBuilder: (context, imageProvider)=> Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  image: DecorationImage(
+                    image: imageProvider,
+                    fit: BoxFit.cover,
+                  ),
+                    boxShadow: [BoxShadow(
+                      color: Colors.black26,
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    )]
+                ),
+              ),
+              placeholder: (context,url)=> const CircularProgressIndicator(),
+              errorWidget: (context,url,error)=> const Icon(Icons.error),
+            ),
           ),
         ),
       );

@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
@@ -7,13 +6,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:my_fyp/utlis/snack_bars.dart';
-
 import 'GroupChatPage.dart';
 
 class GroupDetails extends StatefulWidget {
   final String groupId;
-
-
 
   const GroupDetails({super.key, required this.groupId});
 
@@ -25,7 +21,6 @@ class _GroupDetailsState extends State<GroupDetails> {
   // Initialize Firebase Services
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  File? _profileImage;
 
   /* --------------------------- Main Build Widget --------------------------- */
 
@@ -37,7 +32,7 @@ class _GroupDetailsState extends State<GroupDetails> {
         // Loading state
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
-            backgroundColor: Colors.white,
+              backgroundColor: Colors.white,
               body: Center(child: CircularProgressIndicator()));
         }
         // Error or group not found
@@ -129,14 +124,14 @@ class _GroupDetailsState extends State<GroupDetails> {
                   children: [
                     // Profile Image with a soft shadow
                     Container(
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        boxShadow: [BoxShadow(
+                      decoration:
+                          BoxDecoration(shape: BoxShape.circle, boxShadow: [
+                        BoxShadow(
                           color: Colors.black26,
                           blurRadius: 8,
                           offset: const Offset(0, 4),
-                        )]
-                      ),
+                        )
+                      ]),
                       child: GestureDetector(
                         onTap: () {
                           if (isAdmin) {
@@ -159,7 +154,8 @@ class _GroupDetailsState extends State<GroupDetails> {
                                 shape: BoxShape.circle,
                                 color: Colors.grey[300],
                               ),
-                              child: const Icon(Icons.group, color: Colors.white, size: 40),
+                              child: const Icon(Icons.group,
+                                  color: Colors.white, size: 40),
                             ),
                           ),
                         ),
@@ -195,8 +191,8 @@ class _GroupDetailsState extends State<GroupDetails> {
                             children: [
                               // Members Button
                               ElevatedButton.icon(
-                                onPressed: () =>
-                                    _showMembersDialog(context, members, admins),
+                                onPressed: () => _showMembersDialog(
+                                    context, members, admins),
                                 icon: const Icon(
                                   Icons.people,
                                   size: 18,
@@ -207,7 +203,8 @@ class _GroupDetailsState extends State<GroupDetails> {
                                   foregroundColor: Colors.white,
                                   backgroundColor: Colors.indigoAccent,
                                   textStyle: const TextStyle(
-                                      fontSize: 14, fontWeight: FontWeight.bold),
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold),
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 12, vertical: 8),
                                   shape: RoundedRectangleBorder(
@@ -216,40 +213,43 @@ class _GroupDetailsState extends State<GroupDetails> {
                                 ),
                               ),
 
-                              SizedBox(width: 5,),
+                              SizedBox(
+                                width: 5,
+                              ),
 
                               if (isMember)
-                              // Chat Button
-                              ElevatedButton.icon(
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => GroupChatScreen(
-                                        groupId: widget.groupId,
-                                        groupName: groupName,
+                                // Chat Button
+                                ElevatedButton.icon(
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => GroupChatScreen(
+                                          groupId: widget.groupId,
+                                          groupName: groupName,
+                                        ),
                                       ),
+                                    );
+                                  },
+                                  icon: const Icon(
+                                    Icons.chat_bubble,
+                                    size: 18,
+                                    color: Colors.white,
+                                  ),
+                                  label: Text('Group Chat'),
+                                  style: ElevatedButton.styleFrom(
+                                    foregroundColor: Colors.white,
+                                    backgroundColor: Colors.indigoAccent,
+                                    textStyle: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 12, vertical: 8),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
                                     ),
-                                  );
-                                },
-                                icon: const Icon(
-                                  Icons.chat_bubble,
-                                  size: 18,
-                                  color: Colors.white,
-                                ),
-                                label: Text('Group Chat'),
-                                style: ElevatedButton.styleFrom(
-                                  foregroundColor: Colors.white,
-                                  backgroundColor: Colors.indigoAccent,
-                                  textStyle: const TextStyle(
-                                      fontSize: 14, fontWeight: FontWeight.bold),
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 12, vertical: 8),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
                                   ),
                                 ),
-                              ),
                             ],
                           ),
                         ],
@@ -337,43 +337,42 @@ class _GroupDetailsState extends State<GroupDetails> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 20),
-
-                    // Action Buttons
-                    Row(
-                      children: [
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            style: ElevatedButton.styleFrom(
-                              elevation: 3,
-                              backgroundColor:
-                                  isMember ? Colors.red : Colors.green,
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12)),
-                            ),
-                            icon: Icon(
-                                isMember ? Icons.exit_to_app : Icons.group_add,
-                                color: Colors.white),
-                            label: Text(
-                              isMember ? 'Leave Group' : 'Join Group',
-                              style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                            onPressed: () {
-                              isMember
-                                  ? _leaveGroup(context, widget.groupId,
-                                      currentUser?.email)
-                                  : _joinGroup(context, widget.groupId,
-                                      currentUser?.email);
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
                   ],
+                ),
+              ],
+            ),
+          ),
+          // Action Buttons
+          bottomNavigationBar: Padding(
+            padding: EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      elevation: 2,
+                      backgroundColor: isMember ? Colors.red : Colors.green,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                    ),
+                    icon: Icon(isMember ? Icons.exit_to_app : Icons.group_add,
+                        color: Colors.white),
+                    label: Text(
+                      isMember ? 'Leave Group' : 'Join Group',
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold),
+                    ),
+                    onPressed: () {
+                      isMember
+                          ? _leaveGroup(
+                              context, widget.groupId, currentUser?.email)
+                          : _joinGroup(
+                              context, widget.groupId, currentUser?.email);
+                    },
+                  ),
                 ),
               ],
             ),
@@ -383,18 +382,18 @@ class _GroupDetailsState extends State<GroupDetails> {
     );
   }
 
-
+  /* --------------------------- Pick group profile Method --------------------------- */
 
   Future<void> pickProfileImage() async {
     final ImagePicker picker = ImagePicker();
     final XFile? pickedFile =
-    await picker.pickImage(source: ImageSource.gallery);
+        await picker.pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
-      setState(() {
-        _profileImage = File(pickedFile.path);
-      });
+      setState(() {});
     }
   }
+
+  /* --------------------------- Upload Group Profile Method --------------------------- */
 
   Future<String?> uploadGroupImage(File image, BuildContext context) async {
     try {
@@ -425,7 +424,7 @@ class _GroupDetailsState extends State<GroupDetails> {
     return null;
   }
 
-
+  /* --------------------------- Edit Group Profile Image Method --------------------------- */
 
   void _editGroupProfileImage(BuildContext context) async {
     File? selectedImage;
@@ -453,7 +452,9 @@ class _GroupDetailsState extends State<GroupDetails> {
                       }
                     },
                     icon: const Icon(Icons.image),
-                    label: Text(selectedImage != null ? 'Change Image' : 'Select Image'),
+                    label: Text(selectedImage != null
+                        ? 'Change Image'
+                        : 'Select Image'),
                   ),
                   if (selectedImage != null)
                     Image.file(
@@ -476,17 +477,22 @@ class _GroupDetailsState extends State<GroupDetails> {
                   onPressed: selectedImage == null
                       ? null
                       : () async {
-                    newImageUrl = await uploadGroupImage(selectedImage!, context);
-                    if (newImageUrl != null) {
-                      await _firestore
-                          .collection('groups')
-                          .doc(widget.groupId)
-                          .update({'profile_image': newImageUrl});
-                      Navigator.pop(context);
-                      showSuccessSnackbar(context, 'Profile image updated successfully!');
-                    }
-                  },
-                  child: const Text('Save',style: TextStyle(color: Colors.white),),
+                          newImageUrl =
+                              await uploadGroupImage(selectedImage!, context);
+                          if (newImageUrl != null) {
+                            await _firestore
+                                .collection('groups')
+                                .doc(widget.groupId)
+                                .update({'profile_image': newImageUrl});
+                            Navigator.pop(context);
+                            showSuccessSnackbar(
+                                context, 'Profile image updated successfully!');
+                          }
+                        },
+                  child: const Text(
+                    'Save',
+                    style: TextStyle(color: Colors.white),
+                  ),
                 ),
               ],
             );
@@ -495,8 +501,6 @@ class _GroupDetailsState extends State<GroupDetails> {
       },
     );
   }
-
-
 
   /* --------------------------- Dialogs --------------------------- */
 
@@ -626,8 +630,11 @@ class _GroupDetailsState extends State<GroupDetails> {
                               ListTile(
                                 leading: CircleAvatar(
                                   radius: 24,
-                                  child: CachedNetworkImage(imageUrl: member['profileUrl'] ?? 'https://via.placeholder.com/150',
-                                    imageBuilder: (context, imageProvider)=> Container(
+                                  child: CachedNetworkImage(
+                                    imageUrl: member['profileUrl'] ??
+                                        'https://via.placeholder.com/150',
+                                    imageBuilder: (context, imageProvider) =>
+                                        Container(
                                       decoration: BoxDecoration(
                                         shape: BoxShape.circle,
                                         image: DecorationImage(
@@ -666,8 +673,7 @@ class _GroupDetailsState extends State<GroupDetails> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child:
-                      const Text('Cancel'),
+                  child: const Text('Cancel'),
                 ),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
@@ -752,20 +758,20 @@ class _GroupDetailsState extends State<GroupDetails> {
 
                         return ListTile(
                           leading: GestureDetector(
-                            onTap: () {},
-                            child: CircleAvatar(
-                              backgroundColor: Colors.blue.shade100,
-                              child:  member['profileUrl'] != null
-                                ? CircleAvatar(
-                                backgroundImage: NetworkImage(member['profileUrl']),
-                                radius: 20,
-                              )
-                                  :CircleAvatar(
-                                radius: 20,
-                                child: const Icon(Icons.person, color: Colors.white),
-                              )
-                            )
-                          ),
+                              onTap: () {},
+                              child: CircleAvatar(
+                                  backgroundColor: Colors.blue.shade100,
+                                  child: member['profileUrl'] != null
+                                      ? CircleAvatar(
+                                          backgroundImage: NetworkImage(
+                                              member['profileUrl']),
+                                          radius: 20,
+                                        )
+                                      : CircleAvatar(
+                                          radius: 20,
+                                          child: const Icon(Icons.person,
+                                              color: Colors.white),
+                                        ))),
                           title: Text(
                             member['username'],
                             style: TextStyle(
@@ -868,7 +874,7 @@ class _GroupDetailsState extends State<GroupDetails> {
 
     try {
       DocumentSnapshot groupSnapshot =
-      await _firestore.collection('groups').doc(groupId).get();
+          await _firestore.collection('groups').doc(groupId).get();
       List<dynamic> members = groupSnapshot['members'] ?? [];
       List<dynamic> admins = groupSnapshot['group_admin'] ?? [];
 
@@ -950,7 +956,7 @@ class _GroupDetailsState extends State<GroupDetails> {
         }
       }
     } catch (e) {
-      print('Error fetching member details: $e');
+      showErrorSnackbar(context, 'Error fetching member details: $e');
     }
     return memberDetails;
   }

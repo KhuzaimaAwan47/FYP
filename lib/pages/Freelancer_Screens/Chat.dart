@@ -6,7 +6,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'dart:io';
-
 import 'GroupChatPage.dart';
 
 class ChatsScreen extends StatefulWidget {
@@ -20,6 +19,8 @@ class _ChatsScreenState extends State<ChatsScreen> {
   int _currentIndex = 0;
   final List<bool> isHoverList = List.generate(5, (_) => false);
   final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  /* --------------------------- Main Build Widget --------------------------- */
 
   @override
   Widget build(BuildContext context) {
@@ -60,8 +61,8 @@ class _ChatsScreenState extends State<ChatsScreen> {
                         color: _currentIndex == index
                             ? Colors.indigoAccent
                             : isHoverList[index]
-                            ? Colors.indigoAccent.withOpacity(0.1)
-                            : null,
+                                ? Colors.indigoAccent[10]
+                                : null,
                       ),
                       child: Text(
                         [
@@ -96,6 +97,8 @@ class _ChatsScreenState extends State<ChatsScreen> {
     );
   }
 
+  /* --------------------------- Build All Chats Widget --------------------------- */
+
   // Builds individual chat list
   Widget _buildAllChats() {
     return StreamBuilder<QuerySnapshot>(
@@ -114,7 +117,7 @@ class _ChatsScreenState extends State<ChatsScreen> {
             var chatDoc = snapshot.data!.docs[index];
             var users = List<String>.from(chatDoc['users']);
             var otherUserId = users.firstWhere(
-                  (uid) => uid != FirebaseAuth.instance.currentUser!.uid,
+              (uid) => uid != FirebaseAuth.instance.currentUser!.uid,
             );
             var user1 = chatDoc['user1'] as Map<String, dynamic>? ?? {};
             var user2 = chatDoc['user2'] as Map<String, dynamic>? ?? {};
@@ -122,7 +125,9 @@ class _ChatsScreenState extends State<ChatsScreen> {
             var timestamp = chatDoc['timestamp'] != null
                 ? (chatDoc['timestamp'] as Timestamp).toDate()
                 : DateTime.now();
-            var unreadCount = chatDoc['unreadCounts'][FirebaseAuth.instance.currentUser!.uid] ?? 0;
+            var unreadCount = chatDoc['unreadCounts']
+                    [FirebaseAuth.instance.currentUser!.uid] ??
+                0;
             return Card(
               elevation: 0,
               color: Colors.grey.shade200,
@@ -131,7 +136,8 @@ class _ChatsScreenState extends State<ChatsScreen> {
                 leading: CircleAvatar(
                   radius: 30,
                   child: CachedNetworkImage(
-                    imageUrl: otherUser['profileUrl'] ?? 'https://via.placeholder.com/150 ',
+                    imageUrl: otherUser['profileUrl'] ??
+                        'https://via.placeholder.com/150 ',
                     imageBuilder: (context, imageProvider) => Container(
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
@@ -141,8 +147,10 @@ class _ChatsScreenState extends State<ChatsScreen> {
                         ),
                       ),
                     ),
-                    placeholder: (context, url) => const CircularProgressIndicator(),
-                    errorWidget: (context, url, error) => const Icon(Icons.error),
+                    placeholder: (context, url) =>
+                        const CircularProgressIndicator(),
+                    errorWidget: (context, url, error) =>
+                        const Icon(Icons.error),
                   ),
                 ),
                 title: Row(
@@ -182,7 +190,8 @@ class _ChatsScreenState extends State<ChatsScreen> {
                       builder: (context) => MessagePage(
                         freelancerUid: otherUserId,
                         freelancerUsername: otherUser['name'] ?? 'User',
-                        profileImageUrl: otherUser['profileUrl'] ?? 'https://via.placeholder.com/150 ',
+                        profileImageUrl: otherUser['profileUrl'] ??
+                            'https://via.placeholder.com/150 ',
                       ),
                     ),
                   );
@@ -195,12 +204,15 @@ class _ChatsScreenState extends State<ChatsScreen> {
     );
   }
 
+  /* --------------------------- Group Chat Widget --------------------------- */
+
   // Builds group chat list
   Widget _buildGroupChats() {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection('groups')
-          .where('members', arrayContains: FirebaseAuth.instance.currentUser?.email)
+          .where('members',
+              arrayContains: FirebaseAuth.instance.currentUser?.email)
           .snapshots(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
@@ -219,15 +231,16 @@ class _ChatsScreenState extends State<ChatsScreen> {
             var lastMessageTimestamp = DateTime.now(); // fallback
             if (data['lastMessageTimestamp'] != null) {
               try {
-                lastMessageTimestamp = (data['lastMessageTimestamp'] as Timestamp).toDate();
+                lastMessageTimestamp =
+                    (data['lastMessageTimestamp'] as Timestamp).toDate();
               } catch (e) {
                 // Fallback if timestamp is not a valid Timestamp
                 lastMessageTimestamp = DateTime.now();
               }
             }
 
-            var profileImageUrl = data['profile_image'] ??
-                'https://via.placeholder.com/150 ';
+            var profileImageUrl =
+                data['profile_image'] ?? 'https://via.placeholder.com/150 ';
 
             int unreadCount = 0;
 
@@ -237,10 +250,10 @@ class _ChatsScreenState extends State<ChatsScreen> {
               Map<String, dynamic> counts = data['unreadCounts'];
               String? currentUserUid = _auth.currentUser?.uid;
 
-              if (currentUserUid != null && counts.containsKey(currentUserUid)) {
-                unreadCount = counts[currentUserUid] is int
-                    ? counts[currentUserUid]
-                    : 0;
+              if (currentUserUid != null &&
+                  counts.containsKey(currentUserUid)) {
+                unreadCount =
+                    counts[currentUserUid] is int ? counts[currentUserUid] : 0;
               }
             }
 
@@ -293,14 +306,16 @@ class _ChatsScreenState extends State<ChatsScreen> {
                     ),
                     if (unreadCount > 0)
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
                           color: Colors.indigoAccent,
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Text(
                           unreadCount.toString(),
-                          style: const TextStyle(color: Colors.white, fontSize: 12),
+                          style: const TextStyle(
+                              color: Colors.white, fontSize: 12),
                         ),
                       ),
                   ],
@@ -323,8 +338,9 @@ class _ChatsScreenState extends State<ChatsScreen> {
       },
     );
   }
-
 }
+
+/* --------------------------- Message Page UI --------------------------- */
 
 class MessagePage extends StatefulWidget {
   final String freelancerUid;
@@ -359,6 +375,8 @@ class _MessagePageState extends State<MessagePage> {
     _markAsRead();
   }
 
+  /* --------------------------- User Data loading Method --------------------------- */
+
   Future<Map<String, dynamic>> getCurrentUserDetails() async {
     User? currentUser = _auth.currentUser;
     if (currentUser == null) return {};
@@ -370,15 +388,21 @@ class _MessagePageState extends State<MessagePage> {
       if (querySnapshot.docs.isNotEmpty) {
         return querySnapshot.docs.first.data() as Map<String, dynamic>;
       }
-    } catch (e) {}
+    } catch (e) {
+      return {};
+    }
     return {};
   }
+
+  /* --------------------------- Mark as Read Method --------------------------- */
 
   void _markAsRead() async {
     await _firestore.collection('chats').doc(chatId).update({
       'unreadCounts.${_auth.currentUser!.uid}': 0,
     });
   }
+
+  /* --------------------------- Send Message Method --------------------------- */
 
   void sendMessage() async {
     String messageText = _textController.text.trim();
@@ -425,6 +449,8 @@ class _MessagePageState extends State<MessagePage> {
     );
   }
 
+  /* --------------------------- Image Picking Method --------------------------- */
+
   Future<void> _pickImage(ImageSource source) async {
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(source: source);
@@ -434,6 +460,8 @@ class _MessagePageState extends State<MessagePage> {
     }
   }
 
+  /* --------------------------- Profile Image Upload Method --------------------------- */
+
   Future<void> _uploadImage(File imageFile) async {
     try {
       showDialog(
@@ -442,14 +470,17 @@ class _MessagePageState extends State<MessagePage> {
         builder: (context) => const Center(child: CircularProgressIndicator()),
       );
 
-      final storageRef = FirebaseStorage.instance
-          .ref()
-          .child('chat_images/$chatId/${DateTime.now().millisecondsSinceEpoch}.jpg');
+      final storageRef = FirebaseStorage.instance.ref().child(
+          'chat_images/$chatId/${DateTime.now().millisecondsSinceEpoch}.jpg');
 
       await storageRef.putFile(imageFile);
       final downloadURL = await storageRef.getDownloadURL();
 
-      await _firestore.collection('chats').doc(chatId).collection('messages').add({
+      await _firestore
+          .collection('chats')
+          .doc(chatId)
+          .collection('messages')
+          .add({
         'senderId': _auth.currentUser!.uid,
         'content': downloadURL,
         'type': 'image',
@@ -476,6 +507,8 @@ class _MessagePageState extends State<MessagePage> {
     }
   }
 
+  /* --------------------------- Main Build Widget --------------------------- */
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -488,8 +521,11 @@ class _MessagePageState extends State<MessagePage> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(widget.freelancerUsername, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                const Text("Hey, I'm using Unity Gig", style: TextStyle(color: Colors.white70, fontSize: 14)),
+                Text(widget.freelancerUsername,
+                    style: const TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.bold)),
+                const Text("Hey, I'm using Unity Gig",
+                    style: TextStyle(color: Colors.white70, fontSize: 14)),
               ],
             ),
           ],
@@ -510,16 +546,19 @@ class _MessagePageState extends State<MessagePage> {
                   return const Center(child: CircularProgressIndicator());
                 }
 
-                List<DocumentSnapshot> messages = snapshot.data!.docs.reversed.toList();
+                List<DocumentSnapshot> messages =
+                    snapshot.data!.docs.reversed.toList();
                 List<dynamic> items = [];
                 DateTime? lastDate;
 
                 for (var message in messages) {
                   final timestamp = message['timestamp'] as Timestamp?;
                   final messageDate = timestamp?.toDate() ?? DateTime.now();
-                  final dateOnly = DateTime(messageDate.year, messageDate.month, messageDate.day);
+                  final dateOnly = DateTime(
+                      messageDate.year, messageDate.month, messageDate.day);
 
-                  if (lastDate == null || !dateOnly.isAtSameMomentAs(lastDate)) {
+                  if (lastDate == null ||
+                      !dateOnly.isAtSameMomentAs(lastDate)) {
                     items.add({'type': 'date', 'date': dateOnly});
                     lastDate = dateOnly;
                   }
@@ -537,11 +576,13 @@ class _MessagePageState extends State<MessagePage> {
                       return DateBubble(date: item['date']);
                     } else {
                       final message = item['data'] as DocumentSnapshot;
-                      final isMe = message['senderId'] == _auth.currentUser!.uid;
+                      final isMe =
+                          message['senderId'] == _auth.currentUser!.uid;
                       return MessageBubble(
                         message: message['content'],
                         isMe: isMe,
-                        timestamp: message['timestamp']?.toDate() ?? DateTime.now(),
+                        timestamp:
+                            message['timestamp']?.toDate() ?? DateTime.now(),
                         type: message['type'] ?? 'text',
                       );
                     }
@@ -558,7 +599,8 @@ class _MessagePageState extends State<MessagePage> {
                   child: Card(
                     elevation: 2.0,
                     color: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.0)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15.0)),
                     child: Row(
                       children: [
                         Expanded(
@@ -567,25 +609,30 @@ class _MessagePageState extends State<MessagePage> {
                             decoration: InputDecoration(
                               prefixIcon: IconButton(
                                 onPressed: () {},
-                                icon: const Icon(Icons.emoji_emotions, color: Colors.indigoAccent),
+                                icon: const Icon(Icons.emoji_emotions,
+                                    color: Colors.indigoAccent),
                               ),
                               hintText: "Type something...",
-                              hintStyle: const TextStyle(color: Colors.indigoAccent),
+                              hintStyle:
+                                  const TextStyle(color: Colors.indigoAccent),
                               border: OutlineInputBorder(
                                 borderSide: BorderSide.none,
                                 borderRadius: BorderRadius.circular(20),
                               ),
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 16),
                             ),
                           ),
                         ),
                         IconButton(
                           onPressed: () => _pickImage(ImageSource.camera),
-                          icon: const Icon(Icons.camera_alt, color: Colors.indigoAccent),
+                          icon: const Icon(Icons.camera_alt,
+                              color: Colors.indigoAccent),
                         ),
                         IconButton(
                           onPressed: () => _pickImage(ImageSource.gallery),
-                          icon: const Icon(Icons.image, color: Colors.indigoAccent),
+                          icon: const Icon(Icons.image,
+                              color: Colors.indigoAccent),
                         ),
                       ],
                     ),
@@ -603,7 +650,8 @@ class _MessagePageState extends State<MessagePage> {
                       width: 45,
                       height: 45,
                       alignment: Alignment.center,
-                      child: const Icon(Icons.send, size: 30, color: Colors.white),
+                      child:
+                          const Icon(Icons.send, size: 30, color: Colors.white),
                     ),
                   ),
                 ),
@@ -622,6 +670,8 @@ class _MessagePageState extends State<MessagePage> {
     super.dispose();
   }
 }
+
+/* --------------------------- Message Bubble UI --------------------------- */
 
 class MessageBubble extends StatelessWidget {
   final String message;
@@ -642,7 +692,8 @@ class MessageBubble extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
       child: Column(
-        crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        crossAxisAlignment:
+            isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         children: [
           Container(
             constraints: BoxConstraints(
@@ -670,7 +721,8 @@ class MessageBubble extends StatelessWidget {
                         height: 200,
                         child: Center(child: CircularProgressIndicator()),
                       ),
-                      errorWidget: (context, url, error) => const Icon(Icons.error),
+                      errorWidget: (context, url, error) =>
+                          const Icon(Icons.error),
                       height: 200,
                       width: MediaQuery.of(context).size.width * 0.7,
                       fit: BoxFit.cover,
@@ -701,6 +753,8 @@ class MessageBubble extends StatelessWidget {
   }
 }
 
+/* --------------------------- Date Bubble UI --------------------------- */
+
 class DateBubble extends StatelessWidget {
   final DateTime date;
 
@@ -711,9 +765,13 @@ class DateBubble extends StatelessWidget {
     String formattedDate;
     final now = DateTime.now();
 
-    if (date.year == now.year && date.month == now.month && date.day == now.day) {
+    if (date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day) {
       formattedDate = 'Today';
-    } else if (date.year == now.year && date.month == now.month && date.day == now.day - 1) {
+    } else if (date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day - 1) {
       formattedDate = 'Yesterday';
     } else {
       formattedDate = DateFormat('MMMM d, y').format(date);

@@ -7,8 +7,9 @@ import 'package:image_picker/image_picker.dart';
 import 'package:my_fyp/utlis/snack_bars.dart';
 
 class CreateGroup extends StatefulWidget {
-
-  const CreateGroup({super.key,});
+  const CreateGroup({
+    super.key,
+  });
 
   @override
   State<StatefulWidget> createState() => _CreateGroupState();
@@ -22,7 +23,6 @@ class _CreateGroupState extends State<CreateGroup> {
   final TextEditingController groupMembersController = TextEditingController();
   File? _profileImage;
   String? imageUrl;
-
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -102,7 +102,7 @@ class _CreateGroupState extends State<CreateGroup> {
       String groupRules = groupRulesController.text;
 
       if (groupName.isEmpty || groupDescription.isEmpty || groupRules.isEmpty) {
-        showErrorSnackbar(context, 'Please fill all fields!');
+        showWarningSnackbar(context, 'Please fill all fields!');
         return;
       }
       if (_profileImage == null) {
@@ -118,8 +118,7 @@ class _CreateGroupState extends State<CreateGroup> {
       List<String> groupMembers = [userEmail];
       imageUrl = await uploadGroupImage(_profileImage!);
 
-      await _firestore.collection('groups')
-          .add({
+      await _firestore.collection('groups').add({
         'group_name': groupName,
         'description': groupDescription,
         'rules': groupRules,
@@ -135,12 +134,7 @@ class _CreateGroupState extends State<CreateGroup> {
       showSuccessSnackbar(context, 'Group created successfully!');
       Navigator.pop(context);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: Colors.red,
-          content: Text('Error: $e'),
-        ),
-      );
+      return;
     }
   }
 
@@ -165,21 +159,9 @@ class _CreateGroupState extends State<CreateGroup> {
             .child("group_profileImages/$userId/Group_Profile.png");
         await reference.putFile(image);
         return await reference.getDownloadURL();
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            backgroundColor: Colors.red,
-            content: Text('No user is logged in!'),
-          ),
-        );
-      }
+      } else {}
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: Colors.red,
-          content: Text('Failed to upload image: $e'),
-        ),
-      );
+      showErrorSnackbar(context, 'Failed to upload image: $e');
     }
     return null;
   }
@@ -230,7 +212,7 @@ class _CreateGroupState extends State<CreateGroup> {
             const SizedBox(height: 16.0),
             TextFormField(
               controller: groupDescriptionController,
-              maxLines: 3,
+              maxLines: 5,
               decoration: InputDecoration(
                 label: Text('Group Description'),
                 labelStyle: TextStyle(
@@ -246,7 +228,7 @@ class _CreateGroupState extends State<CreateGroup> {
             const SizedBox(height: 16.0),
             TextFormField(
               controller: groupRulesController,
-              maxLines: 3,
+              maxLines: 5,
               decoration: InputDecoration(
                 label: Text('Group Rules'),
                 labelStyle: TextStyle(color: Colors.grey),
@@ -257,78 +239,28 @@ class _CreateGroupState extends State<CreateGroup> {
                 ),
               ),
             ),
-            const SizedBox(height: 16.0),
-            // const Text('Select Members:', style: TextStyle(fontSize: 16)),
-            // SingleChildScrollView(
-            //   child: Container(
-            //     decoration: BoxDecoration(
-            //       border: Border.all(width: 1.0, color: Colors.grey),
-            //       borderRadius: BorderRadius.circular(16),
-            //     ),
-            //     child: ListView.builder(
-            //       shrinkWrap: true,
-            //       physics: NeverScrollableScrollPhysics(),
-            //       itemCount: freelancersList.length,
-            //       itemBuilder: (context, index) => CheckboxListTile(
-            //         title: Text(freelancersList[index]['email']),
-            //         value: selectedFreelancerEmails
-            //             .contains(freelancersList[index]['email']),
-            //         onChanged: (value) => setState(() {
-            //           if (value!) {
-            //             selectedFreelancerEmails
-            //                 .add(freelancersList[index]['email']);
-            //           } else {
-            //             selectedFreelancerEmails
-            //                 .remove(freelancersList[index]['email']);
-            //           }
-            //         }),
-            //       ),
-            //     ),
-            //   ),
-            // ),
-            // const SizedBox(height: 8.0),
-            // Column(
-            //   children: [
-            //     if (userEmail.isNotEmpty ||
-            //         selectedFreelancerEmails
-            //             .isNotEmpty) // Conditionally render Wrap
-            //       Wrap(
-            //         spacing: 8.0,
-            //         runSpacing: 4.0,
-            //         children: [
-            //           if (userEmail.isNotEmpty) // Display current user's email
-            //             Chip(label: Text(userEmail)),
-            //           ...selectedFreelancerEmails
-            //               .map((email) => Chip(
-            //                     label: Text(email),
-            //                     onDeleted: () => setState(() =>
-            //                         selectedFreelancerEmails.remove(email)),
-            //                   ))
-            //               ,
-            //         ],
-            //       ),
-            //   ],
-            // ),
-            ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.indigoAccent,
-                minimumSize: Size(double.infinity, 56),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-              ),
-              onPressed: createGroup,
-              label: const Text(
-                'Create',
-                style: TextStyle(fontSize: 18, color: Colors.white),
-              ),
-              icon: const Icon(
-                Icons.group_add,
-                color: Colors.white,
-              ),
-
-            ),
           ],
+        ),
+      ),
+      bottomNavigationBar: Padding(
+        padding: EdgeInsets.all(16),
+        child: ElevatedButton.icon(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.indigoAccent,
+            minimumSize: Size(double.infinity, 56),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+          ),
+          onPressed: createGroup,
+          label: const Text(
+            'Create',
+            style: TextStyle(fontSize: 18, color: Colors.white),
+          ),
+          icon: const Icon(
+            Icons.group_add,
+            color: Colors.white,
+          ),
         ),
       ),
     );

@@ -72,29 +72,17 @@ class _BidFormState extends State<BidForm> {
     if (_formKey.currentState!.validate()) {
       try {
         final querySnapshot = await _firestore
-            .collection('bids')
+            .collection('notifications')
             .where('project_name', isEqualTo: widget.projectName)
             .where('bidder_name', isEqualTo: userName)
             .get();
 
         if (querySnapshot.docs.isNotEmpty) {
           // Bid already exists
-          showWarningSnackbar(context, "You have already submitted a bid for this project");
+          showWarningSnackbar(
+              context, "You have already submitted a bid for this project");
           return;
         }
-        // Add bid details to Firestore
-        await _firestore.collection('bids').add({
-          'project_id': widget.projectId,
-          'project_name': widget.projectName,
-          'owner_name': widget.ownerName,
-          'bidder_name': userName,
-          'bid_amount': double.tryParse(amountController.text) ?? 0.0,
-          'estimated_time': timeController.text,
-          'message': messageController.text,
-          'status': 'pending', // Initial status
-          'created_at': FieldValue.serverTimestamp(),
-        });
-        // Add bid details in notifications collection
         await _firestore.collection('notifications').add({
           'project_id': widget.projectId,
           'project_name': widget.projectName,
@@ -105,7 +93,7 @@ class _BidFormState extends State<BidForm> {
           'bid_amount': amountController.text,
           'estimated_time': timeController.text,
           'created_at': FieldValue.serverTimestamp(),
-          'read': false,
+          'message': messageController.text,
           // Status to track whether the notification is read
           'status': "Pending",
           // Status to set by project owner if bid is accepted or rejected
@@ -114,7 +102,6 @@ class _BidFormState extends State<BidForm> {
         Navigator.pop(context);
       } catch (e) {
         showErrorSnackbar(context, 'Error submitting bid: $e');
-
       }
     }
   }
@@ -124,111 +111,115 @@ class _BidFormState extends State<BidForm> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: const Text('Bid Now'),
-      ),
-      body: Form(
-        key: _formKey,
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Icon(Icons.gavel,size: 150,color: Colors.indigoAccent,shadows: [
-                BoxShadow(
-                  color: Colors.grey,
-                  spreadRadius: 2,
-                  blurRadius: 5,
-                  offset: Offset(0, 3),
-                )
-              ],),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: amountController,
-                decoration: InputDecoration(
-                  hintText: 'Bid Amount (\$)',
-                  prefixIcon: Icon(
-                    Icons.account_balance_outlined,
-                    color: Colors.grey,
-                  ),
-                  hintStyle: TextStyle(
-                      color: Colors.grey, fontWeight: FontWeight.normal),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14.0),
-                  ),
+        backgroundColor: Colors.white,
+        appBar: AppBar(
+          title: const Text('Bid Now'),
+        ),
+        body: Form(
+          key: _formKey,
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.gavel,
+                  size: 150,
+                  color: Colors.indigoAccent,
+                  shadows: [
+                    BoxShadow(
+                      color: Colors.grey,
+                      spreadRadius: 2,
+                      blurRadius: 5,
+                      offset: Offset(0, 3),
+                    )
+                  ],
                 ),
-                keyboardType: TextInputType.number,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return '*This field is required';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: timeController,
-                decoration: InputDecoration(
-                  hintText: 'Estimated Time',
-                  prefixIcon: Icon(
-                    Icons.timelapse_outlined,
-                    color: Colors.grey,
-                  ),
-                  hintStyle: TextStyle(
-                      color: Colors.grey, fontWeight: FontWeight.normal),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14.0),
-                  ),
-                ),
-                keyboardType: TextInputType.text,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return '*This field is required';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: messageController,
-                decoration: InputDecoration(
-                    label: Text(
-                      'Message(Optional)',
-                      style: TextStyle(color: Colors.grey),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: amountController,
+                  decoration: InputDecoration(
+                    hintText: 'Bid Amount (\$)',
+                    prefixIcon: Icon(
+                      Icons.account_balance_outlined,
+                      color: Colors.grey,
                     ),
+                    hintStyle: TextStyle(
+                        color: Colors.grey, fontWeight: FontWeight.normal),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14.0),
-                    )),
-                maxLines: 3,
-              ),
-              const SizedBox(height: 16),
-              Center(
-                child: ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.indigoAccent,
-                    elevation: 2.0,
-                    minimumSize: Size(double.infinity, 56),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
                     ),
                   ),
-                  onPressed: _submitBid,
-                  icon: const Icon(
-                    Icons.send,
-                    color: Colors.white,
-                  ),
-                  label: const Text(
-                    'Submit ',
-                    style: TextStyle(color: Colors.white, fontSize: 18),
-                  ),
+                  keyboardType: TextInputType.number,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return '*This field is required';
+                    }
+                    return null;
+                  },
                 ),
-              ),
-              const SizedBox(height: 16),
-            ],
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: timeController,
+                  decoration: InputDecoration(
+                    hintText: 'Estimated Time',
+                    prefixIcon: Icon(
+                      Icons.timelapse_outlined,
+                      color: Colors.grey,
+                    ),
+                    hintStyle: TextStyle(
+                        color: Colors.grey, fontWeight: FontWeight.normal),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14.0),
+                    ),
+                  ),
+                  keyboardType: TextInputType.text,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return '*This field is required';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: messageController,
+                  decoration: InputDecoration(
+                      label: Text(
+                        'Message(Optional)',
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14.0),
+                      )),
+                  maxLines: 3,
+                ),
+              ],
+            ),
           ),
         ),
-      ),
-    );
+        // Elevated Button
+        bottomNavigationBar: Padding(
+          padding: EdgeInsets.all(16.0),
+          child: ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.indigoAccent,
+              elevation: 2.0,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+            ),
+            onPressed: _submitBid,
+            icon: const Icon(
+              Icons.send,
+              color: Colors.white,
+            ),
+            label: const Text(
+              'Submit ',
+              style: TextStyle(color: Colors.white, fontSize: 18),
+            ),
+          ),
+        ));
   }
 }

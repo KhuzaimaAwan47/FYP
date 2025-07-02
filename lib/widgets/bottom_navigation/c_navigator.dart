@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:custom_navigation_bar/custom_navigation_bar.dart';
-import '../../pages/Client_Screens/Chat.dart';
+import '../../pages/Freelancer_Screens/Chat.dart';
 import '../../pages/Client_Screens/Dashboard.dart';
-import '../../pages/Client_Screens/Feed.dart';
-import '../../pages/Client_Screens/Home.dart';
+import '../../pages/Freelancer_Screens/Feed.dart';
+import '../../pages/Freelancer_Screens/Home.dart';
 
 
 
@@ -40,7 +40,8 @@ class _HomePageState extends State<C_navigator> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
+    return PopScope(
+      canPop: false,
       child: Scaffold(
         backgroundColor: Colors.white,
         body:PageView(

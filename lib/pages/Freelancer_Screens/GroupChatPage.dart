@@ -11,11 +11,13 @@ class GroupChatScreen extends StatefulWidget {
   final String groupId;
   final String groupName;
 
-  const GroupChatScreen({super.key, required this.groupId, required this.groupName});
+  const GroupChatScreen(
+      {super.key, required this.groupId, required this.groupName});
 
   @override
   State<GroupChatScreen> createState() => _GroupChatScreenState();
 }
+
 class _GroupChatScreenState extends State<GroupChatScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -29,7 +31,6 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     super.initState();
     _markAsRead();
   }
-
 
   Future<Map<String, dynamic>> getCurrentUserDetails() async {
     User? currentUser = _auth.currentUser;
@@ -56,34 +57,20 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
 
   Future<void> _sendMessage(String content, String type) async {
     final currentUser = _auth.currentUser!;
-    final currentUserData = await getCurrentUserDetails();
-
     try {
       // Send the message to the group
       final groupDocRef = _firestore.collection('groups').doc(widget.groupId);
-      final messageRef = await groupDocRef
-          .collection('messages')
-          .add({
-        'senderId': currentUser.uid,
-        'senderName': currentUserData['username'] ?? 'User',
-        'senderProfile': currentUserData['profileUrl'] ?? '',
-        'content': content,
-        'type': type,
-        'timestamp': FieldValue.serverTimestamp(),
-      });
-
       //  Update the group document with last message and timestamp
       await groupDocRef.set({
         'lastMessage': type == 'image' ? 'Sent an image' : content,
         'lastMessageTimestamp': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
 
-      // Step 2: Get the group document to retrieve member emails
+      // Get the group document to retrieve member emails
       final groupSnapshot = await groupDocRef.get();
       final List<dynamic>? memberEmails = groupSnapshot.get('members');
 
       if (memberEmails == null || memberEmails.isEmpty) {
-        print("No members found in the group.");
         return;
       }
 
@@ -94,9 +81,8 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
           .where('email', whereIn: userEmails)
           .get();
 
-      final List<String> memberUids = usersSnapshot.docs
-          .map((doc) => doc.get('uid') as String)
-          .toList();
+      final List<String> memberUids =
+          usersSnapshot.docs.map((doc) => doc.get('uid') as String).toList();
 
       if (memberUids.isEmpty) {
         return;
@@ -107,7 +93,8 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
 
       for (final String memberId in memberUids) {
         if (memberId != currentUser.uid) {
-          unreadCountsUpdate['unreadCounts.$memberId'] = FieldValue.increment(1);
+          unreadCountsUpdate['unreadCounts.$memberId'] =
+              FieldValue.increment(1);
         }
       }
 
@@ -126,10 +113,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   }
 
   void _markAsRead() async {
-    await _firestore
-        .collection('groups')
-        .doc(widget.groupId)
-        .update({
+    await _firestore.collection('groups').doc(widget.groupId).update({
       'unreadCounts.${_auth.currentUser!.uid}': 0,
     });
   }
@@ -158,7 +142,8 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   Future<void> _uploadImage(File imageFile) async {
     try {
       // Upload to Firebase Storage
-      final storagePath = 'group_images/${widget.groupId}/${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final storagePath =
+          'group_images/${widget.groupId}/${DateTime.now().millisecondsSinceEpoch}.jpg';
       final storageRef = _storage.ref().child(storagePath);
       await storageRef.putFile(imageFile);
       final downloadURL = await storageRef.getDownloadURL();
@@ -196,7 +181,8 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                 }
 
                 // Process messages to add date separators
-                List<DocumentSnapshot> messages = snapshot.data!.docs.reversed.toList();
+                List<DocumentSnapshot> messages =
+                    snapshot.data!.docs.reversed.toList();
                 List<dynamic> items = [];
                 DateTime? lastDate;
 
@@ -209,7 +195,8 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                     messageTime.day,
                   );
 
-                  if (lastDate == null || dateOnly.difference(lastDate).inDays != 0) {
+                  if (lastDate == null ||
+                      dateOnly.difference(lastDate).inDays != 0) {
                     items.add({'type': 'date', 'date': dateOnly});
                     lastDate = dateOnly;
                   }
@@ -233,8 +220,6 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                     Timestamp? ts = message['timestamp'];
                     DateTime messageTime = ts?.toDate() ?? DateTime.now();
 
-
-
                     return GroupMessageBubble(
                       message: message['content'],
                       isMe: isMe,
@@ -256,7 +241,8 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                   child: Card(
                     elevation: 2.0,
                     color: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.0)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15.0)),
                     child: Row(
                       children: [
                         Expanded(
@@ -265,25 +251,30 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                             decoration: InputDecoration(
                               prefixIcon: IconButton(
                                 onPressed: () {},
-                                icon: const Icon(Icons.emoji_emotions, color: Colors.indigoAccent),
+                                icon: const Icon(Icons.emoji_emotions,
+                                    color: Colors.indigoAccent),
                               ),
                               hintText: "Type something...",
-                              hintStyle: const TextStyle(color: Colors.indigoAccent),
+                              hintStyle:
+                                  const TextStyle(color: Colors.indigoAccent),
                               border: OutlineInputBorder(
                                 borderSide: BorderSide.none,
                                 borderRadius: BorderRadius.circular(20),
                               ),
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 16),
                             ),
                           ),
                         ),
                         IconButton(
                           onPressed: () => _pickImage(ImageSource.camera),
-                          icon: const Icon(Icons.camera_alt, color: Colors.indigoAccent),
+                          icon: const Icon(Icons.camera_alt,
+                              color: Colors.indigoAccent),
                         ),
                         IconButton(
                           onPressed: () => _pickImage(ImageSource.gallery),
-                          icon: const Icon(Icons.image, color: Colors.indigoAccent),
+                          icon: const Icon(Icons.image,
+                              color: Colors.indigoAccent),
                         ),
                       ],
                     ),
@@ -301,7 +292,8 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                       width: 45,
                       height: 45,
                       alignment: Alignment.center,
-                      child: const Icon(Icons.send, size: 30, color: Colors.white),
+                      child:
+                          const Icon(Icons.send, size: 30, color: Colors.white),
                     ),
                   ),
                 ),
@@ -337,7 +329,8 @@ class GroupMessageBubble extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: Column(
-        crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        crossAxisAlignment:
+            isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         children: [
           if (!isMe)
             Row(
@@ -383,10 +376,10 @@ class GroupMessageBubble extends StatelessWidget {
                       imageUrl: message,
                       placeholder: (context, url) => SizedBox(
                           height: 200,
-                          child: Center(
-                              child: const CircularProgressIndicator())
-                      ),
-                      errorWidget: (context, url, error) => const Icon(Icons.error),
+                          child:
+                              Center(child: const CircularProgressIndicator())),
+                      errorWidget: (context, url, error) =>
+                          const Icon(Icons.error),
                       height: 200,
                       width: MediaQuery.of(context).size.width * 0.6,
                       fit: BoxFit.cover,
@@ -419,9 +412,13 @@ class DateBubble extends StatelessWidget {
     String formattedDate;
     final now = DateTime.now();
 
-    if (date.year == now.year && date.month == now.month && date.day == now.day) {
+    if (date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day) {
       formattedDate = 'Today';
-    } else if (date.year == now.year && date.month == now.month && date.day == now.day - 1) {
+    } else if (date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day - 1) {
       formattedDate = 'Yesterday';
     } else {
       formattedDate = DateFormat('MMMM d, y').format(date);

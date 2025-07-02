@@ -1,8 +1,10 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart';
 import 'package:my_fyp/auth/signup_page.dart';
 import 'package:my_fyp/auth/validators.dart';
+import '../widgets/bottom_navigation/c_navigator.dart';
 import '../widgets/bottom_navigation/f_navigator.dart';
 import 'forgot.dart';
 
@@ -34,35 +36,86 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  //--------------------------------------Functions for handling authentication-------------------------------------------
+  /* --------------------------- Authentication Method --------------------------- */
+
+  // Future<void> signInUser() async {
+  //   FocusScope.of(context).unfocus(); //keyboard closes when button is pressed.
+  //   try {
+  //     // Attempt to sign in the user
+  //     await FirebaseAuth.instance.signInWithEmailAndPassword(
+  //       email: emailController.text.trim(),
+  //       password: passwordController.text.trim(),
+  //     );
+  //
+  //     Navigator.push(
+  //       context,
+  //       MaterialPageRoute(builder: (context) => const F_navigator()),
+  //     );
+  //   } on FirebaseAuthException catch (e) {
+  //     String errorMessage = _handleFirebaseAuthError(e);
+  //     _showErrorDialog(errorMessage);
+  //   } catch (e) {
+  //     _showErrorDialog('An unexpected error occurred. Please try again.');
+  //     print(
+  //         "Error occurred: $e"); // Log the actual error for debugging purposes
+  //   }
+  // }
 
   Future<void> signInUser() async {
-    FocusScope.of(context).unfocus(); //keyboard closes when button is pressed.
+    FocusScope.of(context).unfocus(); // Close keyboard
+
     try {
-      // Attempt to sign in the user
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
+      // Sign in the user
+      final UserCredential userCredential = await FirebaseAuth.instance
+          .signInWithEmailAndPassword(
         email: emailController.text.trim(),
         password: passwordController.text.trim(),
       );
 
-      // Navigate to the HomePage after successful sign-in
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const F_navigator()),
-      );
+      final User? user = userCredential.user;
+
+      if (user != null) {
+        // Query Firestore using email
+        final QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+            .collection('users')
+            .where('email', isEqualTo: user.email)
+            .limit(1)
+            .get();
+
+        if (querySnapshot.docs.isNotEmpty) {
+          final DocumentSnapshot userData = querySnapshot.docs.first;
+
+          final String role = userData.get('userType');
+
+          // Navigate based on role
+          if (role == 'freelancer') {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const F_navigator()),
+            );
+          } else if (role == 'client') {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const C_navigator()),
+            );
+          } else {
+            _showErrorDialog('Unknown user role.');
+          }
+        } else {
+          _showErrorDialog('User data not found.');
+        }
+      }
     } on FirebaseAuthException catch (e) {
-      // Handle FirebaseAuth-specific errors and show an error dialog
       String errorMessage = _handleFirebaseAuthError(e);
       _showErrorDialog(errorMessage);
     } catch (e) {
-      // Handle other exceptions (e.g., network errors) and show an error dialog
       _showErrorDialog('An unexpected error occurred. Please try again.');
-      print(
-          "Error occurred: $e"); // Log the actual error for debugging purposes
+      print("Error occurred: $e"); // Log for debugging
     }
   }
 
-// Error handling function (same as in the signUpUser function)
+/* --------------------------- Firebase Error Handling Method --------------------------- */
+
   String _handleFirebaseAuthError(FirebaseAuthException e) {
     if (e.code == 'user-not-found') {
       return 'Email not found. Please check your email and try again.';
@@ -79,6 +132,8 @@ class _LoginPageState extends State<LoginPage> {
       return 'Connection Timed Out.... Please try again later.';
     }
   }
+
+  /* --------------------------- Error Dialog Method --------------------------- */
 
   void _showErrorDialog(String message) {
     showDialog(
@@ -100,6 +155,7 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
+/* --------------------------- Main Build Widget --------------------------- */
 
   @override
   Widget build(BuildContext context) {
@@ -152,7 +208,7 @@ class _LoginPageState extends State<LoginPage> {
                         height: screenHeight * 0.02,
                       ),
 
-                      //---------------------------------------------Email-----------------------------------------------------
+                      /* --------------------------- Email --------------------------- */
 
                       TextFormField(
                         controller: emailController,
@@ -182,7 +238,7 @@ class _LoginPageState extends State<LoginPage> {
                         height: screenWidth * 0.02,
                       ),
 
-                      //------------------------------------------------Password-----------------------------------------------
+                      /* --------------------------- Password --------------------------- */
 
                       TextFormField(
                         style: const TextStyle(
@@ -224,7 +280,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       SizedBox(height: 24),
 
-                      //---------------------------------------------Button---------------------------------------------------
+                      /* --------------------------- Elevated Button --------------------------- */
 
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(
@@ -249,7 +305,7 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
 
-                      //-------------------------------------------Text Button------------------------------------------------
+                      /* --------------------------- Text Button --------------------------- */
 
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -277,7 +333,7 @@ class _LoginPageState extends State<LoginPage> {
                         ],
                       ),
 
-                      //-------------------------------------------Text Button------------------------------------------------
+                      /* --------------------------- Text Button --------------------------- */
 
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,

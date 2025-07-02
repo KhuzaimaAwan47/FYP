@@ -10,7 +10,10 @@ class ProjectList extends StatelessWidget {
     return SizedBox(
       height: 150,
       child: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance.collection('projects').snapshots(),
+        stream: FirebaseFirestore.instance
+            .collection('projects')
+            .orderBy('project_created_at', descending: true)
+            .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -23,10 +26,13 @@ class ProjectList extends StatelessWidget {
             scrollDirection: Axis.horizontal,
             itemCount: projectDocs.length,
             itemBuilder: (context, index) {
-              var projectData = projectDocs[index].data() as Map<String, dynamic>;
+              var projectData =
+                  projectDocs[index].data() as Map<String, dynamic>;
               String projectId = projectDocs[index].id;
-              String projectName = projectData['project_name'] ?? 'Unnamed Project';
-              String description = projectData['description'] ?? 'No Description';
+              String projectName =
+                  projectData['project_name'] ?? 'Unnamed Project';
+              String description =
+                  projectData['description'] ?? 'No Description';
               String ownerName = projectData['owner_name'] ?? 'Unknown';
               double budget = (projectData['budget'] is int)
                   ? (projectData['budget'] as int).toDouble()

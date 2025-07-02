@@ -63,15 +63,7 @@ class _PostProjectState extends State<PostProject> {
 
       // Check for empty fields
       if (projectName.isEmpty || description.isEmpty || budget == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              backgroundColor: Colors.redAccent,
-              behavior: SnackBarBehavior.floating,
-              // Make it float
-              margin: EdgeInsets.only(bottom: 16.0, left: 16.0, right: 16.0),
-              duration: Duration(seconds: 2),
-              content: Text('Please fill all fields')),
-        );
+        showWarningSnackbar(context, 'Please fill in all fields.');
         return;
       }
       User? user = FirebaseAuth.instance.currentUser;
@@ -181,31 +173,30 @@ class _PostProjectState extends State<PostProject> {
                 // Limits input to 600 characters or 100 words
               ],
             ),
-            const SizedBox(
-              height: 30,
-            ),
-            ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.indigoAccent,
-                  elevation: 2.0,
-                  minimumSize: Size(double.infinity, 56),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-                onPressed: () {
-                  publishProject();
-                },
-                icon: const Icon(
-                  Icons.publish,
-                  color: Colors.white,
-                ),
-                label: const Text(
-                  'Publish',
-                  style: TextStyle(fontSize: 18, color: Colors.white),
-                ))
           ],
         ),
+      ),
+      bottomNavigationBar: Padding(padding: EdgeInsets.all(16.0),
+      child:  ElevatedButton.icon(
+          style: ElevatedButton.styleFrom(
+            elevation: 2.0,
+            backgroundColor: Colors.indigoAccent,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            padding: const EdgeInsets.symmetric(vertical: 14),
+          ),
+          onPressed: () {
+            publishProject();
+          },
+          icon: const Icon(
+            Icons.publish,
+            color: Colors.white,
+          ),
+          label: const Text(
+            'Publish',
+            style: TextStyle(fontSize: 18, color: Colors.white),
+          ))
       ),
     );
   }

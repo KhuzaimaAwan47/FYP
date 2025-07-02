@@ -1,15 +1,19 @@
 import 'dart:io';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shimmer/shimmer.dart';
-
+import 'assigned_project_status.dart';
 import 'edit_profile.dart';
-
+import 'no_of_biddedProjects.dart';
+import 'no_of_groups.dart';
+import 'no_of_postedProjects.dart';
+import 'offers_received.dart';
+import 'offers_sent.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -19,18 +23,18 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-
   // Constants
-final double coverHeight = 150;
-final double profileHeight = 130;
-int totalReviews = 0;
-double averageRating = 0;
+  final double coverHeight = 150;
+  final double profileHeight = 130;
+  int totalReviews = 0;
+  double averageRating = 0;
 
 // User data variables
   String firstName = '';
   String lastName = '';
   String location = '';
-  double? hourlyRate ;
+  double? hourlyRate;
+
   String description = '';
   String headline = '';
   String skills = '';
@@ -39,28 +43,35 @@ double averageRating = 0;
   String? coverUrl;
 
 // Initialize Firebase Services
-final FirebaseAuth _auth = FirebaseAuth.instance;
-final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-final ImagePicker _imagePicker = ImagePicker();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final ImagePicker _imagePicker = ImagePicker();
 
 // Project data
-int totalProjectsByUser = 0;
-int totalProposals = 0;
-int totalGroupsByUser = 0;
-int totalOffersSent = 0;
-int totalOffersReceived = 0;
-Map<String, int> _projectStatusCounts = {};
+  int totalProjectsByUser = 0;
+  int totalProposals = 0;
+  int totalGroupsByUser = 0;
+  int totalOffersSent = 0;
+  int totalOffersReceived = 0;
+  Map<String, int> _projectStatusCounts = {};
+
+  List<Map<String, dynamic>> assignedProjects = [];
+  List<Map<String, dynamic>> ownedProjects = [];
+  List<Map<String, dynamic>> userGroups = [];
+  List<Map<String, dynamic>> bidsList = [];
+  List<Map<String, dynamic>> offersSentList = [];
+  List<Map<String, dynamic>> offersReceivedList = [];
 
 
-@override
-void initState() {
-  super.initState();
-  loadUserData();
-  loadProjects();
-  loadGroups();
-  loadBids();
-  loadOffers();
-}
+  @override
+  void initState() {
+    super.initState();
+    loadUserData();
+    loadProjects();
+    loadGroups();
+    loadBids();
+    loadOffers();
+  }
 
 /* --------------------------- Data Loading Methods --------------------------- */
 
@@ -78,16 +89,14 @@ void initState() {
 
       // Check if the user document exists
       if (userQuerySnapshot.docs.isEmpty) {
-        print('User not found in Firestore.');
         return;
       }
 
       // Extract the username from the user document
       Map<String, dynamic>? userData =
-      userQuerySnapshot.docs.first.data() as Map<String, dynamic>?;
+          userQuerySnapshot.docs.first.data() as Map<String, dynamic>?;
       String? username = userData?['username'];
       if (username == null) {
-        print('Username not found in Firestore.');
         return;
       }
 
@@ -125,17 +134,18 @@ void initState() {
         setState(() {
           _projectStatusCounts = counts;
           totalProjectsByUser = ownedProjectsSnapshot.docs.length;
+          assignedProjects = projectQuerySnapshot.docs
+              .map((doc) => doc.data() as Map<String, dynamic>)
+              .toList();
+          ownedProjects = ownedProjectsSnapshot.docs
+              .map((doc) => doc.data() as Map<String, dynamic>)
+              .toList();
         });
       }
-
-      print('Project Status Counts: $_projectStatusCounts');
-      print('Total Projects by User: $totalProjectsByUser');
     } catch (e) {
-      // Handle errors gracefully
-      print('Error loading projects: $e');
+      return;
     }
   }
-
 
   Future<void> loadOffers() async {
     // Get the current user
@@ -151,16 +161,14 @@ void initState() {
 
       // Check if the user document exists
       if (userQuerySnapshot.docs.isEmpty) {
-        print('User not found in Firestore.');
         return;
       }
 
       // Extract the username from the user document
       Map<String, dynamic>? userData =
-      userQuerySnapshot.docs.first.data() as Map<String, dynamic>?;
+          userQuerySnapshot.docs.first.data() as Map<String, dynamic>?;
       String? username = userData?['username'];
       if (username == null) {
-        print('Username not found in Firestore.');
         return;
       }
 
@@ -175,47 +183,49 @@ void initState() {
           .where('owner_name', isEqualTo: username)
           .get();
 
-
       // Update the state
       if (mounted) {
         setState(() {
           totalOffersSent = sentOfferSnapshot.docs.length;
           totalOffersReceived = receivedOfferQuerySnapshot.docs.length;
+          offersSentList = sentOfferSnapshot.docs
+              .map((doc) => doc.data() as Map<String, dynamic>)
+              .toList();
+          offersReceivedList = receivedOfferQuerySnapshot.docs
+              .map((doc) => doc.data() as Map<String, dynamic>)
+              .toList();
         });
       }
-      print('Total Offers Sent: $totalOffersSent');
-      print('Total Offers Received: $totalOffersReceived');
     } catch (e) {
-      // Handle errors gracefully
-      print('Error loading offers: $e');
+      return;
     }
   }
 
-
-  Future<void> loadBids() async{
+  Future<void> loadBids() async {
     User? user = _auth.currentUser;
     if (user == null) return;
     try {
-
       QuerySnapshot userQuerySnapshot = await _firestore
           .collection('users')
           .where('email', isEqualTo: user.email)
           .get();
 
       Map<String, dynamic>? userData =
-      userQuerySnapshot.docs.first.data() as Map<String, dynamic>?;
+          userQuerySnapshot.docs.first.data() as Map<String, dynamic>?;
       String? username = userData?['username'];
 
-      QuerySnapshot bidderQuerySnapshot = await _firestore.collection('bids')
+      QuerySnapshot bidderQuerySnapshot = await _firestore
+          .collection('notifications')
           .where('bidder_name', isEqualTo: username)
           .get();
       setState(() {
         totalProposals = bidderQuerySnapshot.docs.length;
+        bidsList = bidderQuerySnapshot.docs
+            .map((doc) => doc.data() as Map<String, dynamic>)
+            .toList();
       });
-      print('Total Proposals: $totalProposals');
-
     } catch (e) {
-      print('Error loading bids: $e');
+      return;
     }
   }
 
@@ -228,110 +238,114 @@ void initState() {
           .collection('groups')
           .where('created_by', isEqualTo: user.uid)
           .get();
-
+      List<Map<String, dynamic>> groupsList = groupQuerySnapshot.docs
+          .map((doc) => doc.data() as Map<String, dynamic>)
+          .toList();
       // Update state regardless of result
       setState(() {
         totalGroupsByUser = groupQuerySnapshot.docs.length;
+        userGroups = groupsList;
       });
-
-      print('Groups by user: $totalGroupsByUser');
-
     } catch (e) {
-      print('Error loading groups: $e');
+      return;
     }
   }
 
-Future<void> loadUserData() async {
-  User? user = _auth.currentUser;
-  if (user != null) {
-    try {
-      // Query to find the document where email matches
-      QuerySnapshot querySnapshot = await _firestore.collection('users')
-          .where('email', isEqualTo: user.email)
-          .get();
-      if (querySnapshot.docs.isNotEmpty) {
-        DocumentSnapshot userDoc = querySnapshot.docs.first;
+  Future<void> loadUserData() async {
+    User? user = _auth.currentUser;
+    if (user != null) {
+      try {
+        // Query to find the document where email matches
+        QuerySnapshot querySnapshot = await _firestore
+            .collection('users')
+            .where('email', isEqualTo: user.email)
+            .get();
+        if (querySnapshot.docs.isNotEmpty) {
+          DocumentSnapshot userDoc = querySnapshot.docs.first;
 
-        setState(() {
-          firstName = userDoc['first_name'];
-          lastName = userDoc['last_name'];
-          location = userDoc['location'];
-          hourlyRate = userDoc['hourly_rate'] != null
-              ? (userDoc['hourly_rate'] is int
-              ? (userDoc['hourly_rate'] as int).toDouble()
-              : userDoc['hourly_rate'])
-              : null;
-          description = userDoc['description'];
-          headline = userDoc['headline'];
-          skills = userDoc['skills'];
-          profileUrl = userDoc['profileUrl'];
-          coverUrl = userDoc['coverUrl'];
-          averageRating = userDoc['averageRating'] ;
-          totalReviews = userDoc['totalReviews'];
-        });
-      //  print('User data loaded: $firstName, $lastName, $location, $hourlyRate,$profileUrl,$coverUrl');
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No data found for the current user!')),
-        );
+          setState(() {
+            firstName = userDoc['first_name'];
+            lastName = userDoc['last_name'];
+            location = userDoc['location'];
+            hourlyRate = userDoc['hourly_rate'] != null
+                ? (userDoc['hourly_rate'] is int
+                    ? (userDoc['hourly_rate'] as int).toDouble()
+                    : userDoc['hourly_rate'])
+                : null;
+            description = userDoc['description'];
+            headline = userDoc['headline'];
+            skills = userDoc['skills'];
+            profileUrl = userDoc['profileUrl'];
+            coverUrl = userDoc['coverUrl'];
+            averageRating = userDoc['averageRating'];
+            totalReviews = userDoc['totalReviews'];
+          });
+        } else {
+          return;
+          // print('User not found in Firestore.');
+        }
+      } catch (e) {
+        return;
       }
-    } catch (e) {}
-  } else {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('No user logged in!')),
-    );
+    } else {
+      return;
+    }
   }
-}
 
 /* ---------------------------Cover Image Upload Method --------------------------- */
 
-
   Future<void> pickImage() async {
     try {
-      // Pick image from gallery
-      final ImagePicker _picker = ImagePicker();
-      XFile? res = await _picker.pickImage(source: ImageSource.gallery);
+      final ImagePicker picker = ImagePicker();
+      XFile? res = await picker.pickImage(source: ImageSource.gallery);
 
-      if (res != null) {
-        // Crop Image
-        CroppedFile? croppedFile = await ImageCropper().cropImage(
-          sourcePath: res.path,
+      if (res == null) return; // Exit if user cancels image selection
 
-          uiSettings: [
-            AndroidUiSettings(
-              aspectRatioPresets: [
-                CropAspectRatioPreset.ratio16x9,
-                CropAspectRatioPreset.original,
-              ],
-              toolbarTitle: 'Crop Cover Image',
-              toolbarColor: Colors.blueAccent,
-              toolbarWidgetColor: Colors.white,
-              initAspectRatio: CropAspectRatioPreset.original,
-              lockAspectRatio: false,
-            ),
-            IOSUiSettings(
-              title: 'Crop Cover Image',
-            ),
-          ],
-        );
-
-        if (croppedFile != null && croppedFile.path.isNotEmpty) {
-          // Upload cropped image
-          await uploadImageToFirebase(File(croppedFile.path));
-        }
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: Colors.red,
-          content: Text('Error: $e'),
-        ),
+      // Show loading dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator()),
       );
+
+      // Crop the image
+      CroppedFile? croppedFile = await ImageCropper().cropImage(
+        sourcePath: res.path,
+        uiSettings: [
+          AndroidUiSettings(
+            aspectRatioPresets: [
+              CropAspectRatioPreset.ratio16x9,
+              CropAspectRatioPreset.original,
+            ],
+            toolbarTitle: 'Crop Cover Image',
+            toolbarColor: Colors.indigoAccent,
+            toolbarWidgetColor: Colors.white,
+            initAspectRatio: CropAspectRatioPreset.original,
+            lockAspectRatio: false,
+          ),
+          IOSUiSettings(
+            title: 'Crop Cover Image',
+          ),
+        ],
+      );
+
+      if (croppedFile == null) {
+        // User canceled cropping
+        Navigator.of(context).pop(); // Dismiss dialog
+        return;
+      }
+
+      // Upload the cropped image
+      await uploadImageToFirebase(File(croppedFile.path));
+
+      // Dismiss dialog after successful upload
+      Navigator.of(context).pop();
+    } catch (e) {
+      // Dismiss dialog on error and rethrow exception
+      Navigator.of(context).pop();
+      rethrow; // Optional: Handle error appropriately
     }
   }
-
-
-
 
   Future<void> uploadImageToFirebase(File image) async {
     try {
@@ -347,89 +361,81 @@ Future<void> loadUserData() async {
 
         // Get the download URL
         String imageUrl = await reference.getDownloadURL();
-        print("Cover image URL: $imageUrl"); // Print the URL for verification
 
         // Update the state to reflect the new image URL
-        setState(() {
-        });
+        setState(() {});
 
         // Additional logic to update the profileUrl based on email or username
-        QuerySnapshot querySnapshot = await FirebaseFirestore.instance.collection('users')
-        .where('email',isEqualTo: currentUser.email).get();
-        if(querySnapshot.docs.isNotEmpty){
+        QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+            .collection('users')
+            .where('email', isEqualTo: currentUser.email)
+            .get();
+        if (querySnapshot.docs.isNotEmpty) {
           DocumentReference userDoc = querySnapshot.docs.first.reference;
           await userDoc.update({
             'coverUrl': imageUrl,
           });
         }
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating, // Floating above default position
-            margin: EdgeInsets.only(bottom: 50,left: 16,right: 16),
-            content: Text('Cover image uploaded successfully!'),
-          ),
-        );
         await loadUserData();
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            backgroundColor: Colors.red,
-            content: Text('No user is logged in!'),
-          ),
-        );
+        return;
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: Colors.red,
-          content: Text('Failed to upload image: $e'),
-        ),
-      );
+      return;
     }
   }
 
 /* --------------------------- Profile Image Upload Method --------------------------- */
 
   Future<void> pickProfileImage() async {
+    XFile? res;
     try {
-      XFile? res = await _imagePicker.pickImage(source: ImageSource.gallery);
-      if (res != null) {
+      res = await _imagePicker.pickImage(source: ImageSource.gallery);
+      if (res == null) return; // Exit if user cancels image selection
 
-        CroppedFile? croppedFile = await ImageCropper().cropImage(
-          sourcePath: res.path,
-
-          uiSettings: [
-            AndroidUiSettings(
-              aspectRatioPresets: [
-                CropAspectRatioPreset.square,
-                CropAspectRatioPreset.original,
-              ],
-              toolbarTitle: 'Crop Profile Image',
-              toolbarColor: Colors.indigoAccent,
-              toolbarWidgetColor: Colors.white,
-              initAspectRatio: CropAspectRatioPreset.original,
-              lockAspectRatio: false,
-            ),
-            IOSUiSettings(
-              title: 'Crop Profile Image',
-            ),
-          ],
-        );
-
-        if (croppedFile != null && croppedFile.path.isNotEmpty) {
-          // Upload cropped image
-          await uploadProfileImageToFirebase(File(croppedFile.path));
-        }
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: Colors.red,
-          content: Text('Image not selected: $e'),
-        ),
+      // Show loading dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator()),
       );
+
+      // Crop the image
+      final croppedFile = await ImageCropper().cropImage(
+        sourcePath: res.path,
+        uiSettings: [
+          AndroidUiSettings(
+            aspectRatioPresets: [
+              CropAspectRatioPreset.square,
+              CropAspectRatioPreset.original,
+            ],
+            toolbarTitle: 'Crop Profile Image',
+            toolbarColor: Colors.indigoAccent,
+            toolbarWidgetColor: Colors.white,
+            initAspectRatio: CropAspectRatioPreset.original,
+            lockAspectRatio: false,
+          ),
+          IOSUiSettings(
+            title: 'Crop Profile Image',
+          ),
+        ],
+      );
+
+      if (croppedFile == null) {
+        // User canceled cropping
+        Navigator.of(context).pop(); // Dismiss dialog
+        return;
+      }
+
+      // Upload the cropped image
+      await uploadProfileImageToFirebase(File(croppedFile.path));
+
+      // Dismiss dialog after successful upload
+      Navigator.of(context).pop();
+    } catch (e) {
+      // Ensure dialog is dismissed on error
+      if (res != null) Navigator.of(context).pop();
+      rethrow; // Propagate error for proper handling
     }
   }
 
@@ -447,16 +453,16 @@ Future<void> loadUserData() async {
 
         // Get the download URL
         String profileUrl = await reference.getDownloadURL();
-        print("Profile Image URL: $profileUrl"); // Print the URL for verification
 
         // Update the state to reflect the new image URL
-        setState(() {
-        });
+        setState(() {});
 
         // Additional logic to update the profileUrl based on email or username
         QuerySnapshot querySnapshot = await FirebaseFirestore.instance
             .collection('users')
-            .where('email', isEqualTo: currentUser.email) // Use currentUser.email to find the document
+            .where('email',
+                isEqualTo: currentUser
+                    .email) // Use currentUser.email to find the document
             .get();
 
         if (querySnapshot.docs.isNotEmpty) {
@@ -465,30 +471,12 @@ Future<void> loadUserData() async {
             'profileUrl': profileUrl, // Update the profileUrl field
           });
         }
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating, // Floating above default position
-            margin: EdgeInsets.only(bottom: 80, left: 16, right: 16),
-            content: Text('Profile image uploaded successfully!'),
-          ),
-        );
         await loadUserData(); // This will call the func after the new image is uploaded.
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            backgroundColor: Colors.red,
-            content: Text('No user is logged in!'),
-          ),
-        );
+        return;
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: Colors.red,
-          content: Text('Failed to upload image: $e'),
-        ),
-      );
+      return;
     }
   }
 
@@ -500,7 +488,7 @@ Future<void> loadUserData() async {
     var screenWidth = MediaQuery.of(context).size.width;
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar:  AppBar(
+      appBar: AppBar(
         title: const Text('DashBoard'),
         automaticallyImplyLeading: false,
       ),
@@ -511,11 +499,8 @@ Future<void> loadUserData() async {
             buildCoverImage(coverUrl),
             Positioned(
               top: top,
-                child: buildProfileImage(profileUrl),
+              child: buildProfileImage(profileUrl),
             ),
-        
-            //--------------------------------------------Display Info Section-----------------------------------------------------
-
             Container(
               margin: const EdgeInsets.only(top: 215),
               width: screenWidth,
@@ -531,45 +516,45 @@ Future<void> loadUserData() async {
                           children: [
                             firstName.isNotEmpty
                                 ? Text(
-                              firstName,
-                              style: const TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            )
+                                    firstName,
+                                    style: const TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  )
                                 : Shimmer.fromColors(
-                              baseColor: Colors.grey[300]!,
-                              highlightColor: Colors.grey[100]!,
-                              child: Container(
-                                width: 120,
-                                height: 24,
-                                decoration: BoxDecoration(
-                                  color: Colors.grey[300],
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                              ),
-                            ),
+                                    baseColor: Colors.grey[300]!,
+                                    highlightColor: Colors.grey[100]!,
+                                    child: Container(
+                                      width: 120,
+                                      height: 24,
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey[300],
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                    ),
+                                  ),
                             const SizedBox(width: 5),
                             lastName.isNotEmpty
                                 ? Text(
-                              lastName,
-                              style: const TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            )
+                                    lastName,
+                                    style: const TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  )
                                 : Shimmer.fromColors(
-                              baseColor: Colors.grey[300]!,
-                              highlightColor: Colors.grey[100]!,
-                              child: Container(
-                                width: 100,
-                                height: 24,
-                                decoration: BoxDecoration(
-                                  color: Colors.grey[300],
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                              ),
-                            ),
+                                    baseColor: Colors.grey[300]!,
+                                    highlightColor: Colors.grey[100]!,
+                                    child: Container(
+                                      width: 100,
+                                      height: 24,
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey[300],
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                    ),
+                                  ),
                           ],
                         ),
                       ),
@@ -578,22 +563,22 @@ Future<void> loadUserData() async {
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: headline.isNotEmpty
                             ? Text(
-                          headline,
-                          textAlign: TextAlign.justify,
-                          style: const TextStyle(fontSize: 18),
-                        )
+                                headline,
+                                textAlign: TextAlign.justify,
+                                style: const TextStyle(fontSize: 18),
+                              )
                             : Shimmer.fromColors(
-                          baseColor: Colors.grey[300]!,
-                          highlightColor: Colors.grey[100]!,
-                          child: Container(
-                            width: double.infinity,
-                            height: 22,
-                            decoration: BoxDecoration(
-                              color: Colors.grey[300],
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                          ),
-                        ),
+                                baseColor: Colors.grey[300]!,
+                                highlightColor: Colors.grey[100]!,
+                                child: Container(
+                                  width: double.infinity,
+                                  height: 22,
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[300],
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                ),
+                              ),
                       ),
                       const SizedBox(height: 5),
                       Row(
@@ -602,118 +587,129 @@ Future<void> loadUserData() async {
                             padding: const EdgeInsets.only(left: 16.0),
                             child: location.isNotEmpty
                                 ? Row(
-                              children: [
-                                const Icon(Icons.location_pin, size: 20, color: Colors.indigoAccent),
-                                const SizedBox(width: 4),
-                                Text(
-                                  location,
-                                  style: const TextStyle(fontSize: 17, color: Colors.black54),
-                                ),
-                              ],
-                            )
+                                    children: [
+                                      const Icon(Icons.location_pin,
+                                          size: 20, color: Colors.indigoAccent),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        location,
+                                        style: const TextStyle(
+                                            fontSize: 17,
+                                            color: Colors.black54),
+                                      ),
+                                    ],
+                                  )
                                 : Shimmer.fromColors(
-                              baseColor: Colors.grey[300]!,
-                              highlightColor: Colors.grey[100]!,
-                              child: Row(
-                                children: [
-                                  Container(
-                                    width: 17,
-                                    height: 17,
-                                    decoration: BoxDecoration(
-                                      color: Colors.grey[300],
-                                      borderRadius: BorderRadius.circular(4),
+                                    baseColor: Colors.grey[300]!,
+                                    highlightColor: Colors.grey[100]!,
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          width: 17,
+                                          height: 17,
+                                          decoration: BoxDecoration(
+                                            color: Colors.grey[300],
+                                            borderRadius:
+                                                BorderRadius.circular(4),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Container(
+                                          width: 100,
+                                          height: 17,
+                                          decoration: BoxDecoration(
+                                            color: Colors.grey[300],
+                                            borderRadius:
+                                                BorderRadius.circular(4),
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
-                                  const SizedBox(width: 4),
-                                  Container(
-                                    width: 100,
-                                    height: 17,
-                                    decoration: BoxDecoration(
-                                      color: Colors.grey[300],
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
                           ),
                           const SizedBox(width: 10),
                           hourlyRate != null
                               ? Row(
-                            children: [
-                              const Icon(Icons.attach_money, size: 20, color: Colors.indigoAccent),
-                              const SizedBox(width: 4),
-                              Text(
-                                '\$$hourlyRate/hr',
-                                style: const TextStyle(fontSize: 17, color: Colors.black54),
-                              ),
-                            ],
-                          )
+                                  children: [
+                                    const Icon(Icons.attach_money,
+                                        size: 20, color: Colors.indigoAccent),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      '\$$hourlyRate/hr',
+                                      style: const TextStyle(
+                                          fontSize: 17, color: Colors.black54),
+                                    ),
+                                  ],
+                                )
                               : Shimmer.fromColors(
-                            baseColor: Colors.grey[300]!,
-                            highlightColor: Colors.grey[100]!,
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 17,
-                                  height: 17,
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey[300],
-                                    borderRadius: BorderRadius.circular(4),
+                                  baseColor: Colors.grey[300]!,
+                                  highlightColor: Colors.grey[100]!,
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 17,
+                                        height: 17,
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey[300],
+                                          borderRadius:
+                                              BorderRadius.circular(4),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Container(
+                                        width: 80,
+                                        height: 17,
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey[300],
+                                          borderRadius:
+                                              BorderRadius.circular(4),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                                const SizedBox(width: 4),
-                                Container(
-                                  width: 80,
-                                  height: 17,
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey[300],
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
                         ],
                       ),
                       Padding(
-                        padding: const EdgeInsets.only(left: 16.0,top: 5),
+                        padding: const EdgeInsets.only(left: 16.0, top: 5),
                         child: skills.isNotEmpty
                             ? Row(
-                          children: [
-                            const Icon(Icons.stars, size: 20, color: Colors.indigoAccent),
-                            const SizedBox(width: 4),
-                            Text(
-                              skills,
-                              style: TextStyle(fontSize: 17, color: Colors.black54),
-                            ),
-                          ],
-                        )
+                                children: [
+                                  const Icon(Icons.stars,
+                                      size: 20, color: Colors.indigoAccent),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    skills,
+                                    style: TextStyle(
+                                        fontSize: 17, color: Colors.black54),
+                                  ),
+                                ],
+                              )
                             : Shimmer.fromColors(
-                          baseColor: Colors.grey[300]!,
-                          highlightColor: Colors.grey[100]!,
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 17,
-                                height: 17,
-                                decoration: BoxDecoration(
-                                  color: Colors.grey[300],
-                                  borderRadius: BorderRadius.circular(4),
+                                baseColor: Colors.grey[300]!,
+                                highlightColor: Colors.grey[100]!,
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 17,
+                                      height: 17,
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey[300],
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Container(
+                                      width: 120,
+                                      height: 17,
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey[300],
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                              const SizedBox(width: 4),
-                              Container(
-                                width: 120,
-                                height: 17,
-                                decoration: BoxDecoration(
-                                  color: Colors.grey[300],
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
                       ),
                       const SizedBox(height: 5),
                       Padding(
@@ -723,77 +719,87 @@ Future<void> loadUserData() async {
                           children: [
                             averageRating != 0
                                 ? Row(
-                              children: [
-                                Icon(Icons.star_rate, color: Colors.amber, size: 20),
-                                SizedBox(width: 4),
-                                Text(
-                                  'Average Rating: ${averageRating.toStringAsFixed(1)}',
-                                  style: TextStyle(fontSize: 16, color: Colors.black54),
-                                ),
-                              ],
-                            )
+                                    children: [
+                                      Icon(Icons.star_rate,
+                                          color: Colors.amber, size: 20),
+                                      SizedBox(width: 4),
+                                      Text(
+                                        'Average Rating: ${averageRating.toStringAsFixed(1)}',
+                                        style: TextStyle(
+                                            fontSize: 16,
+                                            color: Colors.black54),
+                                      ),
+                                    ],
+                                  )
                                 : Shimmer.fromColors(
-                              baseColor: Colors.grey[300]!,
-                              highlightColor: Colors.grey[100]!,
-                              child: Row(
-                                children: [
-                                  Container(
-                                    width: 17,
-                                    height: 17,
-                                    decoration: BoxDecoration(
-                                      color: Colors.grey[300],
-                                      borderRadius: BorderRadius.circular(4),
+                                    baseColor: Colors.grey[300]!,
+                                    highlightColor: Colors.grey[100]!,
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          width: 17,
+                                          height: 17,
+                                          decoration: BoxDecoration(
+                                            color: Colors.grey[300],
+                                            borderRadius:
+                                                BorderRadius.circular(4),
+                                          ),
+                                        ),
+                                        SizedBox(width: 4),
+                                        Container(
+                                          width: 100,
+                                          height: 17,
+                                          decoration: BoxDecoration(
+                                            color: Colors.grey[300],
+                                            borderRadius:
+                                                BorderRadius.circular(4),
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
-                                  SizedBox(width: 4),
-                                  Container(
-                                    width: 100,
-                                    height: 17,
-                                    decoration: BoxDecoration(
-                                      color: Colors.grey[300],
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
                             const SizedBox(height: 5),
                             totalReviews != 0
                                 ? Row(
-                              children: [
-                                Icon(Icons.reviews, color: Colors.indigoAccent, size: 20),
-                                SizedBox(width: 4),
-                                Text(
-                                  'Total Reviews: $totalReviews',
-                                  style: TextStyle(fontSize: 16, color: Colors.black54),
-                                ),
-                              ],
-                            )
+                                    children: [
+                                      Icon(Icons.reviews,
+                                          color: Colors.indigoAccent, size: 20),
+                                      SizedBox(width: 4),
+                                      Text(
+                                        'Total Reviews: $totalReviews',
+                                        style: TextStyle(
+                                            fontSize: 16,
+                                            color: Colors.black54),
+                                      ),
+                                    ],
+                                  )
                                 : Shimmer.fromColors(
-                              baseColor: Colors.grey[300]!,
-                              highlightColor: Colors.grey[100]!,
-                              child: Row(
-                                children: [
-                                  Container(
-                                    width: 17,
-                                    height: 17,
-                                    decoration: BoxDecoration(
-                                      color: Colors.grey[300],
-                                      borderRadius: BorderRadius.circular(4),
+                                    baseColor: Colors.grey[300]!,
+                                    highlightColor: Colors.grey[100]!,
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          width: 17,
+                                          height: 17,
+                                          decoration: BoxDecoration(
+                                            color: Colors.grey[300],
+                                            borderRadius:
+                                                BorderRadius.circular(4),
+                                          ),
+                                        ),
+                                        SizedBox(width: 4),
+                                        Container(
+                                          width: 80,
+                                          height: 17,
+                                          decoration: BoxDecoration(
+                                            color: Colors.grey[300],
+                                            borderRadius:
+                                                BorderRadius.circular(4),
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
-                                  SizedBox(width: 4),
-                                  Container(
-                                    width: 80,
-                                    height: 17,
-                                    decoration: BoxDecoration(
-                                      color: Colors.grey[300],
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
                           ],
                         ),
                       ),
@@ -802,69 +808,125 @@ Future<void> loadUserData() async {
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: description.isNotEmpty
                             ? Text(
-                          description,
-                          textAlign: TextAlign.justify,
-                          style: const TextStyle(fontSize: 16, color: Colors.black54),
-                        )
+                                description,
+                                textAlign: TextAlign.justify,
+                                style: const TextStyle(
+                                    fontSize: 16, color: Colors.black54),
+                              )
                             : Column(
-                          children: List.generate(
-                            3,
-                                (index) => Padding(
-                              padding: const EdgeInsets.only(bottom: 6),
-                              child: Shimmer.fromColors(
-                                baseColor: Colors.grey[300]!,
-                                highlightColor: Colors.grey[100]!,
-                                child: Container(
-                                  width: double.infinity,
-                                  height: 16,
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey[300],
-                                    borderRadius: BorderRadius.circular(4),
+                                children: List.generate(
+                                  3,
+                                  (index) => Padding(
+                                    padding: const EdgeInsets.only(bottom: 6),
+                                    child: Shimmer.fromColors(
+                                      baseColor: Colors.grey[300]!,
+                                      highlightColor: Colors.grey[100]!,
+                                      child: Container(
+                                        width: double.infinity,
+                                        height: 16,
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey[300],
+                                          borderRadius:
+                                              BorderRadius.circular(4),
+                                        ),
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
-                          ),
-                        ),
                       ),
                       SizedBox(height: 10),
-
-                      //-------------------Cards Section------------------
+                      //-------------------Projects Cards Section------------------
                       Container(
                         color: Colors.white,
                         child: Padding(
                           padding: const EdgeInsets.all(16.0),
                           child: Column(
                             children: [
-                              // Cards for Ongoing, Cancelled, and Completed Projects
+                              // Cards for Ongoing, Cancelled, Completed Projects, Available Balance and Withdrawn balance
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                 children: [
-                                  Expanded(child: projectCard('Ongoing Projects', _projectStatusCounts['Ongoing'] ?? 0, Colors.blue)),
-                                  Expanded(child: projectCard('Pending Projects', _projectStatusCounts['Pending'] ?? 0, Colors.orange)),
+                                  Expanded(
+                                      child: accountCard(
+                                    'Available Balance',
+                                    Colors.green,
+                                    Icon(Icons.account_balance_wallet_outlined,
+                                        color: Colors.green,
+                                    size: 35,
+                                    ),
+                                  )),
+                                  Expanded(
+                                      child: accountCard(
+                                    'Withdrawn Balance',
+                                    Colors.orange,
+                                    Icon(
+                                      Icons.arrow_circle_down_outlined,
+                                      color: Colors.orange,
+                                      size: 35,
+                                    ),
+                                  )),
+                                ],
+                              ),
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
+                                children: [
+                                  Expanded(
+                                      child: projectCard(
+                                          'Ongoing Projects',
+                                          _projectStatusCounts['Ongoing'] ?? 0,
+                                          Colors.blue,
+                                          'Ongoing')),
+                                  Expanded(
+                                      child: projectCard(
+                                          'Pending Projects',
+                                          _projectStatusCounts['Pending'] ?? 0,
+                                          Colors.orange,
+                                          'Pending')),
                                 ],
                               ),
                               Row(
                                 children: [
-                                  Expanded(child: projectCard('Completed Projects',_projectStatusCounts['Completed'] ?? 0, Colors.green)),
-                                  Expanded(child: projectCard('Cancelled Projects',_projectStatusCounts['Cancelled'] ?? 0, Colors.red)),
+                                  Expanded(
+                                      child: projectCard(
+                                          'Completed Projects',
+                                          _projectStatusCounts['Completed'] ??
+                                              0,
+                                          Colors.green,
+                                          'Completed')),
+                                  Expanded(
+                                      child: projectCard(
+                                          'Cancelled Projects',
+                                          _projectStatusCounts['Cancelled'] ??
+                                              0,
+                                          Colors.red,
+                                          'Cancelled')),
                                 ],
                               ),
                               SizedBox(height: 10),
                               // Additional Info Cards
-                              infoCard('Offers Received', totalOffersReceived ?? 0, Icons.local_offer),
-                              infoCard('No of Bided Projects',totalProposals ?? 0, Icons.gavel),
-                              infoCard('No of Groups', totalGroupsByUser ?? 0, Icons.group),
-                              infoCard('No of Posted Projects', totalProjectsByUser ?? 0, Icons.library_books),
-                              infoCard('Offers Sent', totalOffersSent ?? 0, Icons.send),
+                              infoCard(
+                                  'Offers Sent', totalOffersSent, Icons.send,
+                                  OffersSent(offers: offersSentList,)),
+                              infoCard('Offers Received', totalOffersReceived,
+                                  Icons.local_offer,
+                                  OffersReceived(offers: offersReceivedList,)),
+                              infoCard('No of Groups Created', totalGroupsByUser,
+                                  Icons.group,
+                                  NoOfGroups(groups: userGroups)),
+                              infoCard('No of Bided Projects', totalProposals,
+                                  Icons.gavel,
+                                  NoOfBiddedProjects(bids: bidsList,)),
+                              infoCard('No of Posted Projects',
+                                  totalProjectsByUser, Icons.library_books,
+                                  NoOfPostedProjects(projects: ownedProjects,)),
                             ],
                           ),
                         ),
                       ),
-
                     ],
                   ),
-                 // SizedBox(height: 20), // Spacing
                   //Edit Button
                   Positioned(
                     top: 0,
@@ -884,7 +946,8 @@ Future<void> loadUserData() async {
                           onPressed: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (context) => const FullScreenForm()),
+                              MaterialPageRoute(
+                                  builder: (context) => const FullScreenForm()),
                             );
                           },
                           icon: const Icon(
@@ -905,14 +968,15 @@ Future<void> loadUserData() async {
     );
   }
 
-  /* --------------------------- Project Cards Widget --------------------------- */
+  /* --------------------------- Account Cards Widget --------------------------- */
 
-  Widget projectCard(String title, int count, Color color) {
+
+  Widget accountCard(String title, Color color,icon) {
     return Card(
-      elevation: 2,
+      elevation: 0,
       color: Colors.grey[50],
       child: Container(
-        height: 100,
+        height: 120,
         padding: EdgeInsets.all(8),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -921,14 +985,13 @@ Future<void> loadUserData() async {
               title,
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 18,
+                fontSize: 20,
                 fontWeight: FontWeight.bold,
                 color: color,
               ),
             ),
-            SizedBox(height: 5),
-            Text(
-              count.toString(),
+            icon,
+            Text('\$0.00',
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
@@ -941,19 +1004,76 @@ Future<void> loadUserData() async {
     );
   }
 
+  /* --------------------------- Project Cards Widget --------------------------- */
+
+  Widget projectCard(String title, int count, Color color, String status) {
+    return GestureDetector(
+      onTap: () {
+        List<Map<String, dynamic>> filtered = assignedProjects
+            .where((p) => p['project_status'] == status)
+            .toList();
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ProjectStatus(status: status, projects: filtered,),
+          ),
+        );
+      },
+      child: Card(
+        elevation: 2,
+        color: Colors.grey[50],
+        child: Container(
+          height: 100,
+          padding: EdgeInsets.all(8),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+              ),
+              SizedBox(height: 5),
+              Text(
+                count.toString(),
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   /* --------------------------- Info Cards Widget --------------------------- */
 
-  Widget infoCard(String title, int count, IconData icon) {
-    return Card(
-      color: Colors.grey[50],
-      elevation: 2,
-      margin: EdgeInsets.symmetric(vertical: 5),
-      child: ListTile(
-        leading: Icon(icon, color: Colors.indigoAccent),
-        title: Text(title),
-        trailing: Text(
-          count.toString(),
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+  Widget infoCard(String title, int count, IconData icon, Widget screen) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => screen),
+        );
+      },
+      child: Card(
+        color: Colors.grey[50],
+        elevation: 2,
+        margin: EdgeInsets.symmetric(vertical: 5),
+        child: ListTile(
+          leading: Icon(icon, color: Colors.indigoAccent),
+          title: Text(title),
+          trailing: Text(
+            count.toString(),
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
         ),
       ),
     );
@@ -972,12 +1092,15 @@ Future<void> loadUserData() async {
           // Display the image if imageUrl is not null, otherwise show a placeholder
           coverUrl != null
               ? Image.network(
-            coverUrl,
-            fit: BoxFit.cover,
-          )
+                  coverUrl,
+                  fit: BoxFit.cover,
+                )
               : const Center(
-            child: Text('Upload a cover image here.', style: TextStyle(fontSize: 16, color: Colors.black54),),
-          ),
+                  child: Text(
+                    'Upload a cover image here.',
+                    style: TextStyle(fontSize: 16, color: Colors.black54),
+                  ),
+                ),
           Align(
             alignment: Alignment.centerRight,
             child: Padding(
@@ -1014,40 +1137,55 @@ Future<void> loadUserData() async {
   /* --------------------------- Profile Image Widget --------------------------- */
 
   Widget buildProfileImage(String? profileUrl) => Stack(
-    children:[
-      Padding(
-        padding: const EdgeInsets.only(left: 10.0),
-        child: CircleAvatar(
-          radius: profileHeight / 2,
-          backgroundImage: profileUrl != null && profileUrl.isNotEmpty
-              ? NetworkImage(profileUrl)
-              : const NetworkImage('https://t4.ftcdn.net/jpg/05/49/98/39/360_F_549983970_bRCkYfk0P6PP5fKbMhZMIb07mCJ6esXL.jpg'
-          ),
-        ),
-      ),
-      Positioned(
-        top: 10,
-        right: 1,
-        bottom: 10,
-        child: SizedBox(
-          width: 25,
-          height: 25,
-          child: Container(
-            padding: const EdgeInsets.all(1.0),
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.indigoAccent
-            ),
-            child: IconButton(
-              padding: EdgeInsets.zero,
-              icon: const Icon(Icons.add_circle_outlined,size: 22,color: Colors.white,),
-              onPressed: () {
-                pickProfileImage();
-              },
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(left: 10.0),
+            child: CircleAvatar(
+              radius: profileHeight / 2,
+              backgroundColor: Colors.grey[200],
+              child: ClipOval(
+                child: CachedNetworkImage(
+                  imageUrl: (profileUrl != null && profileUrl.isNotEmpty)
+                      ? profileUrl
+                      :'https://t4.ftcdn.net/jpg/05/49/98/39/360_F_549983970_bRCkYfk0P6PP5fKbMhZMIb07mCJ6esXL.jpg',
+                  fit: BoxFit.cover,
+                  placeholder: (context, url) => const Center(
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  ),
+                  errorWidget: (context, url, error) => const Icon(Icons.error_outline),
+                ),
+              ),
             ),
           ),
-        ),
-      ),
-    ],
-  );
+          Positioned(
+            top: 10,
+            right: 1,
+            bottom: 10,
+            child: SizedBox(
+              width: 25,
+              height: 25,
+              child: Container(
+                padding: const EdgeInsets.all(1.0),
+                decoration: const BoxDecoration(
+                    shape: BoxShape.circle, color: Colors.indigoAccent),
+                child: IconButton(
+                  padding: EdgeInsets.zero,
+                  icon: const Icon(
+                    Icons.add_circle_outlined,
+                    size: 22,
+                    color: Colors.white,
+                  ),
+                  onPressed: () {
+                    pickProfileImage();
+                  },
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
 }

@@ -50,7 +50,7 @@ class ProjectCard extends StatelessWidget {
               Row(
                 children: [
                   const Icon(Icons.assignment, size: 50, color: Colors.black87),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: 5),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -63,10 +63,18 @@ class ProjectCard extends StatelessWidget {
                         ),
                         Row(
                           children: [
-                            const Icon(Icons.account_balance_wallet,
-                                size: 15, color: Colors.grey),
-                            Text('Budget: \$${budget.toStringAsFixed(2)}',
+                            const Icon(Icons.attach_money,
+                                size: 18, color: Colors.indigoAccent),
+                            Text(' \$${budget.toStringAsFixed(1)}',
                                 style: TextStyle(color: Colors.grey[700])),
+                          ],
+                        ),
+                        Row(
+                          children: [
+                            const Icon(Icons.person_2_rounded,
+                                size: 18, color: Colors.indigoAccent),
+                            Text(' $ownerName',
+                                style: TextStyle(color: Colors.grey[600])),
                           ],
                         ),
                       ],
@@ -75,18 +83,9 @@ class ProjectCard extends StatelessWidget {
                 ],
               ),
               Divider(color: Colors.grey[300], thickness: 1, height: 1),
-              const SizedBox(height: 5),
-              Row(
-                children: [
-                  const Icon(Icons.person_2_rounded,
-                      size: 15, color: Colors.grey),
-                  Text('Posted By: $ownerName',
-                      style: TextStyle(color: Colors.grey[600])),
-                ],
-              ),
               Text(
                 description,
-                maxLines: 2,
+                maxLines: 3,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(color: Colors.grey[600]),
               ),
