@@ -345,6 +345,7 @@ class _NotificationsState extends State<Notifications> {
     showDialog(
       context: context,
       builder: (context) => Dialog(
+        backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
         ),
@@ -359,169 +360,138 @@ class _NotificationsState extends State<Notifications> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Dialog Title
-                Center(
-                  child: Text(
-                    'Received Offer Details',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 22,
-                      color: Colors.indigoAccent,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                // Offer Details
-                RichText(
-                  textAlign: TextAlign.justify,
-                  text: TextSpan(
-                    style: const TextStyle(color: Colors.black87, fontSize: 14),
-                    children: [
-                      TextSpan(
-                        text: '${offer['project_name'] ?? 'Unknown Project'}\n',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.indigoAccent,
-                          fontSize: 16,
-                        ),
-                      ),
-                      const TextSpan(
-                          text: '\nOffered by: ',
-                          style: TextStyle(color: Colors.black87)),
-                      TextSpan(
-                        text: '${offer['owner_name']}\n',
-                        style: const TextStyle(
-                          color: Colors.indigo,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const TextSpan(
-                          text: '\nBudget: ',
-                          style: TextStyle(color: Colors.black87)),
-                      TextSpan(
-                        text: '\$${offer['budget']}\n',
-                        style: const TextStyle(
-                          color: Colors.indigo,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const TextSpan(
-                          text: '\nEstimated Time: ',
-                          style: TextStyle(color: Colors.black87)),
-                      TextSpan(
-                        text: '${offer['estimated_time']}\n',
-                        style: const TextStyle(
-                          color: Colors.indigo,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const TextSpan(
-                          text: '\nDescription: ',
-                          style: TextStyle(color: Colors.black87)),
-                      TextSpan(
-                        text: '\n${offer['description']}\n',
-                        style: TextStyle(color: Colors.grey[600]),
-                      ),
-                      const TextSpan(
-                          text: '\nCurrent Project Status: ',
-                          style: TextStyle(color: Colors.black87)),
-                      TextSpan(
-                        text: '${offer['project_status']}\n',
-                        style: TextStyle(
-                          color: _getStatusColor(offer['project_status']),
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      TextSpan(
-                        text: '\nInform the client about your project status.',
-                        style: TextStyle(
-                            color: Colors.redAccent,
-                            fontWeight: FontWeight.w500),
-                      )
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 20),
-                // Status Buttons using Wrap to avoid overflow issues
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
                     Expanded(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          _updateOfferStatus('Ongoing');
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blueAccent,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                        child: const Text(
-                          'Ongoing',
-                          style: TextStyle(fontSize: 14, color: Colors.white),
+                      child: Text(
+                        'Received Offer Details',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 22,
+                            color: _getStatusColor(offer['project_status'])
                         ),
                       ),
                     ),
-                    SizedBox(
-                      width: 8.0,
-                    ),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          _updateOfferStatus('Pending');
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.orangeAccent,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                        child: const Text(
-                          'Pending',
-                          style: TextStyle(fontSize: 14, color: Colors.white),
-                        ),
-                      ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: Navigator.of(context).pop,
                     ),
                   ],
                 ),
+                // Offer Details
+                ListTile(
+                  leading: Icon(
+                    Icons.assignment_outlined,
+                    size: 30,
+                      color: _getStatusColor(offer['project_status']),
+                  ),
+                  title: Text(
+                    offer['project_name'] ?? 'Unknown Project',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  subtitle: Text('Project Name'),
+                ),
+                ListTile(
+                  leading: Icon(
+                    Icons.person_outline,
+                    size: 30,
+                    color: _getStatusColor(offer['project_status']),
+                  ),
+                  title: Text(
+                    offer['owner_name'] ?? 'Unknown',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  subtitle: Text('Offered By'),
+                ),
+                ListTile(
+                  leading: Icon(
+                    Icons.attach_money,
+                    size: 30,
+                    color: _getStatusColor(offer['project_status']),
+                  ),
+                  title: Text(
+                    '\$${offer['budget']}',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  subtitle: Text('Budget'),
+                ),
+                ListTile(
+                  leading: Icon(
+                    Icons.timer_outlined,
+                    size: 30,
+                    color: _getStatusColor(offer['project_status']),
+                  ),
+                  title: Text(
+                    offer['estimated_time'] ?? 'Unknown',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  subtitle: Text('Estimated Time'),
+                ),
+                ListTile(
+                  leading: Icon(
+                    Icons.info_outline,
+                    size: 30,
+                    color: _getStatusColor(offer['project_status']),
+                  ),
+                  title: Text(
+                    offer['project_status'] ?? 'Unknown Status',
+                    style: TextStyle(
+                      color: _getStatusColor(offer['project_status']),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  subtitle: Text('Project Status'),
+                ),
+                Text('${offer['description']}',
+                  textAlign: TextAlign.justify,
+                  style: TextStyle(
+                  color: Colors.grey[700],
+                ),),
+                Divider(),
+                Text('Inform the client about your project status.',
+                  style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500),
+                ),
+                const SizedBox(height: 5),
+                // Status Buttons using Wrap to avoid overflow issues
+
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
                     Expanded(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          _updateOfferStatus('Cancelled');
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.redAccent,
-                          shape: RoundedRectangleBorder(
+                      child: DropdownButtonFormField<String>(
+                        dropdownColor: Colors.grey[200],
+                        decoration: InputDecoration(
+                          filled: true,
+                          fillColor: Colors.grey[200],
+                          border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10),
+                            borderSide: BorderSide.none,
                           ),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12),
                         ),
-                        child: const Text(
-                          'Cancelled',
-                          style: TextStyle(fontSize: 14, color: Colors.white),
-                        ),
-                      ),
-                    ),
-                    SizedBox(
-                      width: 8.0,
-                    ),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          _updateOfferStatus('Completed');
+                        value: null, // No initial selection
+                        hint: const Text('Change Project Status'),
+                        items: ['Ongoing', 'Pending', 'Cancelled', 'Completed'].map((String value) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value),
+                          );
+                        }).toList(),
+                        onChanged: (String? selectedValue) {
+                          if (selectedValue != null) {
+                            _updateOfferStatus(selectedValue);
+                          }
                         },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                        child: const Text(
-                          'Completed',
-                          style: TextStyle(fontSize: 14, color: Colors.white),
-                        ),
                       ),
                     ),
                   ],
@@ -539,6 +509,7 @@ class _NotificationsState extends State<Notifications> {
     showDialog(
       context: context,
       builder: (context) => Dialog(
+        backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
         ),
@@ -552,96 +523,103 @@ class _NotificationsState extends State<Notifications> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Title
-              Center(
-                child: Text(
-                  'Sent Offer Details',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 22,
-                    color: Colors.indigoAccent,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              // Offer details
-              RichText(
-                text: TextSpan(
-                  style: const TextStyle(color: Colors.black87, fontSize: 14),
-                  children: [
-                    TextSpan(
-                      text: '${offer['project_name'] ?? 'Unknown Project'}\n',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.indigo,
-                        fontSize: 16,
-                      ),
-                    ),
-                    const TextSpan(
-                      text: '\nProject offered to: ',
-                      style: TextStyle(color: Colors.black87),
-                    ),
-                    TextSpan(
-                      text: '${offer['assigned_to']}\n',
-                      style: const TextStyle(
-                        color: Colors.indigoAccent,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const TextSpan(
-                      text: '\nProject Budget: ',
-                      style: TextStyle(color: Colors.black87),
-                    ),
-                    TextSpan(
-                      text: '${offer['budget']}\n',
-                      style: const TextStyle(
-                        color: Colors.indigoAccent,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const TextSpan(
-                      text: '\nEstimated time: ',
-                      style: TextStyle(color: Colors.black87),
-                    ),
-                    TextSpan(
-                      text: '${offer['estimated_time']}\n',
-                      style: const TextStyle(
-                        color: Colors.indigoAccent,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const TextSpan(
-                      text: '\nProject Status: ',
-                      style: TextStyle(color: Colors.black87),
-                    ),
-                    TextSpan(
-                      text: '${offer['project_status']}\n',
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Sent Offer Details',
                       style: TextStyle(
-                        color: _getStatusColor(offer['project_status']),
                         fontWeight: FontWeight.bold,
+                        fontSize: 22,
+                        color: _getStatusColor(offer['project_status']),
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: Navigator.of(context).pop,
+                  ),
+                ],
               ),
-              const SizedBox(height: 20),
-              // Close button
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  style: TextButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    backgroundColor: Colors.indigoAccent,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 10),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
+              // Offer details
+              ListTile(
+                leading: Icon(
+                  Icons.assignment_outlined,
+                  size: 30,
+                  color: _getStatusColor(offer['project_status']),
+                ),
+                title: Text(
+                  '${offer['project_name']}',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w500,
                   ),
-                  child: const Text(
-                    'Close',
-                    style: TextStyle(fontSize: 16),
+                ),
+                subtitle: Text('Project Name'),
+              ),
+              ListTile(
+                leading: Icon(
+                  Icons.person_outlined,
+                  size: 30,
+                  color: _getStatusColor(offer['project_status']),
+                ),
+                title: Text(
+                  '${offer['assigned_to']}',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w500,
                   ),
+                ),
+                subtitle: Text('Offered To'),
+              ),
+              ListTile(
+                leading: Icon(
+                  Icons.attach_money,
+                  size: 30,
+                  color: _getStatusColor(offer['project_status']),
+                ),
+                title: Text(
+                  '${offer['budget']}',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                subtitle: Text('Budget'),
+              ),
+              ListTile(
+                leading: Icon(
+                  Icons.timer_outlined,
+                  size: 30,
+                  color: _getStatusColor(offer['project_status']),
+                ),
+                title: Text(
+                  '${offer['estimated_time']}',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                subtitle: Text('Estimated Time'),
+              ),
+              ListTile(
+                leading: Icon(
+                  Icons.info_outline,
+                  size: 30,
+                  color: _getStatusColor(offer['project_status']),
+                ),
+                title: Text(
+                  offer['project_status'] ?? 'Unknown',
+                  style: TextStyle(
+                    color: _getStatusColor(offer['project_status']),
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                subtitle: Text('Project Status',style: TextStyle(
+                  fontWeight: FontWeight.w500,
+                ),),
+              ),
+              Divider(),
+              Text('${offer['description']}',
+                textAlign: TextAlign.justify,
+                style: TextStyle(
+                  color: Colors.grey[700],
                 ),
               ),
             ],
@@ -652,11 +630,13 @@ class _NotificationsState extends State<Notifications> {
   }
 
   // show Received Bids details
-  void _showNotificationPopup(
-      BuildContext context, QueryDocumentSnapshot notification) {
+  Future<void> _showNotificationPopup(
+      BuildContext context, QueryDocumentSnapshot notification) async {
+    final currentStatus = notification['status'] ?? 'Not Started';
     showDialog(
       context: context,
       builder: (context) => Dialog(
+        backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
         ),
@@ -670,52 +650,84 @@ class _NotificationsState extends State<Notifications> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Center(
-                  child: Text(
-                    'Received Bid Details',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 22,
-                      color: Colors.indigoAccent,
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Received Bid Details',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 22,
+                          color: _getStatusColor(currentStatus),
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-                SizedBox(
-                  height: 20,
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: Navigator.of(context).pop,
+                    ),
+                  ],
                 ),
                 Text(
                   'You received a bid from ${notification['bidder_name']}.',
                   style: TextStyle(color: Colors.black87, fontSize: 15),
                 ),
-                SizedBox(
-                  height: 10,
-                ),
-                Text(
-                  'Project Name: ${notification['project_name']}',
-                  style: TextStyle(
-                      color: Colors.black54,
+                ListTile(
+                  leading: Icon(
+                    Icons.assignment_outlined,
+                    size: 30,
+                    color: _getStatusColor(currentStatus),
+                  ),
+                  title: Text(
+                    notification['project_name'] ?? 'Unknown Project',
+                    style: TextStyle(
                       fontWeight: FontWeight.w500,
-                      fontSize: 14),
+                    ),
+                  ),
+                  subtitle: Text('Project Name'),
                 ),
-                SizedBox(
-                  height: 10,
-                ),
-                Text(
-                  'Bid Amount: \$${notification['bid_amount']}',
-                  style: TextStyle(
-                      color: Colors.black54,
+                ListTile(
+                  leading: Icon(
+                    Icons.attach_money,
+                    size: 30,
+                    color: _getStatusColor(currentStatus),
+                  ),
+                  title: Text(
+                    '\$${notification['bid_amount']}',
+                    style: TextStyle(
                       fontWeight: FontWeight.w500,
-                      fontSize: 14),
+                    ),
+                  ),
+                  subtitle: Text('Bid Amount'),
                 ),
-                SizedBox(
-                  height: 10,
-                ),
-                Text(
-                  'Estimated Time: ${notification['estimated_time']}',
-                  style: TextStyle(
-                      color: Colors.black54,
+                ListTile(
+                  leading: Icon(
+                    Icons.timer_outlined,
+                    size: 30,
+                    color: _getStatusColor(currentStatus),
+                  ),
+                  title: Text(
+                    notification['estimated_time'] ?? 'Unknown Time',
+                    style: TextStyle(
                       fontWeight: FontWeight.w500,
-                      fontSize: 14),
+                    ),
+                  ),
+                  subtitle: Text('Estimated Time'),
+                ),
+                ListTile(
+                  leading: Icon(
+                    Icons.info_outline,
+                    size: 30,
+                    color: _getStatusColor(currentStatus),
+                  ),
+                  title: Text(
+                    notification['status'] ?? 'Unknown Status',
+                    style: TextStyle(
+                      color: _getStatusColor(currentStatus),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  subtitle: Text('Bid Status'),
                 ),
                 SizedBox(
                   height: 10,
@@ -752,18 +764,42 @@ class _NotificationsState extends State<Notifications> {
     );
   }
 
-// Show status update popup for Accepted Sent Bids
+  // update Project Status
+  Future<void> _updateProjectStatus(
+      QueryDocumentSnapshot notification, String newStatus) async {
+    final projectId = notification['project_id'];
+    final notificationId = notification.id;
+
+    final WriteBatch batch = _firestore.batch();
+
+    final projectRef = _firestore.collection('projects').doc(projectId);
+    final notificationRef = _firestore.collection('notifications').doc(notificationId);
+
+    batch.update(projectRef, {'project_status': newStatus});
+    batch.update(notificationRef, {'project_status': newStatus});
+
+    showSuccessSnackbar(context, 'Status updated to $newStatus');
+    await _loadAllBids();
+    try {
+      await batch.commit();
+    } catch (e) {
+      throw Exception('Failed to update both project and notification: $e');
+    }
+  }
+
+  // Show status update popup for Accepted Sent Bids
   void _showStatusUpdatePopup(
       BuildContext context, QueryDocumentSnapshot notification) async {
     try {
       final projectId = notification['project_id'];
       final projectSnapshot =
-          await _firestore.collection('projects').doc(projectId).get();
+      await _firestore.collection('projects').doc(projectId).get();
       final currentStatus = projectSnapshot['project_status'] ?? 'Not Started';
 
       showDialog(
         context: context,
         builder: (context) => Dialog(
+          backgroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
@@ -777,160 +813,128 @@ class _NotificationsState extends State<Notifications> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Center(
-                    child: Text(
-                      'Sent Bid Details',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 22,
-                        color: Colors.indigoAccent,
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Sent Bid Details',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 22,
+                            color: _getStatusColor(currentStatus),
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                  SizedBox(
-                    height: 20,
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: Navigator.of(context).pop,
+                      ),
+                    ],
                   ),
                   Text(
                     'Congrats🎉 your bid is accepted by ${notification['owner_name']}.',
                     style: TextStyle(color: Colors.black87, fontSize: 15),
                   ),
-                  SizedBox(
-                    height: 10,
-                  ),
-                  Text(
-                    'Project Name: ${notification['project_name']}',
-                    style: TextStyle(
-                        color: Colors.black45,
-                        fontWeight: FontWeight.w500,
-                        fontSize: 14),
-                  ),
-                  SizedBox(
-                    height: 10,
-                  ),
-                  Text(
-                    'Bid Amount: \$${notification['bid_amount']}',
-                    style: TextStyle(
-                        color: Colors.black45,
-                        fontWeight: FontWeight.w500,
-                        fontSize: 14),
-                  ),
-                  SizedBox(
-                    height: 10,
-                  ),
-                  Text(
-                    'Estimated Time: ${notification['estimated_time']}',
-                    style: TextStyle(
-                        color: Colors.black45,
-                        fontWeight: FontWeight.w500,
-                        fontSize: 14),
-                  ),
-                  SizedBox(
-                    height: 10,
-                  ),
-                  RichText(
-                    text: TextSpan(
-                      text: 'Current Status: ',
-                      style: TextStyle(
-                        color: Colors.black45,
-                        fontWeight: FontWeight.w500,
-                        fontSize: 14,
-                      ),
-                      children: [
-                        TextSpan(
-                          text: currentStatus,
-                          style: TextStyle(
-                            color: _getStatusColor(currentStatus),
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
+                  ListTile(
+                    leading: Icon(
+                      Icons.assignment_outlined,
+                      size: 30,
+                      color: _getStatusColor(currentStatus),
                     ),
+                    title: Text(
+                      notification['project_name'] ?? 'Unknown Project',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    subtitle: Text('Project Name'),
                   ),
-                  SizedBox(
-                    height: 10,
+                  ListTile(
+                    leading: Icon(
+                      Icons.attach_money,
+                      size: 30,
+                      color: _getStatusColor(currentStatus),
+                    ),
+                    title: Text('\$ ${notification['bid_amount']}',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w500,),
+                    ),
+                    subtitle: Text('Bid Amount'),
                   ),
+
+                  ListTile(
+                    leading: Icon(
+                      Icons.timer_outlined,
+                      size: 30,
+                      color: _getStatusColor(currentStatus),
+                    ),
+                    title: Text(
+                      notification['estimated_time'] ?? 'Unknown Time',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    subtitle: Text('Estimated Time'),
+                  ),
+
+                  ListTile(
+                    leading: Icon(
+                      Icons.info_outline,
+                      size: 30,
+                      color: _getStatusColor(currentStatus),
+                    ),
+                    subtitle: Text(
+                      'Project Status',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    title: Text(currentStatus,style: TextStyle(
+                      color: _getStatusColor(currentStatus),
+                      fontWeight: FontWeight.bold
+                    ),),
+                  ),
+                  SizedBox(height: 10),
                   Text(
                     'Inform the client about project status.',
                     style: TextStyle(
-                        color: Colors.redAccent,
                         fontSize: 15,
                         fontWeight: FontWeight.w500),
                   ),
-                  SizedBox(
-                    height: 20,
-                  ),
+                  SizedBox(height: 5),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
                       Expanded(
-                        child: ElevatedButton(
-                          onPressed: () =>
-                              _updateProjectStatus(notification, 'Pending'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.orangeAccent,
-                            shape: RoundedRectangleBorder(
+                        child: DropdownButtonFormField<String>(
+                          dropdownColor: Colors.grey[200],
+                          decoration: InputDecoration(
+                            filled: true,
+                            fillColor: Colors.grey[200],
+                            border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(10),
+                              borderSide: BorderSide.none,
                             ),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 12),
                           ),
-                          child: const Text('Pending',
-                              style:
-                                  TextStyle(color: Colors.white, fontSize: 16)),
-                        ),
-                      ),
-                      SizedBox(
-                        width: 8.0,
-                      ),
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () =>
-                              _updateProjectStatus(notification, 'Ongoing'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blueAccent,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                          ),
-                          child: const Text('Ongoing',
-                              style:
-                                  TextStyle(color: Colors.white, fontSize: 16)),
-                        ),
-                      ),
-                    ],
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () =>
-                              _updateProjectStatus(notification, 'Cancelled'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.redAccent,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                          ),
-                          child: const Text('Cancelled',
-                              style:
-                                  TextStyle(color: Colors.white, fontSize: 16)),
-                        ),
-                      ),
-                      SizedBox(
-                        width: 8.0,
-                      ),
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () =>
-                              _updateProjectStatus(notification, 'Completed'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                          ),
-                          child: const Text('Completed',
-                              style:
-                                  TextStyle(color: Colors.white, fontSize: 16)),
+                          value: null, // No initial selection
+                          hint: const Text('Change Project Status'),
+                          items: ['Pending', 'Ongoing', 'Cancelled', 'Completed'].map((String value) {
+                            return DropdownMenuItem<String>(
+                              value: value,
+                              child: Text(value),
+                            );
+                          }).toList(),
+                          onChanged: (String? newValue) async {
+                            if (newValue != null) {
+                              try {
+                                await _updateProjectStatus(notification, newValue);
+                                Navigator.of(context).pop();
+                              } catch (e) {
+                                showErrorSnackbar(context, 'Error updating status: $e');
+                              }
+                            }
+                          },
                         ),
                       ),
                     ],
@@ -1084,26 +1088,6 @@ class _NotificationsState extends State<Notifications> {
       }
     } catch (e) {
       showErrorSnackbar(context, 'Error updating bid status: $e');
-    }
-  }
-
-  // update Project Status
-  Future<void> _updateProjectStatus(
-      QueryDocumentSnapshot notification, String newStatus) async {
-    try {
-      final projectId = notification['project_id'];
-      await _firestore.collection('projects').doc(projectId).update({
-        'project_status': newStatus,
-        'last_updated': FieldValue.serverTimestamp(),
-      });
-
-      if (mounted) {
-        Navigator.of(context).pop();
-        showSuccessSnackbar(context, 'Status updated to $newStatus');
-        await _loadAllBids(); // Refresh the list after updating the status
-      }
-    } catch (e) {
-      showErrorSnackbar(context, 'Error updating status: $e');
     }
   }
 

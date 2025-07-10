@@ -7,12 +7,15 @@ class BidForm extends StatefulWidget {
   final String projectName;
   final String projectId;
   final String ownerName;
+  final String description;
 
   const BidForm(
       {super.key,
-      required this.projectName,
-      required this.ownerName,
-      required this.projectId});
+        required this.projectName,
+        required this.ownerName,
+        required this.projectId,
+        required this.description
+      });
 
   @override
   State<BidForm> createState() => _BidFormState();
@@ -94,7 +97,8 @@ class _BidFormState extends State<BidForm> {
           'estimated_time': timeController.text,
           'created_at': FieldValue.serverTimestamp(),
           'message': messageController.text,
-          // Status to track whether the notification is read
+          'project_status': 'Pending',
+          'description' : widget.description,
           'status': "Pending",
           // Status to set by project owner if bid is accepted or rejected
         });

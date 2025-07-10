@@ -6,6 +6,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:my_fyp/pages/Freelancer_Screens/no_of_receivedBids.dart';
 import 'package:shimmer/shimmer.dart';
 import 'assigned_project_status.dart';
 import 'edit_profile.dart';
@@ -34,7 +35,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   String lastName = '';
   String location = '';
   double? hourlyRate;
-
   String description = '';
   String headline = '';
   String skills = '';
@@ -47,9 +47,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final ImagePicker _imagePicker = ImagePicker();
 
+
 // Project data
   int totalProjectsByUser = 0;
   int totalProposals = 0;
+  int totalProposalReceived = 0;
   int totalGroupsByUser = 0;
   int totalOffersSent = 0;
   int totalOffersReceived = 0;
@@ -59,6 +61,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   List<Map<String, dynamic>> ownedProjects = [];
   List<Map<String, dynamic>> userGroups = [];
   List<Map<String, dynamic>> bidsList = [];
+  List<Map<String, dynamic>> receivedBidsList = [];
   List<Map<String, dynamic>> offersSentList = [];
   List<Map<String, dynamic>> offersReceivedList = [];
 
@@ -71,10 +74,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
     loadGroups();
     loadBids();
     loadOffers();
+    loadReceivedBids();
   }
 
 /* --------------------------- Data Loading Methods --------------------------- */
 
+
+
+  // load Bids received on projects
   Future<void> loadProjects() async {
     // Get the current user
     User? user = _auth.currentUser;
@@ -201,6 +208,34 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
+  Future<void> loadReceivedBids() async {
+    User? user = _auth.currentUser;
+    if (user == null) return;
+    try {
+      QuerySnapshot userQuerySnapshot = await _firestore
+          .collection('users')
+          .where('email', isEqualTo: user.email)
+          .get();
+
+      Map<String, dynamic>? userData =
+      userQuerySnapshot.docs.first.data() as Map<String, dynamic>?;
+      String? username = userData?['username'];
+
+      QuerySnapshot bidderQuerySnapshot = await _firestore
+          .collection('notifications')
+          .where('owner_name', isEqualTo: username)
+          .get();
+      setState(() {
+        totalProposalReceived = bidderQuerySnapshot.docs.length;
+        receivedBidsList = bidderQuerySnapshot.docs
+            .map((doc) => doc.data() as Map<String, dynamic>)
+            .toList();
+      });
+    } catch (e) {
+      return;
+    }
+  }
+
   Future<void> loadBids() async {
     User? user = _auth.currentUser;
     if (user == null) return;
@@ -237,6 +272,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       QuerySnapshot groupQuerySnapshot = await _firestore
           .collection('groups')
           .where('created_by', isEqualTo: user.uid)
+      .orderBy('created_at', descending: true)
           .get();
       List<Map<String, dynamic>> groupsList = groupQuerySnapshot.docs
           .map((doc) => doc.data() as Map<String, dynamic>)
@@ -282,7 +318,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
           });
         } else {
           return;
-          // print('User not found in Firestore.');
         }
       } catch (e) {
         return;
@@ -915,9 +950,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               infoCard('No of Groups Created', totalGroupsByUser,
                                   Icons.group,
                                   NoOfGroups(groups: userGroups)),
-                              infoCard('No of Bided Projects', totalProposals,
+                              infoCard('No of Bids Sent on Projects', totalProposals,
                                   Icons.gavel,
                                   NoOfBiddedProjects(bids: bidsList,)),
+                              infoCard('No of Bids Received on Projects', totalProposalReceived,
+                                  Icons.check_circle,
+                                  NoOfBidsReceived(bids: receivedBidsList,)),
                               infoCard('No of Posted Projects',
                                   totalProjectsByUser, Icons.library_books,
                                   NoOfPostedProjects(projects: ownedProjects,)),

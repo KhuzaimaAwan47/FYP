@@ -6,8 +6,8 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:my_fyp/pages/Freelancer_Screens/no_of_receivedBids.dart';
 import '../Freelancer_Screens/edit_profile.dart';
-import '../Freelancer_Screens/no_of_biddedProjects.dart';
 import '../Freelancer_Screens/no_of_postedProjects.dart';
 import '../Freelancer_Screens/offers_sent.dart';
 
@@ -35,11 +35,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   // Project data
   int totalProjectsByUser = 0;
-  int totalProposals = 0;
+  int totalProposalsReceived  = 0;
   int totalOffersSent = 0;
 
   List<Map<String, dynamic>> ownedProjects = [];
-  List<Map<String, dynamic>> bidsList = [];
+  List<Map<String, dynamic>> receivedBidsList = [];
   List<Map<String, dynamic>> offersSentList = [];
 
   @override
@@ -47,7 +47,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     super.initState();
     loadUserData();
     loadProjects();
-    loadBids();
+    loadReceivedBids();
     loadOffers();
   }
 
@@ -126,7 +126,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-  Future<void> loadBids() async {
+  Future<void> loadReceivedBids() async {
     User? user = _auth.currentUser;
     if (user == null) return;
     try {
@@ -144,8 +144,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
           .where('owner_name', isEqualTo: username)
           .get();
       setState(() {
-        totalProposals = bidderQuerySnapshot.docs.length;
-        bidsList = bidderQuerySnapshot.docs
+        totalProposalsReceived = bidderQuerySnapshot.docs.length;
+        receivedBidsList = bidderQuerySnapshot.docs
             .map((doc) => doc.data() as Map<String, dynamic>)
             .toList();
       });
@@ -382,9 +382,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
               infoCard(
                   'Offers Sent', totalOffersSent, Icons.send,
                   OffersSent(offers: offersSentList,)),
-              infoCard('No of Bids on Projects', totalProposals,
+              infoCard('No of Bids Received on Projects', totalProposalsReceived,
                   Icons.gavel,
-                  NoOfBiddedProjects(bids: bidsList,)),
+                  NoOfBidsReceived(bids: receivedBidsList,
+                  )),
               infoCard('No of Posted Projects',
                   totalProjectsByUser, Icons.library_books,
                   NoOfPostedProjects(projects: ownedProjects,)),

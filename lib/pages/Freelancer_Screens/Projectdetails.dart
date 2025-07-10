@@ -29,6 +29,7 @@ class _ProjectDetailsState extends State<ProjectDetails> {
   int totalProjectsByUser = 0;
   int totalProposals = 0;
 
+
   // User state
   String? currentUserId;
   String? userType;
@@ -69,26 +70,6 @@ class _ProjectDetailsState extends State<ProjectDetails> {
       });
     }
   }
-
-  // Fetch the current user data
-  // Future<void> loadUserData() async {
-  //   User? user = _auth.currentUser;
-  //
-  //   if (user != null) {
-  //     setState(() {
-  //       currentUserId = user.uid; // Get the current user's UID
-  //     });
-  //
-  //     // Compare if the current user is the project owner
-  //     if (currentUserId == widget.postedById) {
-  //       setState(() {
-  //         isOwner = true; // Set the flag if the current user is the owner
-  //       });
-  //     }
-  //   } else {
-  //     return;
-  //   }
-  // }
 
   Future<void> loadUserData() async {
     User? user = _auth.currentUser;
@@ -159,7 +140,7 @@ class _ProjectDetailsState extends State<ProjectDetails> {
     try {
       // Find the specific document using the `project_name`
       QuerySnapshot bidSnapshot = await _firestore
-          .collection('bids')
+          .collection('notifications')
           .where('project_name',
               isEqualTo: widget.projectName) // Match based on project name
           .get();
@@ -174,7 +155,7 @@ class _ProjectDetailsState extends State<ProjectDetails> {
 
         // Count total proposals for this project
         QuerySnapshot userBids = await _firestore
-            .collection('bids')
+            .collection('notifications')
             .where('project_name', isEqualTo: widget.projectName)
             .get();
 
@@ -478,6 +459,7 @@ class _ProjectDetailsState extends State<ProjectDetails> {
                   projectName: projectName,
                   ownerName: ownerName,
                   projectId: widget.projectId,
+                  description: description,
                 ),
               ),
             );

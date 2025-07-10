@@ -17,6 +17,7 @@ void _showOfferDetails(BuildContext context, Map<String, dynamic> offer) {
       context: context,
       builder: (_) {
         return Dialog(
+            backgroundColor: Colors.white,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
@@ -111,7 +112,8 @@ class _OffersReceivedState extends State<OffersReceived> {
                     _showOfferDetails(context, offers);
                   },
                   child: Card(
-                    margin: const EdgeInsets.all(8),
+                    margin: const EdgeInsets.only(
+                        left: 16, right: 16, top: 4, bottom: 4),
                     elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),

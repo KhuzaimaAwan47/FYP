@@ -26,6 +26,7 @@ void _showGroupDetails(
     context: context,
     builder: (_) {
       return Dialog(
+        backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
@@ -110,7 +111,8 @@ class _NoOfGroupsState extends State<NoOfGroups> {
                     _showGroupDetails(context, group, widget);
                   },
                   child: Card(
-                    margin: const EdgeInsets.all(8.0),
+                    margin: const EdgeInsets.only(
+                        left: 16, right: 16, top: 4, bottom: 4),
                     elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10.0),

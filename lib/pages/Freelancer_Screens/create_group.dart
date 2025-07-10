@@ -123,6 +123,7 @@ class _CreateGroupState extends State<CreateGroup> {
         'description': groupDescription,
         'rules': groupRules,
         'members': groupMembers,
+        'members_count': groupMembers.length,
         'created_by': user.uid,
         'creator_name': userName,
         'group_admin': [userEmail],

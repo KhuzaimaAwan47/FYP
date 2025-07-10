@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:my_fyp/pages/Freelancer_Screens/search.dart';
 import 'create_group.dart';
 import 'create_project.dart';
 import 'notifications.dart';
@@ -230,38 +231,43 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.only(left: 16.0, right: 16),
-                    child: TextFormField(
-                      decoration: InputDecoration(
-                        prefixIcon: IconButton(
-                          onPressed: () {},
-                          icon: const Icon(
-                            Icons.search,
-                            color: Colors.black45,
-                            size: 30,
-                          ),
+                    padding: const EdgeInsets.only(left: 16.0, right: 16.0),
+                    child: GestureDetector(
+                      onTap: () {
+                        final userEmail = _auth.currentUser?.email;
+                        if(userEmail != null){
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => Search(
+                                    userEmail: userEmail
+                                )),
+                          );
+                        }
+                      },
+                      child: Container(
+                        height: 50.0,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[200],
+                          borderRadius: BorderRadius.circular(16.0),
                         ),
-                        suffixIcon: IconButton(
-                          onPressed: () {
-                            showModalBottomSheet(
-                              context: context,
-                              builder: (context) =>
-                              const AdvancedSearchFilters(),
-                            );
-                          },
-                          icon: const Icon(
-                            Icons.filter_list,
-                            color: Colors.black45,
-                          ),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16.0, vertical: 12.0),
+                        child: const Row(
+                          children: [
+                            Icon(Icons.search, color: Colors.grey,size: 30),
+                            SizedBox(width: 5),
+                            Expanded(
+                              child: Text(
+                                "Search freelancers, groups, & projects",
+                                style: TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                        hintText: 'Search freelancers, groups, & projects',
-                        hintStyle: const TextStyle(color: Colors.black38),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          borderSide: BorderSide.none,
-                        ),
-                        fillColor: Colors.grey.shade200,
-                        filled: true,
                       ),
                     ),
                   ),
@@ -281,9 +287,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     padding: const EdgeInsets.only(left: 10.0, right: 10),
                     child: ProjectList(),
                   ),
-                  if (userType == 'freelancer') ...[
-
-                  ],
                   Padding(
                     padding: const EdgeInsets.only(left: 10.0),
                     child: SectionHeader(title: 'Groups'),
@@ -292,136 +295,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     padding: const EdgeInsets.only(left: 10.0, right: 10),
                     child: GroupList(),
                   ),
-
-
                 ],
               ),
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-// Advanced Search Filters Widget
-class AdvancedSearchFilters extends StatefulWidget {
-  const AdvancedSearchFilters({super.key});
-
-  @override
-  _AdvancedSearchFiltersState createState() => _AdvancedSearchFiltersState();
-}
-
-class _AdvancedSearchFiltersState extends State<AdvancedSearchFilters> {
-  // State variables for sliders and text fields
-  double hourlyRate = 50; // Default hourly rate value
-  double minHourlyRate = 0;
-  double maxHourlyRate = 100;
-
-  double projectBudget = 5000; // Default project budget
-  double minBudget = 0;
-  double maxBudget = 10000;
-
-  double groupMembers = 50; // Default group members
-  double minMembers = 1;
-  double maxMembers = 100;
-
-  String skills = ""; // Skills input
-
-  // UI widget
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Advanced Search Title
-          const Text('Advanced Search',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 10),
-
-          // Search Freelancers by Hourly Rate (Slider)
-          Text(
-              'Search Freelancers by Hourly Rate: \$${hourlyRate.toStringAsFixed(2)}'),
-          Slider(
-            value: hourlyRate,
-            min: minHourlyRate,
-            max: maxHourlyRate,
-            divisions: 100,
-            // You can define divisions for more precise values
-            label: '\$${hourlyRate.toStringAsFixed(2)}',
-            onChanged: (value) {
-              setState(() {
-                hourlyRate = value;
-              });
-            },
-          ),
-
-          // Search Freelancers by Skills (TextField)
-          const Text('Search Freelancers by Skills:'),
-          TextField(
-            decoration: const InputDecoration(hintText: 'Enter skills...'),
-            onChanged: (value) {
-              setState(() {
-                skills = value;
-              });
-            },
-          ),
-          const SizedBox(height: 10),
-
-          // Search Projects by Budget (Slider)
-          Text(
-              'Search Projects by Budget: \$${projectBudget.toStringAsFixed(0)}'),
-          Slider(
-            value: projectBudget,
-            min: minBudget,
-            max: maxBudget,
-            divisions: 100,
-            // You can define divisions for more precise values
-            label: '\$${projectBudget.toStringAsFixed(0)}',
-            onChanged: (value) {
-              setState(() {
-                projectBudget = value;
-              });
-            },
-          ),
-          const SizedBox(height: 10),
-
-          // Search Groups by Members (Slider)
-          Text('Search Groups by Members: ${groupMembers.toInt()}'),
-          Slider(
-            value: groupMembers,
-            min: minMembers,
-            max: maxMembers,
-            divisions: 100,
-            label: '${groupMembers.toInt()} Members',
-            onChanged: (value) {
-              setState(() {
-                groupMembers = value;
-              });
-            },
-          ),
-          const SizedBox(height: 20),
-
-          // Search Button
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.indigo,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 35,
-                vertical: 10,
-              ),
-            ),
-            onPressed: () {
-              // Perform search action with filters applied
-              print(
-                  'Hourly Rate: $hourlyRate, Skills: $skills, Budget: $projectBudget, Group Members: $groupMembers');
-              Navigator.pop(context);
-            },
-            child: const Text('Search', style: TextStyle(color: Colors.white)),
-          ),
-        ],
       ),
     );
   }
