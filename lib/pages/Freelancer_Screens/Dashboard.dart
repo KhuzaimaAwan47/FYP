@@ -549,327 +549,125 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         padding: const EdgeInsets.only(left: 16.0),
                         child: Row(
                           children: [
-                            firstName.isNotEmpty
-                                ? Text(
-                                    firstName,
-                                    style: const TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  )
-                                : Shimmer.fromColors(
-                                    baseColor: Colors.grey[300]!,
-                                    highlightColor: Colors.grey[100]!,
-                                    child: Container(
-                                      width: 120,
-                                      height: 24,
-                                      decoration: BoxDecoration(
-                                        color: Colors.grey[300],
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                    ),
-                                  ),
-                            const SizedBox(width: 5),
-                            lastName.isNotEmpty
-                                ? Text(
-                                    lastName,
-                                    style: const TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  )
-                                : Shimmer.fromColors(
-                                    baseColor: Colors.grey[300]!,
-                                    highlightColor: Colors.grey[100]!,
-                                    child: Container(
-                                      width: 100,
-                                      height: 24,
-                                      decoration: BoxDecoration(
-                                        color: Colors.grey[300],
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                    ),
-                                  ),
+                            if (firstName.isNotEmpty)
+                              Text(
+                                firstName,
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            if (firstName.isNotEmpty) const SizedBox(width: 5),
+                            if (lastName.isNotEmpty)
+                              Text(
+                                lastName,
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                           ],
                         ),
                       ),
                       const SizedBox(height: 10),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: headline.isNotEmpty
-                            ? Text(
-                                headline,
-                                textAlign: TextAlign.justify,
-                                style: const TextStyle(fontSize: 18),
-                              )
-                            : Shimmer.fromColors(
-                                baseColor: Colors.grey[300]!,
-                                highlightColor: Colors.grey[100]!,
-                                child: Container(
-                                  width: double.infinity,
-                                  height: 22,
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey[300],
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                ),
-                              ),
-                      ),
+                      if (headline.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Text(
+                            headline,
+                            textAlign: TextAlign.justify,
+                            style: const TextStyle(fontSize: 18),
+                          ),
+                        ),
                       const SizedBox(height: 5),
                       Row(
                         children: [
-                          Padding(
-                            padding: const EdgeInsets.only(left: 16.0),
-                            child: location.isNotEmpty
-                                ? Row(
-                                    children: [
-                                      const Icon(Icons.location_pin,
-                                          size: 20, color: Colors.indigoAccent),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        location,
-                                        style: const TextStyle(
-                                            fontSize: 17,
-                                            color: Colors.black54),
-                                      ),
-                                    ],
-                                  )
-                                : Shimmer.fromColors(
-                                    baseColor: Colors.grey[300]!,
-                                    highlightColor: Colors.grey[100]!,
-                                    child: Row(
-                                      children: [
-                                        Container(
-                                          width: 17,
-                                          height: 17,
-                                          decoration: BoxDecoration(
-                                            color: Colors.grey[300],
-                                            borderRadius:
-                                                BorderRadius.circular(4),
-                                          ),
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Container(
-                                          width: 100,
-                                          height: 17,
-                                          decoration: BoxDecoration(
-                                            color: Colors.grey[300],
-                                            borderRadius:
-                                                BorderRadius.circular(4),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                          ),
-                          const SizedBox(width: 10),
-                          hourlyRate != null
-                              ? Row(
-                                  children: [
-                                    const Icon(Icons.attach_money,
-                                        size: 20, color: Colors.indigoAccent),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      '\$$hourlyRate/hr',
-                                      style: const TextStyle(
-                                          fontSize: 17, color: Colors.black54),
-                                    ),
-                                  ],
-                                )
-                              : Shimmer.fromColors(
-                                  baseColor: Colors.grey[300]!,
-                                  highlightColor: Colors.grey[100]!,
-                                  child: Row(
-                                    children: [
-                                      Container(
-                                        width: 17,
-                                        height: 17,
-                                        decoration: BoxDecoration(
-                                          color: Colors.grey[300],
-                                          borderRadius:
-                                              BorderRadius.circular(4),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Container(
-                                        width: 80,
-                                        height: 17,
-                                        decoration: BoxDecoration(
-                                          color: Colors.grey[300],
-                                          borderRadius:
-                                              BorderRadius.circular(4),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                        ],
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.only(left: 16.0, top: 5),
-                        child: skills.isNotEmpty
-                            ? Row(
+                          if (location.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(left: 16.0),
+                              child: Row(
                                 children: [
-                                  const Icon(Icons.stars,
+                                  const Icon(Icons.location_pin,
                                       size: 20, color: Colors.indigoAccent),
                                   const SizedBox(width: 4),
                                   Text(
-                                    skills,
-                                    style: TextStyle(
-                                        fontSize: 17, color: Colors.black54),
+                                    location,
+                                    style: const TextStyle(fontSize: 17, color: Colors.black54),
                                   ),
                                 ],
-                              )
-                            : Shimmer.fromColors(
-                                baseColor: Colors.grey[300]!,
-                                highlightColor: Colors.grey[100]!,
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      width: 17,
-                                      height: 17,
-                                      decoration: BoxDecoration(
-                                        color: Colors.grey[300],
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Container(
-                                      width: 120,
-                                      height: 17,
-                                      decoration: BoxDecoration(
-                                        color: Colors.grey[300],
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                    ),
-                                  ],
-                                ),
                               ),
+                            ),
+                          if (location.isNotEmpty && hourlyRate != null) const SizedBox(width: 10),
+                          if (hourlyRate != null)
+                            Row(
+                              children: [
+                                const Icon(Icons.attach_money,
+                                    size: 20, color: Colors.indigoAccent),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '\$$hourlyRate/hr',
+                                  style: const TextStyle(fontSize: 17, color: Colors.black54),
+                                ),
+                              ],
+                            ),
+                        ],
                       ),
+                      if (skills.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(left: 16.0, top: 5),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.stars, size: 20, color: Colors.indigoAccent),
+                              const SizedBox(width: 4),
+                              Text(
+                                skills,
+                                style: const TextStyle(fontSize: 17, color: Colors.black54),
+                              ),
+                            ],
+                          ),
+                        ),
                       const SizedBox(height: 5),
                       Padding(
                         padding: const EdgeInsets.only(left: 16.0, right: 16),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            averageRating != 0
-                                ? Row(
-                                    children: [
-                                      Icon(Icons.star_rate,
-                                          color: Colors.amber, size: 20),
-                                      SizedBox(width: 4),
-                                      Text(
-                                        'Average Rating: ${averageRating.toStringAsFixed(1)}',
-                                        style: TextStyle(
-                                            fontSize: 16,
-                                            color: Colors.black54),
-                                      ),
-                                    ],
-                                  )
-                                : Shimmer.fromColors(
-                                    baseColor: Colors.grey[300]!,
-                                    highlightColor: Colors.grey[100]!,
-                                    child: Row(
-                                      children: [
-                                        Container(
-                                          width: 17,
-                                          height: 17,
-                                          decoration: BoxDecoration(
-                                            color: Colors.grey[300],
-                                            borderRadius:
-                                                BorderRadius.circular(4),
-                                          ),
-                                        ),
-                                        SizedBox(width: 4),
-                                        Container(
-                                          width: 100,
-                                          height: 17,
-                                          decoration: BoxDecoration(
-                                            color: Colors.grey[300],
-                                            borderRadius:
-                                                BorderRadius.circular(4),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
+                            if (averageRating != 0)
+                              Row(
+                                children: [
+                                  Icon(Icons.star_rate, color: Colors.amber, size: 20),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Average Rating: ${averageRating.toStringAsFixed(1)}',
+                                    style: const TextStyle(fontSize: 16, color: Colors.black54),
                                   ),
+                                ],
+                              ),
                             const SizedBox(height: 5),
-                            totalReviews != 0
-                                ? Row(
-                                    children: [
-                                      Icon(Icons.reviews,
-                                          color: Colors.indigoAccent, size: 20),
-                                      SizedBox(width: 4),
-                                      Text(
-                                        'Total Reviews: $totalReviews',
-                                        style: TextStyle(
-                                            fontSize: 16,
-                                            color: Colors.black54),
-                                      ),
-                                    ],
-                                  )
-                                : Shimmer.fromColors(
-                                    baseColor: Colors.grey[300]!,
-                                    highlightColor: Colors.grey[100]!,
-                                    child: Row(
-                                      children: [
-                                        Container(
-                                          width: 17,
-                                          height: 17,
-                                          decoration: BoxDecoration(
-                                            color: Colors.grey[300],
-                                            borderRadius:
-                                                BorderRadius.circular(4),
-                                          ),
-                                        ),
-                                        SizedBox(width: 4),
-                                        Container(
-                                          width: 80,
-                                          height: 17,
-                                          decoration: BoxDecoration(
-                                            color: Colors.grey[300],
-                                            borderRadius:
-                                                BorderRadius.circular(4),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
+                            if (totalReviews != 0)
+                              Row(
+                                children: [
+                                  Icon(Icons.reviews, color: Colors.indigoAccent, size: 20),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Total Reviews: $totalReviews',
+                                    style: const TextStyle(fontSize: 16, color: Colors.black54),
                                   ),
+                                ],
+                              ),
                           ],
                         ),
                       ),
                       const SizedBox(height: 10),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: description.isNotEmpty
-                            ? Text(
-                                description,
-                                textAlign: TextAlign.justify,
-                                style: const TextStyle(
-                                    fontSize: 16, color: Colors.black54),
-                              )
-                            : Column(
-                                children: List.generate(
-                                  3,
-                                  (index) => Padding(
-                                    padding: const EdgeInsets.only(bottom: 6),
-                                    child: Shimmer.fromColors(
-                                      baseColor: Colors.grey[300]!,
-                                      highlightColor: Colors.grey[100]!,
-                                      child: Container(
-                                        width: double.infinity,
-                                        height: 16,
-                                        decoration: BoxDecoration(
-                                          color: Colors.grey[300],
-                                          borderRadius:
-                                              BorderRadius.circular(4),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                      ),
+                      if (description.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Text(
+                            description,
+                            textAlign: TextAlign.justify,
+                            style: const TextStyle(fontSize: 16, color: Colors.black54),
+                          ),
+                        ),
                       SizedBox(height: 10),
                       //-------------------Projects Cards Section------------------
                       Container(

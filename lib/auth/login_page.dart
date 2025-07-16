@@ -1,11 +1,10 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart';
 import 'package:my_fyp/auth/signup_page.dart';
 import 'package:my_fyp/auth/validators.dart';
 import '../widgets/bottom_navigation/c_navigator.dart';
 import '../widgets/bottom_navigation/f_navigator.dart';
+import 'auth.dart';
 import 'forgot.dart';
 
 class LoginPage extends StatefulWidget {
@@ -22,12 +21,6 @@ class _LoginPageState extends State<LoginPage> {
   bool isPasswordVisible = false;
   bool? isSignIn = false;
 
-  @override
-  void initState() {
-    super.initState();
-    // Hide status bar and other system overlays for an immersive experience.
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-  }
 
   @override
   void dispose() {
@@ -38,98 +31,33 @@ class _LoginPageState extends State<LoginPage> {
 
   /* --------------------------- Authentication Method --------------------------- */
 
-  // Future<void> signInUser() async {
-  //   FocusScope.of(context).unfocus(); //keyboard closes when button is pressed.
-  //   try {
-  //     // Attempt to sign in the user
-  //     await FirebaseAuth.instance.signInWithEmailAndPassword(
-  //       email: emailController.text.trim(),
-  //       password: passwordController.text.trim(),
-  //     );
-  //
-  //     Navigator.push(
-  //       context,
-  //       MaterialPageRoute(builder: (context) => const F_navigator()),
-  //     );
-  //   } on FirebaseAuthException catch (e) {
-  //     String errorMessage = _handleFirebaseAuthError(e);
-  //     _showErrorDialog(errorMessage);
-  //   } catch (e) {
-  //     _showErrorDialog('An unexpected error occurred. Please try again.');
-  //     print(
-  //         "Error occurred: $e"); // Log the actual error for debugging purposes
-  //   }
-  // }
+  void _signIn() async {
+    // Close keyboard
+    FocusScope.of(context).unfocus();
 
-  Future<void> signInUser() async {
-    FocusScope.of(context).unfocus(); // Close keyboard
+    final String email = emailController.text.trim();
+    final String password = passwordController.text.trim();
 
     try {
-      // Sign in the user
-      final UserCredential userCredential = await FirebaseAuth.instance
-          .signInWithEmailAndPassword(
-        email: emailController.text.trim(),
-        password: passwordController.text.trim(),
-      );
+      final Auth authController = Auth();
+      final String role = await authController.signInUser(email, password);
 
-      final User? user = userCredential.user;
-
-      if (user != null) {
-        // Query Firestore using email
-        final QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-            .collection('users')
-            .where('email', isEqualTo: user.email)
-            .limit(1)
-            .get();
-
-        if (querySnapshot.docs.isNotEmpty) {
-          final DocumentSnapshot userData = querySnapshot.docs.first;
-
-          final String role = userData.get('userType');
-
-          // Navigate based on role
-          if (role == 'freelancer') {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const F_navigator()),
-            );
-          } else if (role == 'client') {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const C_navigator()),
-            );
-          } else {
-            _showErrorDialog('Unknown user role.');
-          }
-        } else {
-          _showErrorDialog('User data not found.');
-        }
+      // Navigate based on role
+      if (role == 'freelancer') {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const F_navigator()),
+        );
+      } else if (role == 'client') {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const C_navigator()),
+        );
+      } else {
+        _showErrorDialog('Unknown user role.');
       }
-    } on FirebaseAuthException catch (e) {
-      String errorMessage = _handleFirebaseAuthError(e);
-      _showErrorDialog(errorMessage);
     } catch (e) {
-      _showErrorDialog('An unexpected error occurred. Please try again.');
-      print("Error occurred: $e"); // Log for debugging
-    }
-  }
-
-/* --------------------------- Firebase Error Handling Method --------------------------- */
-
-  String _handleFirebaseAuthError(FirebaseAuthException e) {
-    if (e.code == 'user-not-found') {
-      return 'Email not found. Please check your email and try again.';
-    } else if (e.code == 'invalid-credential') {
-      return 'Incorrect password. Please try again.';
-    } else if (e.code == 'too-many-requests') {
-      return 'We have blocked all requests from this device due to unusual activity. Try again later.  Access to this account has been temporarily disabled due to many failed login attempts. You can immediately restore it by resetting your password or you can try again later.';
-    } else if (e.code == 'invalid-email') {
-      return 'The email address is not valid. Please enter a correct email.';
-    } else if (e.code == 'channel-error') {
-      return 'Please provide a valid email or password.';
-    } else {
-      print('Unhandled FirebaseAuthException code: ${e.code}');
-      return 'Connection Timed Out.... Please try again later.';
+      _showErrorDialog(e.toString());
     }
   }
 
@@ -162,7 +90,7 @@ class _LoginPageState extends State<LoginPage> {
     var screenHeight = MediaQuery.of(context).size.height;
     var screenWidth = MediaQuery.of(context).size.width;
 
-    // PopScope block user to leave screen such as swapback or going back.
+    // PopScope block user to leave screen such as swipe back or going back.
 
     return PopScope(
       canPop: false,
@@ -191,7 +119,7 @@ class _LoginPageState extends State<LoginPage> {
                   textAlign: TextAlign.center,
                 ),
                 const Text(
-                  'Login to your acccount',
+                  'Login to your account',
                   style: TextStyle(
                       color: Colors.black54,
                       fontSize: 18,
@@ -293,7 +221,7 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                         onPressed: () {
                           if (_formKey.currentState!.validate()) {
-                            signInUser();
+                            _signIn();
                           }
                         },
                         child: const Text(

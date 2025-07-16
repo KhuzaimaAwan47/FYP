@@ -5,6 +5,7 @@ import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/services.dart';
 import 'package:my_fyp/auth/validators.dart';
 
+import 'auth.dart';
 import 'login_page.dart';
 
 class SignupPage extends StatefulWidget {
@@ -49,78 +50,81 @@ class _SignupPageState extends State<SignupPage> {
         confirmpasswordControllerText.text.trim();
   }
 
-  Future<void> signUpUser() async {
-    FocusScope.of(context).unfocus(); //keyboard closes when button is pressed.
-    try {
-      if (passwordConfirmed()) {
-        UserCredential userCredential =
-            await FirebaseAuth.instance.createUserWithEmailAndPassword(
-          email: emailController.text.trim(),
-          password: passwordController.text.trim(),
-        );
-        String uid = userCredential.user!.uid;
-        // Add user details to Firestore
-        addUserDetails(
-          uid,
-          usernameController.text.trim(),
-          emailController.text.trim(),
-          isClientChecked ? 'client' : 'freelancer',
-          passwordController.text.trim(),
-        );
-        // Navigate to the Login Page
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => LoginPage()),
-        );
-      } else {
-        _showErrorDialog('Passwords do not match.');
-      }
-    } on FirebaseAuthException catch (e) {
-      // Handle FirebaseAuth errors and show an error dialog
-      String errorMessage = _handleFirebaseAuthError(e);
-      _showErrorDialog(errorMessage);
-    } catch (e) {
-      // Handle other errors and show an error dialog
-      _showErrorDialog('An unexpected error occurred. Please try again.');
-    } finally {}
-  }
+  // Future<void> signUpUser() async {
+  //   FocusScope.of(context).unfocus(); //keyboard closes when button is pressed.
+  //   try {
+  //     if (passwordConfirmed()) {
+  //       UserCredential userCredential =
+  //           await FirebaseAuth.instance.createUserWithEmailAndPassword(
+  //         email: emailController.text.trim(),
+  //         password: passwordController.text.trim(),
+  //       );
+  //       String uid = userCredential.user!.uid;
+  //       // Add user details to Firestore
+  //       addUserDetails(
+  //         uid,
+  //         usernameController.text.trim(),
+  //         emailController.text.trim(),
+  //         isClientChecked ? 'client' : 'freelancer',
+  //         passwordController.text.trim(),
+  //       );
+  //       // Navigate to the Login Page
+  //       Navigator.push(
+  //         context,
+  //         MaterialPageRoute(builder: (context) => LoginPage()),
+  //       );
+  //     } else {
+  //       _showErrorDialog('Passwords do not match.');
+  //     }
+  //   } on FirebaseAuthException catch (e) {
+  //     // Handle FirebaseAuth errors and show an error dialog
+  //     String errorMessage = _handleFirebaseAuthError(e);
+  //     _showErrorDialog(errorMessage);
+  //   } catch (e) {
+  //     // Handle other errors and show an error dialog
+  //     _showErrorDialog('An unexpected error occurred. Please try again.');
+  //   } finally {}
+  // }
+  //
+  // String _handleFirebaseAuthError(FirebaseAuthException e) {
+  //   if (e.code == 'email-already-in-use') {
+  //     return 'This email is already in use. Please use a different email.';
+  //   } else if (e.code == 'weak-password') {
+  //     return 'The password provided is too weak. Please use a stronger password.';
+  //   } else if (e.code == 'invalid-email') {
+  //     return 'The email address is not valid. Please enter a correct email.';
+  //   } else {
+  //     return 'An unexpected error occurred. Please try again.';
+  //   }
+  // } // SignUpUser
 
-  String _handleFirebaseAuthError(FirebaseAuthException e) {
-    if (e.code == 'email-already-in-use') {
-      return 'This email is already in use. Please use a different email.';
-    } else if (e.code == 'weak-password') {
-      return 'The password provided is too weak. Please use a stronger password.';
-    } else if (e.code == 'invalid-email') {
-      return 'The email address is not valid. Please enter a correct email.';
-    } else {
-      return 'An unexpected error occurred. Please try again.';
+  void _signUp() async {
+    // Close keyboard
+    FocusScope.of(context).unfocus();
+
+    if (!passwordConfirmed()) {
+      _showErrorDialog('Passwords do not match.');
+      return;
     }
-  } // SignUpUser
 
-  Future addUserDetails(
-    String uid,
-    String username,
-    String email,
-    String userType,
-    String password,
-  ) async {
-    await FirebaseFirestore.instance.collection('users').add({
-      'uid': uid,
-      'username': username,
-      'userType': userType,
-      'email': email,
-      'passowrd': password,
-      'first_name': 'first_name',
-      'last_name': 'last_name',
-      'location': 'None',
-      'hourly_rate': 0,
-      'description': 'No description',
-      'headline': 'No headline',
-      'skills': 'None',
-      'rating': 0,
-      'averageRating': 'averageRating',
-      'totalReviews': 'totalReviews',
-    });
+    final String email = emailController.text.trim();
+    final String password = passwordController.text.trim();
+    final String username = usernameController.text.trim();
+    final String userType = isClientChecked ? 'client' : 'freelancer';
+
+    try {
+      final Auth authController = Auth();
+      await authController.signUpUser(email, password, username, userType);
+
+
+      // Navigate to Login Page
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => LoginPage()),
+      );
+    } on Exception catch (e) {
+      _showErrorDialog(e.toString());
+    }
   }
 
   void _showErrorDialog(String message) {
@@ -142,6 +146,22 @@ class _SignupPageState extends State<SignupPage> {
       },
     );
   }
+
+  Future addUserDetails(
+    String uid,
+    String username,
+    String email,
+    String userType,
+  ) async {
+    await FirebaseFirestore.instance.collection('users').add({
+      'uid': uid,
+      'username': username,
+      'userType': userType,
+      'email': email,
+    });
+  }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -387,10 +407,10 @@ class _SignupPageState extends State<SignupPage> {
                     ),
                     onPressed: () {
                       if (_formKey.currentState!.validate()) {
+                        _signUp();
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(content: Text('Processing Data...')),
                         );
-                        signUpUser();
                       }
                     },
                     child: const AutoSizeText('Register',

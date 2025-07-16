@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:my_fyp/widget_tree.dart';
 import 'dart:async';
-import 'auth/login_page.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -18,7 +18,7 @@ class _SplashScreenState extends State<SplashScreen> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) => LoginPage(),
+          builder: (context) => WidgetTree(),
         ),
       );
     });
@@ -32,13 +32,13 @@ class _SplashScreenState extends State<SplashScreen> {
       body: Container(
       width: screenWidth,
       height: screenHeight,
-      color: Colors.black,
+      color: Colors.white,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
          SizedBox(
            child: Image.asset(
-              'assets/images/logo.png',
+              'assets/images/logo1.png',
               width: screenWidth * (250 / screenWidth),
               height: screenHeight * (250 / screenHeight),
               fit: BoxFit.fill,

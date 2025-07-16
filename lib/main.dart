@@ -2,6 +2,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:my_fyp/widget_tree.dart';
 import 'package:my_fyp/widgets/bottom_navigation/f_navigator.dart';
 import 'auth/login_page.dart';
 import 'auth/signup_page.dart';
@@ -11,15 +12,7 @@ Future main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
 
-  // Set status bar style
-  SystemChrome.setSystemUIOverlayStyle(
-    SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent, // Transparent background
-      statusBarIconBrightness: Brightness.dark,
-      statusBarBrightness:
-          Brightness.light,
-    ),
-  );
+
 
   runApp(const MyApp());
 }
@@ -39,17 +32,20 @@ class MyApp extends StatelessWidget {
           foregroundColor: Colors.white,
           systemOverlayStyle: SystemUiOverlayStyle(
             statusBarColor: Colors.transparent,
-            statusBarIconBrightness: Brightness.dark,
+            statusBarIconBrightness: Brightness.light,
             statusBarBrightness: Brightness.light,
+            systemNavigationBarColor: Colors.white,
+            systemNavigationBarIconBrightness: Brightness.dark,
           ),
         ),
       ),
+    //  home: WidgetTree(),
       initialRoute: '/',
       routes: {
         '/': (context) => SplashScreen(),
-        '/login': (context) => LoginPage(),
-        '/signup': (context) => const SignupPage(),
-        '/home': (context) => const F_navigator(),
+        //'/login': (context) => LoginPage(),
+        //'/signup': (context) => const SignupPage(),
+        '/home': (context) => const WidgetTree(),
       },
     );
   }

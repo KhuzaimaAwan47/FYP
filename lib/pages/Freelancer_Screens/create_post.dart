@@ -104,7 +104,7 @@ class _CreatePostState extends State<CreatePost> {
 
   Future<void> createPost() async {
     if (_textController.text.isEmpty && postMedia == null) {
-      showErrorSnackbar(context, 'Cannot post empty content.');
+      showWarningSnackbar(context, 'Cannot post empty content.');
       return;
     }
 

@@ -218,6 +218,9 @@ class _FullScreenFormState extends State<FullScreenForm> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Please complete your profile!')),
           );
+          setState(() {
+            _userType = 'freelancer'; // Default userType for new users
+          });
         }
       } catch (e) {
         print('Error: $e');

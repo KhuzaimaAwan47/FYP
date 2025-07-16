@@ -139,7 +139,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     MaterialPageRoute(builder: (context) => CreateGroup()),
                   );
                 } else if (value == 'item3') {
-                  Navigator.pop(context);
+                  _auth.signOut();
                 }
               },
               itemBuilder: (context) {
