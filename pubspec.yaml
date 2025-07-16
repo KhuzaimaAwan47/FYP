@@ -61,7 +61,14 @@ dependencies:
   video_player: ^2.10.0
   time_ago_provider: ^4.2.0
   visibility_detector: ^0.4.0+2
+  flutter_launcher_icons: ^0.14.4
 
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/images/app_icon.png"
+  min_sdk_android: 21 # android min sdk min:16, default 21
 
 dev_dependencies:
   flutter_test:
