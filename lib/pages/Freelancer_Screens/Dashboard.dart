@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:my_fyp/pages/Freelancer_Screens/no_of_receivedBids.dart';
-import 'package:shimmer/shimmer.dart';
 import 'assigned_project_status.dart';
 import 'edit_profile.dart';
 import 'no_of_biddedProjects.dart';

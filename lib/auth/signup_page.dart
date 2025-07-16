@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/services.dart';
@@ -50,54 +49,6 @@ class _SignupPageState extends State<SignupPage> {
         confirmpasswordControllerText.text.trim();
   }
 
-  // Future<void> signUpUser() async {
-  //   FocusScope.of(context).unfocus(); //keyboard closes when button is pressed.
-  //   try {
-  //     if (passwordConfirmed()) {
-  //       UserCredential userCredential =
-  //           await FirebaseAuth.instance.createUserWithEmailAndPassword(
-  //         email: emailController.text.trim(),
-  //         password: passwordController.text.trim(),
-  //       );
-  //       String uid = userCredential.user!.uid;
-  //       // Add user details to Firestore
-  //       addUserDetails(
-  //         uid,
-  //         usernameController.text.trim(),
-  //         emailController.text.trim(),
-  //         isClientChecked ? 'client' : 'freelancer',
-  //         passwordController.text.trim(),
-  //       );
-  //       // Navigate to the Login Page
-  //       Navigator.push(
-  //         context,
-  //         MaterialPageRoute(builder: (context) => LoginPage()),
-  //       );
-  //     } else {
-  //       _showErrorDialog('Passwords do not match.');
-  //     }
-  //   } on FirebaseAuthException catch (e) {
-  //     // Handle FirebaseAuth errors and show an error dialog
-  //     String errorMessage = _handleFirebaseAuthError(e);
-  //     _showErrorDialog(errorMessage);
-  //   } catch (e) {
-  //     // Handle other errors and show an error dialog
-  //     _showErrorDialog('An unexpected error occurred. Please try again.');
-  //   } finally {}
-  // }
-  //
-  // String _handleFirebaseAuthError(FirebaseAuthException e) {
-  //   if (e.code == 'email-already-in-use') {
-  //     return 'This email is already in use. Please use a different email.';
-  //   } else if (e.code == 'weak-password') {
-  //     return 'The password provided is too weak. Please use a stronger password.';
-  //   } else if (e.code == 'invalid-email') {
-  //     return 'The email address is not valid. Please enter a correct email.';
-  //   } else {
-  //     return 'An unexpected error occurred. Please try again.';
-  //   }
-  // } // SignUpUser
-
   void _signUp() async {
     // Close keyboard
     FocusScope.of(context).unfocus();
@@ -115,7 +66,6 @@ class _SignupPageState extends State<SignupPage> {
     try {
       final Auth authController = Auth();
       await authController.signUpUser(email, password, username, userType);
-
 
       // Navigate to Login Page
       Navigator.pushReplacement(
@@ -160,8 +110,6 @@ class _SignupPageState extends State<SignupPage> {
       'email': email,
     });
   }
-
-
 
   @override
   Widget build(BuildContext context) {

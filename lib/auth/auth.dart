@@ -4,12 +4,14 @@ import 'package:firebase_auth/firebase_auth.dart';
 class Auth {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
   Future<String> signInUser(String email, String password) async {
     try {
       // Sign in the user
-      final UserCredential userCredential = await _auth.signInWithEmailAndPassword(
+      final UserCredential userCredential =
+          await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
@@ -37,26 +39,28 @@ class Auth {
     }
   }
 
-String _handleSignInError(FirebaseAuthException e) {
-  if (e.code == 'user-not-found') {
-    return 'Email not found. Please check your email and try again.';
-  } else if (e.code == 'invalid-credential') {
-    return 'Incorrect password. Please try again.';
-  } else if (e.code == 'too-many-requests') {
-    return 'Too many attempts. Try again later.';
-  } else if (e.code == 'invalid-email') {
-    return 'The email address is invalid. Please enter a correct email.';
-  } else if (e.code == 'channel-error') {
-    return 'Please provide a valid email or password.';
-  } else {
-    return 'Connection Timed Out.... Please try again later.';
+  String _handleSignInError(FirebaseAuthException e) {
+    if (e.code == 'user-not-found') {
+      return 'Email not found. Please check your email and try again.';
+    } else if (e.code == 'invalid-credential') {
+      return 'Incorrect password. Please try again.';
+    } else if (e.code == 'too-many-requests') {
+      return 'Too many attempts. Try again later.';
+    } else if (e.code == 'invalid-email') {
+      return 'The email address is invalid. Please enter a correct email.';
+    } else if (e.code == 'channel-error') {
+      return 'Please provide a valid email or password.';
+    } else {
+      return 'Connection Timed Out.... Please try again later.';
+    }
   }
-}
 
   // Sign Up Method
-  Future<String> signUpUser(String email, String password, String username, String userType) async {
+  Future<String> signUpUser(
+      String email, String password, String username, String userType) async {
     try {
-      final UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
+      final UserCredential userCredential =
+          await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
@@ -101,5 +105,4 @@ String _handleSignInError(FirebaseAuthException e) {
   Future<void> signOut() async {
     await _auth.signOut();
   }
-
 }
