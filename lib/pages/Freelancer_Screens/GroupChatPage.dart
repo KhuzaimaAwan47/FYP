@@ -57,8 +57,21 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
 
   Future<void> _sendMessage(String content, String type) async {
     final currentUser = _auth.currentUser!;
+    final currentUserData = await getCurrentUserDetails();
     try {
       // Send the message to the group
+      await _firestore
+          .collection('groups')
+          .doc(widget.groupId)
+          .collection('messages')
+          .add({
+        'senderId': _auth.currentUser!.uid,
+        'senderName': currentUserData['username'] ?? 'User',
+        'senderProfile': currentUserData['profileUrl'] ?? '',
+        'content': content,
+        'type': type,
+        'timestamp': FieldValue.serverTimestamp(),
+      });
       final groupDocRef = _firestore.collection('groups').doc(widget.groupId);
       //  Update the group document with last message and timestamp
       await groupDocRef.set({
