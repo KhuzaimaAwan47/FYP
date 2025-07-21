@@ -47,51 +47,6 @@ class _FullScreenFormState extends State<FullScreenForm> {
 
 /* --------------------------- Saving data Method --------------------------- */
 
-  // Future<void> saveData() async {
-  //   FocusScope.of(context).unfocus(); //keyboard closes when button is pressed.
-  //   // Validate the form before proceeding
-  //   if (!_formKey.currentState!.validate()) {
-  //     // If the form is not valid, show an error message and return
-  //     showErrorSnackbar(context, 'Please fill out all required fields.');
-  //     return; // Don't proceed with saving if the form is invalid
-  //   }
-  //
-  //   User? user = _auth.currentUser;
-  //
-  //   if (user != null) {
-  //     try {
-  //       // Query to find the document where email or username matches
-  //       QuerySnapshot querySnapshot = await _firestore
-  //           .collection('users')
-  //           .where('email',
-  //               isEqualTo:
-  //                   user.email)
-  //           .get();
-  //
-  //       if (querySnapshot.docs.isNotEmpty) {
-  //         DocumentReference userDoc = querySnapshot.docs.first.reference;
-  //
-  //         await userDoc.update({
-  //           'first_name': firstnameController.text,
-  //           'last_name': lastnameController.text,
-  //           'location': locationController.text,
-  //           'hourly_rate': double.parse(rateController.text),
-  //           'description': descriptionController.text,
-  //           'skills': skillsController.text,
-  //           'headline': headlineController.text,
-  //         });
-  //         showSuccessSnackbar(context, 'Profile Info added Successfully!');
-  //         Navigator.pop(context);
-  //       } else {
-  //         return;
-  //       }
-  //     } catch (e) {
-  //       return;
-  //     }
-  //   } else {
-  //     return;
-  //   }
-  // }
   Future<void> saveData() async {
     FocusScope.of(context).unfocus();
 
@@ -138,46 +93,6 @@ class _FullScreenFormState extends State<FullScreenForm> {
 
   /* --------------------------- Data Loading Method --------------------------- */
 
-  // Future<void> loadUserData() async {
-  //   User? user = _auth.currentUser;
-  //
-  //   if (user != null) {
-  //     try {
-  //       // Query to find the document where email matches
-  //       QuerySnapshot querySnapshot = await _firestore
-  //           .collection('users')
-  //           .where('email', isEqualTo: user.email)
-  //           .get();
-  //
-  //       if (querySnapshot.docs.isNotEmpty) {
-  //         DocumentSnapshot userDoc = querySnapshot.docs.first;
-  //
-  //         setState(() {
-  //           // Populate the controllers if data exists in Firestore
-  //           _userType = userDoc['userType'];
-  //           firstnameController.text = userDoc['first_name'] ?? '';
-  //           lastnameController.text = userDoc['last_name'] ?? '';
-  //           locationController.text = userDoc['location'] ?? '';
-  //           rateController.text = userDoc['hourly_rate']?.toString() ?? '';
-  //           skillsController.text = userDoc['skills'] ?? '';
-  //           descriptionController.text = userDoc['description'] ?? '';
-  //           headlineController.text = userDoc['headline'] ?? '';
-  //         });
-  //       } else {
-  //         // If no data is found, leave fields empty (user will input them)
-  //         ScaffoldMessenger.of(context).showSnackBar(
-  //           const SnackBar(content: Text('Please complete you profile!')),
-  //         );
-  //       }
-  //     } catch (e) {
-  //       print('Error: $e');
-  //     }
-  //   } else {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       const SnackBar(content: Text('No user logged in!')),
-  //     );
-  //   }
-  // }
   Future<void> loadUserData() async {
     User? user = _auth.currentUser;
     if (user != null) {

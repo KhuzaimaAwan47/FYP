@@ -3,7 +3,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/services.dart';
 import 'package:my_fyp/auth/validators.dart';
-
 import 'auth.dart';
 import 'login_page.dart';
 

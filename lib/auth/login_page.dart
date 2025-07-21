@@ -4,7 +4,6 @@ import 'package:my_fyp/auth/validators.dart';
 import '../widgets/bottom_navigation/c_navigator.dart';
 import '../widgets/bottom_navigation/f_navigator.dart';
 import 'auth.dart';
-import 'forgot.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -257,29 +256,6 @@ class _LoginPageState extends State<LoginPage> {
                                   color: Colors.indigo,
                                 ),
                               )),
-                        ],
-                      ),
-
-                      /* --------------------------- Text Button --------------------------- */
-
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          TextButton(
-                              onPressed: () {
-                                Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => forgot(),
-                                    ));
-                              },
-                              child: const Text(
-                                'Forgot Password?',
-                                style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w500,
-                                    color: Colors.indigo),
-                              ))
                         ],
                       ),
                     ],
