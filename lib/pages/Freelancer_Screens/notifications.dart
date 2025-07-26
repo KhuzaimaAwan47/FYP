@@ -489,7 +489,7 @@ class _NotificationsState extends State<Notifications> {
                         }).toList(),
                         onChanged: (String? selectedValue) {
                           if (selectedValue != null) {
-                            _updateOfferStatus(selectedValue);
+                            _updateOfferStatus(selectedValue, offer['project_name']);
                           }
                         },
                       ),
@@ -1092,34 +1092,40 @@ class _NotificationsState extends State<Notifications> {
   }
 
   // update Received offer status
-  Future<void> _updateOfferStatus(String newStatus) async {
+  Future<void> _updateOfferStatus(String newStatus, String projectName) async {
     try {
-      // Query Firestore for offers assigned to the current user
+      // Query Firestore for offers assigned to the user AND matching project name
       final querySnapshot = await _firestore
           .collection('offers')
-          .where('assigned_to',
-              isEqualTo: userName) // Replace with your user name variable
+          .where('assigned_to', isEqualTo: userName)
+          .where('project_name', isEqualTo: projectName) // Add this filter
           .get();
 
       if (querySnapshot.docs.isEmpty) {
-        showSuccessSnackbar(context, 'No offers found assigned to $userName');
+        showSuccessSnackbar(
+            context, 'No offers found for $projectName assigned to $userName');
         return;
       }
 
-      // Assuming only one offer is assigned to the user; adjust if multiple exist
-      final offerDoc = querySnapshot.docs.first;
-      final offerId = offerDoc.id;
+      // Use batch write to update all matching offers
+      WriteBatch batch = _firestore.batch();
 
-      // Update the offer's status
-      await _firestore.collection('offers').doc(offerId).update({
-        'project_status': newStatus,
-        'last_updated': FieldValue.serverTimestamp(),
-      });
+      for (final doc in querySnapshot.docs) {
+        batch.update(doc.reference, {
+          'project_status': newStatus,
+          'last_updated': FieldValue.serverTimestamp(),
+        });
+      }
+
+      await batch.commit();
 
       if (mounted) {
         Navigator.of(context).pop();
-        showSuccessSnackbar(context, 'Status updated to $newStatus');
-        await _loadAllOffers(); // Refresh the list if needed
+        showSuccessSnackbar(
+          context,
+          'Status updated to $newStatus',
+        );
+        await _loadAllOffers(); // Refresh the list
       }
     } catch (e) {
       showErrorSnackbar(context, 'Error updating status: $e');
