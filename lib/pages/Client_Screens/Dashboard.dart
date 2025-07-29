@@ -360,9 +360,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     child: accountCard(
                         'Available Balance',
                         Colors.green,
-                        Icon(Icons.account_balance_outlined,
+                        Icon(Icons.account_balance_wallet_outlined,
                           color: Colors.green,
-                          size: 35,
+                          size: 30,
                         )
                     ),
                   ),
@@ -370,9 +370,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   Expanded(
                     child: accountCard('Withdrawn Balance',
                       Colors.orange,
-                      Icon(Icons.account_balance_wallet_outlined,
+                      Icon(Icons.arrow_circle_down_outlined,
                         color: Colors.orange,
-                        size: 35,
+                        size: 30,
                       ),
                     ),
                   ),
@@ -470,7 +470,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               title,
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 20,
+                fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: color,
               ),

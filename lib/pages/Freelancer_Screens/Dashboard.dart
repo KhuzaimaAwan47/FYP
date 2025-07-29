@@ -685,7 +685,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     Colors.green,
                                     Icon(Icons.account_balance_wallet_outlined,
                                         color: Colors.green,
-                                    size: 35,
+                                    size: 30,
                                     ),
                                   )),
                                   Expanded(
@@ -695,7 +695,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     Icon(
                                       Icons.arrow_circle_down_outlined,
                                       color: Colors.orange,
-                                      size: 35,
+                                      size: 30,
                                     ),
                                   )),
                                 ],
@@ -820,7 +820,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               title,
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 20,
+                fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: color,
               ),

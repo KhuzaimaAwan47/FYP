@@ -517,6 +517,7 @@ class _GroupDetailsState extends State<GroupDetails> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
         title: const Text('Edit Group'),
         content: SingleChildScrollView(
           child: Column(
@@ -594,6 +595,7 @@ class _GroupDetailsState extends State<GroupDetails> {
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
+              backgroundColor: Colors.white,
               title: const Text(
                 'Add Admin',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -763,9 +765,21 @@ class _GroupDetailsState extends State<GroupDetails> {
                                   backgroundColor: Colors.blue.shade100,
                                   child: member['profileUrl'] != null
                                       ? CircleAvatar(
-                                          backgroundImage: NetworkImage(
-                                              member['profileUrl']),
-                                          radius: 20,
+                                    // backgroundImage: NetworkImage(
+                                    //           member['profileUrl']),
+                                          radius: 24,
+                                    child: CachedNetworkImage(imageUrl: member['profileUrl'],
+                                      imageBuilder: (context, imageProvider) =>
+                                          Container(
+                                            decoration: BoxDecoration(
+                                              shape: BoxShape.circle,
+                                              image: DecorationImage(
+                                                image: imageProvider,
+                                                fit: BoxFit.cover,
+                                              ),
+                                            ),
+                                          ),
+                                    ),
                                         )
                                       : CircleAvatar(
                                           radius: 20,
@@ -903,6 +917,7 @@ class _GroupDetailsState extends State<GroupDetails> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor: Colors.white,
           title: const Text('Confirm Delete'),
           content: const Text('Are you sure you want to delete this group?'),
           actions: <Widget>[
@@ -912,11 +927,17 @@ class _GroupDetailsState extends State<GroupDetails> {
               },
               child: const Text('Cancel'),
             ),
-            TextButton(
+            ElevatedButton(
               onPressed: () {
                 Navigator.of(context).pop(true);
               },
-              child: const Text('Delete', style: TextStyle(color: Colors.red)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.redAccent,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              child: const Text('Delete', style: TextStyle(color: Colors.white)),
             ),
           ],
         );

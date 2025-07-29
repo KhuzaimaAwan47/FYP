@@ -123,6 +123,7 @@ class _OfferNowState extends State<OfferNow> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: Text('Offer Now'),
       ),

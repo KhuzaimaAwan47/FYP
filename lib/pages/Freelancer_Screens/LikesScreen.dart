@@ -17,6 +17,7 @@ void showLikesBottomSheet(BuildContext context, String postId) {
 class LikesBottomSheet extends StatelessWidget {
   final String postId;
 
+
   const LikesBottomSheet({super.key, required this.postId});
 
   @override
@@ -69,6 +70,7 @@ class LikesBottomSheet extends StatelessWidget {
                               user['profileUrl'],
                             ),
                           ),
+                          trailing: Icon(Icons.favorite, color: Colors.red),
                           title: Text(user['username']),
                         );
                       },

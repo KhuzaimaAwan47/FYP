@@ -142,15 +142,6 @@ class _CommentsBottomSheetState extends State<CommentsBottomSheet> {
                           title: Row(
                             children: [
                               Text(comment['username'],style: const TextStyle(fontWeight: FontWeight.w500),),
-                              if (isCurrentUser)
-                                const Padding(
-                                  padding: EdgeInsets.only(left: 4.0),
-                                  child: Icon(
-                                    Icons.check_circle,
-                                    color: Colors.blue,
-                                    size: 16,
-                                  ),
-                                ),
                             ],
                           ),
                           subtitle: Text(comment['text']),
