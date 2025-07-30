@@ -31,17 +31,28 @@ The goal is to provide hands‑on experience, enhance skills, and foster communi
 - **AdvancedSearch**: Both Freelancers and Clients can search freelancers by `hourly rate`, projects by `budget`, and groups by `group members`.
 
 
-## Video
+## 📹Videos
+https://github.com/user-attachments/assets/8406da53-cebd-4bfd-91cc-bb7d1dcf1c32
+
+https://github.com/user-attachments/assets/3ab39577-fd3a-4180-aa23-2370379958c3
+
+https://github.com/user-attachments/assets/c67ead31-2421-4f73-a108-bd64017a4183
+
+https://github.com/user-attachments/assets/7310da84-e4df-47f7-9e8c-2114284ae132
+
+https://github.com/user-attachments/assets/c6ddbd41-bcb4-45d7-b5c7-e66456b41602
+
 
 ## 📸 App Screenshots
-<p align="center">
-  <img src="https://github.com/user-attachments/assets/0bcd93b8-7cea-4e7d-bce1-e04d34415c53" width="48%" />
-  <img src="https://github.com/user-attachments/assets/e9815cfe-45f9-4d97-a704-8a087fe09944" width="48%" />
-</p>
 
 <p align="center">
   <img src="https://github.com/user-attachments/assets/df40b084-bdf4-40a9-a8cf-636e851bfca9" width="48%" />
   <img src="https://github.com/user-attachments/assets/aa5a6628-c897-460a-95bd-f1991c470712" width="48%" />
+</p>
+
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/0bcd93b8-7cea-4e7d-bce1-e04d34415c53" width="48%" />
+  <img src="https://github.com/user-attachments/assets/e9815cfe-45f9-4d97-a704-8a087fe09944" width="48%" />
 </p>
 
 <p align="center">
@@ -110,11 +121,6 @@ The goal is to provide hands‑on experience, enhance skills, and foster communi
 </p>
 
 <p align="center">
-  <img src="" width="48%" />
-  <img src="" width="48%" />
-</p>
-
-<p align="center">
   <img src="https://github.com/user-attachments/assets/fc9213a0-eca3-4daf-9a37-3ef4d66f4b2a" width="48%" />
   <img src="https://github.com/user-attachments/assets/283b1cb0-4ae4-45d8-b127-22c046077b00" width="48%" />
 </p>
@@ -132,31 +138,6 @@ The goal is to provide hands‑on experience, enhance skills, and foster communi
 <p align="center">
   <img src="https://github.com/user-attachments/assets/47d2505d-cb72-4d06-b8c9-6cb905a6642c" width="48%" />
   <img src="https://github.com/user-attachments/assets/931faa73-0597-43a4-aed6-480ac205f1d4" width="48%" />
-</p>
-
-<p align="center">
-  <img src="" width="48%" />
-  <img src="" width="48%" />
-</p>
-
-<p align="center">
-  <img src="" width="48%" />
-  <img src="" width="48%" />
-</p>
-
-<p align="center">
-  <img src="" width="48%" />
-  <img src="" width="48%" />
-</p>
-
-<p align="center">
-  <img src="" width="48%" />
-  <img src="" width="48%" />
-</p>
-
-<p align="center">
-  <img src="" width="48%" />
-  <img src="" width="48%" />
 </p>
 
 ## 🔧 Installation & Setup
@@ -222,6 +203,16 @@ The goal is to provide hands‑on experience, enhance skills, and foster communi
   - **Cloud Firestore**: Real-time NoSQL database for projects, chats, and groups.
   - **Firebase Storage**: Secure media storage for images/videos.
   - **Cloud Functions**: (Optional) For notifications and background tasks.
+
+## 🔮 Future Work
+Due to time constraints and the large number of features, there's still a significant amount of work left on this project such as:
+
+- Payment Method
+- Push Notifications
+- UI Improvements
+- End to End Encryption in Chats
+- Voice chat
+- Edit/Delete a message
 
 ## 🤝 Contributing
 Contributions are welcome! Please follow these steps:
